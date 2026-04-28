@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDI-IA — Evaluación Inteligente de Síntomas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #060b14;
+    --bg-secondary: #0a1525;
+    --bg-card: #0e1e33;
+    --bg-card-hover: #122240;
+    --accent-teal: #00d4b8;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --text-primary: #e8f4f8;
+    --text-secondary: #7ca6c0;
+    --text-muted: #3d6680;
+    --border: #1a3550;
+    --border-bright: #1e4060;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --glow-teal: 0 0 20px rgba(0, 212, 184, 0.15);
+    --glow-blue: 0 0 30px rgba(59, 130, 246, 0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Radial glow top */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 500px;
+    background: radial-gradient(ellipse, rgba(0, 212, 184, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ====== HEADER ====== */
+  header {
+    padding: 40px 0 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .logo-mark {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--bg-primary);
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+    box-shadow: var(--glow-teal);
+  }
+
+  .header-text h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-text p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    font-weight: 300;
+  }
+
+  .status-badge {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ====== DISCLAIMER BANNER ====== */
+  .disclaimer-banner {
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .disclaimer-banner .icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ====== CHAT AREA ====== */
+  .chat-area {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    min-height: 460px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  /* Welcome state */
+  .welcome-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px 20px;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .welcome-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, rgba(0, 212, 184, 0.1), rgba(59, 130, 246, 0.1));
+    border: 1px solid rgba(0, 212, 184, 0.2);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .welcome-state h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .welcome-state p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  /* Example queries */
+  .example-queries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .example-chip {
+    background: rgba(0, 212, 184, 0.05);
+    border: 1px solid rgba(0, 212, 184, 0.15);
+    color: var(--accent-teal);
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Sora', sans-serif;
+  }
+
+  .example-chip:hover {
+    background: rgba(0, 212, 184, 0.12);
+    border-color: rgba(0, 212, 184, 0.35);
+    transform: translateY(-1px);
+  }
+
+  /* ====== MESSAGES ====== */
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: fadeInUp 0.3s ease;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .avatar.user-avatar {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  .avatar.ai-avatar {
+    background: linear-gradient(135deg, rgba(0, 212, 184, 0.15), rgba(59, 130, 246, 0.15));
+    border: 1px solid rgba(0, 212, 184, 0.2);
+  }
+
+  .message-bubble {
+    max-width: 78%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .message.user .message-bubble {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--text-primary);
+    border-radius: 14px 4px 14px 14px;
+  }
+
+  .message.ai .message-bubble {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-bright);
+    color: var(--text-primary);
+    border-radius: 4px 14px 14px 14px;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* ====== AI RESPONSE CARD ====== */
+  .response-card {
+    width: 100%;
+  }
+
+  .response-header {
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .gravity-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .gravity-badge.leve {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #22c55e;
+  }
+  .gravity-badge.moderada {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: #f59e0b;
+  }
+  .gravity-badge.grave {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+  }
+  .gravity-badge.emergencia {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #a78bfa;
+    animation: pulse-emergency 1.5s infinite;
+  }
+
+  @keyframes pulse-emergency {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+    50% { box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15); }
+  }
+
+  .condition-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-teal);
+    flex: 1;
+  }
+
+  .confidence-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .confidence-track {
+    width: 60px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-teal), var(--accent-blue));
+    border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+
+  .response-body {
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .response-body strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .recommendation-box {
+    padding: 12px 18px;
+    background: rgba(0, 212, 184, 0.04);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .recommendation-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent-teal);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .recommendation-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  .related-section {
+    padding: 10px 18px 14px;
+  }
+
+  .related-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .related-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .related-chip {
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .disclaimer-text {
+    padding: 10px 18px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ====== TYPING INDICATOR ====== */
+  .typing-indicator {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .typing-bubble {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-bright);
+    border-radius: 4px 14px 14px 14px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-teal);
+    animation: typing 1.4s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1.1); }
+  }
+
+  /* ====== INPUT AREA ====== */
+  .input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-bright);
+    border-radius: 14px;
+    padding: 6px 6px 6px 18px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: rgba(0, 212, 184, 0.4);
+    box-shadow: 0 0 0 3px rgba(0, 212, 184, 0.06);
+  }
+
+  #userInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: 'Sora', sans-serif;
+    padding: 10px 0;
+    resize: none;
+    line-height: 1.5;
+  }
+
+  #userInput::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+    border: none;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+
+  .send-btn:hover { transform: scale(1.05); opacity: 0.9; }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .send-btn svg { width: 18px; height: 18px; fill: white; }
+
+  /* ====== INFO ROW ====== */
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .info-card .num {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .info-card .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  /* ====== EMERGENCY OVERLAY ====== */
+  .emergency-banner {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 12px;
+    display: none;
+    gap: 12px;
+    align-items: center;
+    animation: fadeInUp 0.3s ease;
+  }
+
+  .emergency-banner.show { display: flex; }
+  .emergency-banner .em-icon { font-size: 24px; }
+  .emergency-banner .em-text { font-size: 14px; font-weight: 600; color: #a78bfa; }
+  .emergency-banner .em-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .info-row { grid-template-columns: 1fr; }
+    header { flex-wrap: wrap; }
+    .status-badge { margin-left: 0; }
+    .message-bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">M·IA</div>
+    <div class="header-text">
+      <h1>MEDI-IA</h1>
+      <p>Agente Inteligente para Evaluación Preliminar de Síntomas · Fase 2 — RAG + NLP</p>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      Sistema activo
+    </div>
+  </header>
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer-banner">
+    <span class="icon">ℹ️</span>
+    <span>Este sistema es una herramienta de orientación preliminar. <strong>No reemplaza la consulta médica profesional.</strong> En caso de emergencia, llame al <strong>123</strong> (Colombia) inmediatamente.</span>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area" id="chatArea">
+    <div class="welcome-state" id="welcomeState">
+      <div class="welcome-icon">🩺</div>
+      <h2>¿Cómo te sientes hoy?</h2>
+      <p>Describe tus síntomas con el mayor detalle posible. MEDI-IA analizará tu consulta usando procesamiento de lenguaje natural y una base de conocimiento médico.</p>
+      <div class="example-queries">
+        <button class="example-chip" onclick="fillExample(this)">tengo fiebre y dolor muscular</button>
+        <button class="example-chip" onclick="fillExample(this)">me duele el pecho y el brazo</button>
+        <button class="example-chip" onclick="fillExample(this)">tengo tos con flema y dificultad para respirar</button>
+        <button class="example-chip" onclick="fillExample(this)">ardor al orinar y micción frecuente</button>
+        <button class="example-chip" onclick="fillExample(this)">dolor de cabeza intenso con náuseas</button>
+        <button class="example-chip" onclick="fillExample(this)">picazón en los ojos y estornudos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY BANNER -->
+  <div class="emergency-banner" id="emergencyBanner">
+    <span class="em-icon">🚨</span>
+    <div>
+      <div class="em-text">POSIBLE EMERGENCIA MÉDICA DETECTADA</div>
+      <div class="em-sub">Llame al 123 (Emergencias Colombia) o diríjase a urgencias inmediatamente</div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="input-wrapper">
+      <textarea id="userInput" rows="2" placeholder="Describe tus síntomas aquí... (ej: tengo fiebre alta, dolor de cabeza y escalofríos)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- INFO CARDS -->
+  <div class="info-row">
+    <div class="info-card">
+      <div class="num">20</div>
+      <div class="label">Condiciones médicas en corpus</div>
+    </div>
+    <div class="info-card">
+      <div class="num">RAG</div>
+      <div class="label">TF-IDF + Cosine Similarity</div>
+    </div>
+    <div class="info-card">
+      <div class="num">4</div>
+      <div class="label">Niveles de triaje</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const welcomeState = document.getElementById('welcomeState');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const emergencyBanner = document.getElementById('emergencyBanner');
+
+let isFirstMessage = true;
+let isLoading = false;
+
+// Enter to send (Shift+Enter for newline)
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function fillExample(btn) {
+  userInput.value = btn.textContent;
+  userInput.focus();
+}
+
+function sendMessage() {
+  const msg = userInput.value.trim();
+  if (!msg || isLoading) return;
+
+  if (isFirstMessage) {
+    welcomeState.remove();
+    isFirstMessage = false;
+  }
+
+  appendUserMessage(msg);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  setLoading(true);
+
+  const typingId = appendTyping();
+
+  fetch('/api/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: msg })
+  })
+  .then(r => r.json())
+  .then(data => {
+    removeTyping(typingId);
+    if (data.success) {
+      appendAIResponse(data);
+      if (data.urgencia === 'emergencia') {
+        emergencyBanner.classList.add('show');
+      }
+    } else {
+      appendErrorMessage(data.error || 'Error al procesar tu consulta.');
+    }
+  })
+  .catch(() => {
+    removeTyping(typingId);
+    appendErrorMessage('Error de conexión. Intenta de nuevo.');
+  })
+  .finally(() => setLoading(false));
+}
+
+function appendUserMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'message user';
+  div.innerHTML = `
+    <div class="avatar user-avatar">👤</div>
+    <div class="message-bubble">${escapeHtml(text)}</div>
+  `;
+  chatArea.appendChild(div);
+  scrollBottom();
+}
+
+function appendTyping() {
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'typing-indicator';
+  div.innerHTML = `
+    <div class="avatar ai-avatar">🤖</div>
+    <div class="typing-bubble">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  chatArea.appendChild(div);
+  scrollBottom();
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function appendAIResponse(data) {
+  const gravClass = data.gravedad || 'moderada';
+  const related = (data.condiciones_relacionadas || []).map(c => `
+    <span class="related-chip">${getGravIcon(c.gravedad)} ${escapeHtml(c.nombre)}</span>
+  `).join('');
+
+  const confWidth = Math.max(5, Math.min(100, data.confianza || 0));
+
+  const div = document.createElement('div');
+  div.className = 'message ai';
+  div.innerHTML = `
+    <div class="avatar ai-avatar">🤖</div>
+    <div class="message-bubble">
+      <div class="response-card">
+        <div class="response-header">
+          <span class="gravity-badge ${gravClass}">${data.gravedad_icon} ${data.gravedad_label}</span>
+          <span class="condition-name">${escapeHtml(data.condicion_principal)}</span>
+          <div class="confidence-bar">
+            <div class="confidence-track">
+              <div class="confidence-fill" style="width:${confWidth}%"></div>
+            </div>
+            <span>${data.confianza}%</span>
+          </div>
+        </div>
+
+        <div class="response-body">${formatResponse(data.respuesta)}</div>
+
+        <div class="recommendation-box">
+          <div class="recommendation-label">
+            <span>✦</span> RECOMENDACIÓN
+          </div>
+          <div class="recommendation-text">${escapeHtml(data.recomendacion)}</div>
+        </div>
+
+        ${related ? `
+        <div class="related-section">
+          <div class="related-label">CONDICIONES RELACIONADAS</div>
+          <div class="related-chips">${related}</div>
+        </div>` : ''}
+
+        <div class="disclaimer-text">${escapeHtml(data.disclaimer)}</div>
+      </div>
+    </div>
+  `;
+  chatArea.appendChild(div);
+  scrollBottom();
+}
+
+function appendErrorMessage(msg) {
+  const div = document.createElement('div');
+  div.className = 'message ai';
+  div.innerHTML = `
+    <div class="avatar ai-avatar">🤖</div>
+    <div class="message-bubble" style="padding:14px 18px; color: #ef4444;">${escapeHtml(msg)}</div>
+  `;
+  chatArea.appendChild(div);
+  scrollBottom();
+}
+
+function getGravIcon(g) {
+  const icons = { leve:'🟢', moderada:'🟡', grave:'🔴', emergencia:'🚨' };
+  return icons[g] || '🟡';
+}
+
+function formatResponse(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function scrollBottom() {
+  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
+}
+
+function setLoading(state) {
+  isLoading = state;
+  sendBtn.disabled = state;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+index/books.index
+libros/*.pdf
+.env
+.DS_Store
+ .claude/
