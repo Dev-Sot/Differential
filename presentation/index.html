@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDI-IA — Phase 2 Progress Submission</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:#060b14; --bg2:#0a1525; --card:#0e1e33;
+    --teal:#00d4b8; --blue:#3b82f6; --cyan:#06b6d4;
+    --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+    --text:#e8f4f8; --muted:#7ca6c0; --border:#1a3550;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;user-select:none;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.2;pointer-events:none;z-index:0;}
+
+  .deck{width:100vw;height:100vh;position:relative;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:50px 80px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:1;}
+  .slide.active{opacity:1;transform:translateX(0);pointer-events:all;}
+  .slide.exit{opacity:0;transform:translateX(-60px);}
+
+  .progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .4s;z-index:200;}
+  .nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:rgba(10,21,37,.92);border:1px solid var(--border);border-radius:40px;padding:9px 22px;z-index:100;backdrop-filter:blur(12px);}
+  .nav button{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 16px;border-radius:20px;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;transition:all .2s;}
+  .nav button:hover{border-color:var(--teal);color:var(--teal);}
+  .slide-counter{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:55px;text-align:center;}
+  .key-hint{position:fixed;top:18px;right:22px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);z-index:100;}
+  .key-hint kbd{background:var(--card);border:1px solid var(--border);padding:2px 6px;border-radius:4px;}
+
+  /* ── TITLE ── */
+  .title-slide{text-align:center;gap:18px;}
+  .logo{width:76px;height:76px;background:linear-gradient(135deg,var(--teal),var(--blue));border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--bg);box-shadow:0 0 40px rgba(0,212,184,.3);margin:0 auto 8px;}
+  .title-slide h1{font-size:58px;font-weight:800;background:linear-gradient(135deg,var(--text) 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;}
+  .subtitle{font-size:17px;color:var(--muted);font-weight:300;}
+  .badges{display:flex;gap:9px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+  .badge{padding:4px 13px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;border:1px solid;}
+  .badge.teal{background:rgba(0,212,184,.1);border-color:rgba(0,212,184,.3);color:var(--teal);}
+  .badge.blue{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--blue);}
+  .badge.purple{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);color:var(--purple);}
+  .badge.green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green);}
+  .badge.red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red);}
+
+  /* ── CONTENT ── */
+  .content-slide{align-items:flex-start;gap:22px;width:100%;max-width:1100px;}
+  .slide-tag{font-family:'DM Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;margin-bottom:-12px;}
+  .slide-title{font-size:30px;font-weight:700;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+  .cards{display:grid;gap:14px;width:100%;}
+  .cols-2{grid-template-columns:1fr 1fr;}
+  .cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;}
+  .card.teal{border-color:rgba(0,212,184,.25);}
+  .card.blue{border-color:rgba(59,130,246,.25);}
+  .card.purple{border-color:rgba(139,92,246,.25);}
+  .card.red{border-color:rgba(239,68,68,.25);}
+  .card.green{border-color:rgba(34,197,94,.25);}
+  .card.yellow{border-color:rgba(245,158,11,.25);}
+  .card-icon{font-size:24px;margin-bottom:8px;}
+  .card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .card p,.card li{font-size:12.5px;color:var(--muted);line-height:1.6;}
+  .card ul{list-style:none;}
+  .card ul li::before{content:'→ ';color:var(--teal);}
+
+  /* ── COMPARE ── */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;}
+  .compare-col{border-radius:12px;padding:20px;}
+  .phase1-col{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);}
+  .phase2-col{background:rgba(0,212,184,.05);border:1px solid rgba(0,212,184,.2);}
+  .compare-col h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .phase1-col h3{color:var(--red);}
+  .phase2-col h3{color:var(--teal);}
+  .compare-col ul{list-style:none;display:flex;flex-direction:column;gap:7px;}
+  .compare-col li{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;}
+  .dot{flex-shrink:0;margin-top:5px;width:6px;height:6px;border-radius:50%;}
+  .phase1-col .dot{background:var(--red);}
+  .phase2-col .dot{background:var(--teal);}
+
+  /* ── PIPELINE ── */
+  .pipeline{display:flex;align-items:center;gap:6px;width:100%;overflow-x:auto;}
+  .pipe-step{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:108px;}
+  .pipe-step .icon{font-size:20px;margin-bottom:5px;}
+  .pipe-step .label{font-size:11.5px;font-weight:600;color:var(--text);}
+  .pipe-step .sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+  .pipe-arrow{color:var(--teal);font-size:18px;flex-shrink:0;}
+  .pipe-step.hl{border-color:var(--teal);background:rgba(0,212,184,.07);}
+  .pipe-step.hl2{border-color:var(--purple);background:rgba(139,92,246,.07);}
+
+  /* ── REACT ── */
+  .react-loop{display:flex;flex-direction:column;gap:8px;width:100%;}
+  .react-step{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-radius:10px;font-size:12.5px;}
+  .step-type{font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:9px;flex-shrink:0;font-weight:500;white-space:nowrap;}
+  .react-thought{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);}
+  .react-thought .step-type{background:rgba(59,130,246,.15);color:var(--blue);}
+  .react-action{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);}
+  .react-action .step-type{background:rgba(139,92,246,.15);color:var(--purple);}
+  .react-obs{background:rgba(0,212,184,.06);border:1px solid rgba(0,212,184,.15);}
+  .react-obs .step-type{background:rgba(0,212,184,.12);color:var(--teal);}
+  .react-final{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);}
+  .react-final .step-type{background:rgba(34,197,94,.15);color:var(--green);}
+  .react-step p{color:var(--muted);line-height:1.5;}
+  .react-step code{color:var(--cyan);background:rgba(6,182,212,.1);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;}
+
+  /* ── STATS ── */
+  .stats{display:flex;gap:16px;width:100%;}
+  .stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;}
+  .stat .num{font-size:38px;font-weight:800;font-family:'DM Mono',monospace;background:linear-gradient(135deg,var(--teal),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .stat .label{font-size:11px;color:var(--muted);margin-top:5px;}
+
+  /* ── CHECKLIST ── */
+  .checklist{width:100%;display:flex;flex-direction:column;gap:8px;}
+  .check-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:13px;}
+  .check-item .ci-icon{font-size:16px;flex-shrink:0;}
+  .check-item .ci-text{color:var(--text);}
+  .check-item .ci-sub{font-size:10.5px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+  .check-item.done{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.04);}
+  .check-item.partial{border-color:rgba(245,158,11,.2);background:rgba(245,158,11,.04);}
+  .check-item.pending{border-color:rgba(239,68,68,.15);background:rgba(239,68,68,.03);opacity:.75;}
+
+  /* ── TABLE ── */
+  .fw-table{width:100%;border-collapse:collapse;}
+  .fw-table th{text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);letter-spacing:1px;padding:7px 10px;border-bottom:1px solid var(--border);}
+  .fw-table td{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid rgba(26,53,80,.5);vertical-align:top;}
+  .fw-table td:first-child{color:var(--text);font-weight:500;}
+  .fw-table .ok{color:var(--green);}
+  .fw-table .warn{color:var(--yellow);}
+
+  /* ── TWO COL ── */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;}
+
+  /* ── KEY POINTS ── */
+  .key-points{display:flex;flex-direction:column;gap:9px;}
+  .kp{display:flex;gap:11px;align-items:flex-start;padding:11px;background:var(--card);border-radius:9px;border:1px solid var(--border);}
+  .kp-icon{font-size:18px;flex-shrink:0;}
+  .kp-title{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .kp-text{font-size:12px;color:var(--muted);line-height:1.5;}
+
+  /* ── TOOLS GRID ── */
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;width:100%;}
+  .tool-card{background:var(--card);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:14px;}
+  .tool-card h4{font-family:'DM Mono',monospace;font-size:12px;color:var(--purple);margin-bottom:5px;}
+  .tool-card p{font-size:11.5px;color:var(--muted);line-height:1.5;}
+
+  /* ── FINAL ── */
+  .final-slide{text-align:center;gap:20px;}
+  .final-slide h2{font-size:44px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .quote{font-size:14px;color:var(--muted);border-left:3px solid var(--teal);padding:11px 18px;text-align:left;background:rgba(0,212,184,.04);border-radius:0 8px 8px 0;max-width:640px;}
+
+  /* ALERT BOX */
+  .alert{border-radius:10px;padding:14px 18px;width:100%;font-size:13px;}
+  .alert.red{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);color:var(--muted);}
+  .alert.teal{background:rgba(0,212,184,.05);border:1px solid rgba(0,212,184,.2);color:var(--muted);}
+  .alert.yellow{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);color:var(--muted);}
+  .alert-title{font-family:'DM Mono',monospace;font-size:11px;margin-bottom:6px;}
+  .alert.red .alert-title{color:var(--red);}
+  .alert.teal .alert-title{color:var(--teal);}
+  .alert.yellow .alert-title{color:var(--yellow);}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="key-hint"><kbd>←</kbd> <kbd>→</kbd></div>
+
+<div class="deck" id="deck">
+
+<!-- ══════════════════════════════════════════
+     SLIDE 1 — TITLE
+══════════════════════════════════════════ -->
+<div class="slide title-slide active">
+  <div class="logo">M·IA</div>
+  <h1>MEDI-IA</h1>
+  <div class="subtitle">Intelligent Conversational Agent for Initial Medical Symptom Assessment</div>
+  <div class="subtitle" style="font-size:14px;margin-top:4px;color:#4a7a96;">Second Progress Submission — Phase 2 Report</div>
+  <div class="badges">
+    <span class="badge teal">ReAct Agent</span>
+    <span class="badge blue">HuggingFace · Qwen2.5-7B</span>
+    <span class="badge purple">FAISS + Cross-Encoder Reranker</span>
+    <span class="badge green">34,562 Medical Fragments</span>
+  </div>
+  <div style="margin-top:16px;font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;">
+    Nelson Garzón · Misael Gallo · Alejandro Marín &nbsp;|&nbsp; Intelligent Agents · Universidad — Ibagué, 2026
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 2 — AGENDA
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">AGENDA</div>
+  <div class="slide-title">Presentation Structure</div>
+  <div class="cards cols-2">
+    <div class="card teal">
+      <div class="card-icon">📌</div>
+      <h3>1. Problem & Project Overview</h3>
+      <p>What MEDI-IA is, why it matters, and the core constraint: never hallucinate.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">📋</div>
+      <h3>2. Phase 1 — Original Proposal</h3>
+      <p>BioBERT/BETO + FLAN-T5 + SNOMED CT. What we proposed and why it was ambitious.</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">🔄</div>
+      <h3>3. Why the Proposal Changed</h3>
+      <p>GPU constraints, SNOMED licensing, and professor guidance toward a pragmatic pivot.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🏗️</div>
+      <h3>4. Phase 2 — Full Implementation</h3>
+      <p>RAG pipeline, ReAct agent, HuggingFace LLM, tools, memory, tests, and UI.</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">⚡</div>
+      <h3>5. Models & Architecture Deep Dive</h3>
+      <p>Every model, why it was chosen, and how they connect in the pipeline.</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">✅</div>
+      <h3>6. Results, Status & Next Steps</h3>
+      <p>What works, 12/12 tests passing, what's left, and the 8-step agent framework coverage.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 3 — PROBLEM & OVERVIEW
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">PROJECT OVERVIEW</div>
+  <div class="slide-title">The Problem MEDI-IA Solves</div>
+  <div class="two-col">
+    <div class="key-points">
+      <div class="kp">
+        <div class="kp-icon">🌎</div>
+        <div>
+          <div class="kp-title">Healthcare Access Gap</div>
+          <div class="kp-text">In Latin America, patients turn to unverified internet sources for symptom interpretation, leading to misdiagnoses, unnecessary ER visits, and incorrect self-medication. (Topol, 2019)</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">🎯</div>
+        <div>
+          <div class="kp-title">Goal</div>
+          <div class="kp-text">A conversational AI agent that analyzes symptoms, estimates severity, and provides evidence-based guidance — acting as a first filter between the patient and the formal health system.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">🔒</div>
+        <div>
+          <div class="kp-title">Core Constraint</div>
+          <div class="kp-text">The system <strong style="color:var(--teal)">never invents information.</strong> Every answer is grounded exclusively in indexed medical literature with exact book + page citations.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">⚕️</div>
+        <div>
+          <div class="kp-title">Always Ends With</div>
+          <div class="kp-text" style="color:var(--yellow);font-style:italic;">"This does not replace professional medical consultation."</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="stat"><div class="num">34K</div><div class="label">Book fragments indexed</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">Real clinical reference books</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">Autonomous medical tools</div></div>
+      <div class="stat"><div class="num">12/12</div><div class="label">Automated tests passing</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 4 — PHASE 1 PROPOSAL
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">PHASE 1 — ORIGINAL PROPOSAL</div>
+  <div class="slide-title">What We Proposed in Phase 1</div>
+  <div class="cards cols-3" style="margin-bottom:14px;">
+    <div class="card red">
+      <div class="card-icon">🧬</div>
+      <h3>NLP Engine</h3>
+      <p><strong style="color:var(--text)">BioBERT / BETO</strong> — pre-trained biomedical transformers for dense Spanish-language symptom embeddings. Designed for clinical text comprehension.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">📚</div>
+      <h3>Knowledge Base</h3>
+      <p><strong style="color:var(--text)">SNOMED CT</strong> ontology — international clinical terminology standard with thousands of structured medical concepts in Spanish.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">✍️</div>
+      <h3>Generation</h3>
+      <p><strong style="color:var(--text)">FLAN-T5</strong> — generative transformer model for producing natural language diagnostic summaries from retrieved context.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">⚡</div>
+      <h3>Vector Store</h3>
+      <p><strong style="color:var(--text)">FAISS Dense</strong> (float32) — dense vector index over SNOMED CT entries for semantic similarity retrieval.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">🖥️</div>
+      <h3>Frontend</h3>
+      <p><strong style="color:var(--text)">Vue 3</strong> SPA consuming a Flask REST API. Modern reactive interface with component-based architecture.</p>
+    </div>
+    <div class="card red">
+      <div class="card-icon">🏥</div>
+      <h3>Triage</h3>
+      <p><strong style="color:var(--text)">3-level system:</strong> leve / moderada / grave. Cloud/GPU deployment on Google Colab Pro or HuggingFace Endpoints.</p>
+    </div>
+  </div>
+  <div class="alert red">
+    <div class="alert-title">⚠ PHASE 1 DEPENDENCY RISKS (identified before implementation)</div>
+    BioBERT + FLAN-T5 require 4–6 GB GPU VRAM · SNOMED CT in Spanish requires institutional licensing · Vue 3 adds frontend framework complexity
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 5 — WHY WE CHANGED
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">JUSTIFIED PIVOT</div>
+  <div class="slide-title">Why the Proposal Changed — 3 Converging Reasons</div>
+  <div class="cards cols-3" style="margin-bottom:16px;">
+    <div class="card yellow">
+      <div class="card-icon">💻</div>
+      <h3>1. Computational Constraints</h3>
+      <p>BioBERT and FLAN-T5 require a minimum of <strong style="color:var(--text)">4–6 GB GPU VRAM</strong> for inference. No GPU was available in the local development environment. CPU-only inference was prohibitively slow.</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">📄</div>
+      <h3>2. Corpus Feasibility</h3>
+      <p>Obtaining and processing <strong style="color:var(--text)">SNOMED CT in Spanish</strong> required institutional licensing and significant preprocessing effort beyond the scope and timeline of this phase.</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">👩‍🏫</div>
+      <h3>3. Instructor Guidance</h3>
+      <p>Prof. <strong style="color:var(--text)">Alexandra La Cruz</strong> recommended a HuggingFace + Sentence Transformers approach — embedding a local medical knowledge corpus. This preserves RAG while enabling CPU deployment.</p>
+    </div>
+  </div>
+  <div class="alert teal">
+    <div class="alert-title">✅ THE CORE RAG INSIGHT REMAINS IDENTICAL</div>
+    "Retrieve relevant context, then generate a grounded response." The architectural principle from Phase 1 is preserved. Only the implementation layer changed: dense transformer embeddings → sentence-transformers + TF-IDF, and FLAN-T5 → Qwen2.5-7B via HuggingFace free API.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 6 — PHASE 1 vs PHASE 2 COMPARISON
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">EVOLUTION</div>
+  <div class="slide-title">Phase 1 Proposed → Phase 2 Implemented</div>
+  <div class="compare">
+    <div class="compare-col phase1-col">
+      <h3>❌ Phase 1 — Proposed</h3>
+      <ul>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">BioBERT/BETO</strong> — biomedical transformer encoder</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">SNOMED CT</strong> — international clinical ontology</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">FLAN-T5</strong> — generative model for summaries</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">FAISS Dense</strong> float32 vector store</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">Vue 3</strong> SPA frontend</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">Cloud / GPU server</strong> (Google Colab / HF Endpoints)</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">3-level triage:</strong> leve / moderada / grave</div></li>
+        <li><div class="dot"></div><div>No memory, no agent, no tools</div></li>
+      </ul>
+    </div>
+    <div class="compare-col phase2-col">
+      <h3>✅ Phase 2 — Implemented</h3>
+      <ul>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">paraphrase-multilingual-MiniLM-L12-v2</strong> — sentence-transformers, ES+EN</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">4 real clinical PDFs</strong> — Harrison, Oxford, Symptom-to-Dx, Top 100 Drugs</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">Qwen2.5-7B-Instruct</strong> via HuggingFace free API</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">FAISS-CPU IndexFlatIP</strong> + TF-IDF fallback</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">HTML5 + CSS3 + Vanilla JS</strong> — zero framework dependency</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">Local Flask server</strong> — zero infrastructure cost</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">4-level triage:</strong> added emergencia 🚨</div></li>
+        <li><div class="dot"></div><div><strong style="color:var(--text)">ReAct agent</strong> with 4 tools + multi-turn memory</div></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 7 — COMPLETE PIPELINE
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">PHASE 2 ARCHITECTURE</div>
+  <div class="slide-title">The Complete Pipeline — Two Stages</div>
+  <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--teal);margin-bottom:4px;">STAGE 1 — INGESTION (run once with: python ingest.py)</div>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="icon">📄</div><div class="label">4 PDF Books</div><div class="sub">150MB total</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="icon">✂️</div><div class="label">Chunking</div><div class="sub">400 chars + overlap</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="icon">🧠</div><div class="label">Embeddings</div><div class="sub">MiniLM-L12 · 384d</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="icon">⚡</div><div class="label">FAISS Index</div><div class="sub">34,562 vectors</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="icon">💾</div><div class="label">books.index</div><div class="sub">+ metadata.json</div></div>
+  </div>
+  <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--purple);margin-bottom:4px;margin-top:6px;">STAGE 2 — QUERY TIME (each user message)</div>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="icon">👤</div><div class="label">Symptoms</div><div class="sub">natural language</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="icon">🔍</div><div class="label">FAISS Retrieve</div><div class="sub">top-10 chunks</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="icon">🎯</div><div class="label">Cross-Encoder</div><div class="sub">rerank → top-5</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="icon">🗺️</div><div class="label">Section Map</div><div class="sub">chapter context</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl2"><div class="icon">🤖</div><div class="label">ReAct Agent</div><div class="sub">Qwen2.5-7B</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="icon">💬</div><div class="label">Response</div><div class="sub">cited + structured</div></div>
+  </div>
+  <div class="alert teal" style="margin-top:4px;">
+    <div class="alert-title">🔄 FALLBACK SYSTEM</div>
+    If FAISS index not found → TF-IDF sparse retrieval on 20-condition corpus. If HF_TOKEN not set → template-based generation. System degrades gracefully at every layer.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 8 — REACT AGENT
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">REACT PATTERN — Yao et al. (2023)</div>
+  <div class="slide-title">How the ReAct Agent Thinks and Acts</div>
+  <div class="react-loop">
+    <div class="react-step react-thought">
+      <span class="step-type">THOUGHT 1</span>
+      <p>"The user reports high fever, sudden onset, muscle pain, and chills. I need to search the indexed medical books for relevant clinical context before answering."</p>
+    </div>
+    <div class="react-step react-action">
+      <span class="step-type">ACTION</span>
+      <p>Calls tool: <code>search_symptoms("high fever sudden onset muscle pain rigors chills")</code></p>
+    </div>
+    <div class="react-step react-obs">
+      <span class="step-type">OBSERVATION</span>
+      <p>Retrieved: Harrison p.136 — "Fever, rigors, myalgia..." · Oxford Handbook p.831 — "Symptoms: Fever, malaise, dyspnoea, purulent sputum..." · Symptom to Diagnosis p.87 — "Fever with chills suggests bacteremia..."</p>
+    </div>
+    <div class="react-step react-action">
+      <span class="step-type">ACTION</span>
+      <p>Calls tool: <code>assess_urgency("high fever sudden muscle pain chills|||Harrison p.136 Oxford p.831...")</code></p>
+    </div>
+    <div class="react-step react-obs">
+      <span class="step-type">OBSERVATION</span>
+      <p>Result: <strong style="color:var(--red)">emergencia</strong> — pattern matches severe infectious disease / bacteremia indicators per clinical literature.</p>
+    </div>
+    <div class="react-step react-final">
+      <span class="step-type">FINAL ANSWER</span>
+      <p>Structured diagnosis: condition, urgency level, clinical reasoning with citations from Harrison + Oxford Handbook, recommendation. Disclaimer appended.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 9 — 4 AGENT TOOLS
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">AUTONOMOUS AGENT TOOLS</div>
+  <div class="slide-title">4 Medical Tools the Agent Decides to Use</div>
+  <div class="tools-grid" style="margin-bottom:14px;">
+    <div class="tool-card">
+      <h4>⚙ search_symptoms(query)</h4>
+      <p>Primary retrieval tool. FAISS similarity search → cross-encoder reranker → top-4 chunks with book + section + page. <strong style="color:var(--muted)">Always called first for any symptom query.</strong></p>
+    </div>
+    <div class="tool-card">
+      <h4>⚙ assess_urgency(symptoms, context)</h4>
+      <p>Evaluates triage level: <span style="color:var(--green)">leve</span> / <span style="color:var(--yellow)">moderada</span> / <span style="color:var(--red)">grave</span> / <span style="color:var(--purple)">emergencia 🚨</span>. Uses clinical keywords + retrieved context. Triggers emergency banner in UI.</p>
+    </div>
+    <div class="tool-card">
+      <h4>⚙ get_drug_info(condition)</h4>
+      <p>Retrieves medication information from <em>The Top 100 Drugs Clinical</em>. Called when the agent identifies a condition requiring pharmacological context or treatment options.</p>
+    </div>
+    <div class="tool-card">
+      <h4>⚙ get_section(book, topic)</h4>
+      <p>Deep-dives into a specific book + section. Used when the agent needs more detail from a particular reference. Input: <code>Harrison|||chest pain</code> or <code>Oxford|||respiratory</code>.</p>
+    </div>
+  </div>
+  <div class="alert teal">
+    <div class="alert-title">🧠 WHAT MAKES THIS A REAL AGENT</div>
+    The LLM <strong style="color:var(--text)">autonomously decides</strong> which tools to call, in what order, and when it has enough context to generate a final answer. It is not a fixed pipeline — it reasons. The full trajectory (Thought → Action → Observation) is displayed in the UI for explainability. (XAI principle)
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 10 — MODELS USED
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">MODELS & TECHNOLOGY STACK</div>
+  <div class="slide-title">All Models Used in Phase 2 — And Why</div>
+  <div class="cards cols-2">
+    <div class="card teal">
+      <div class="card-icon">🤖</div>
+      <h3>Qwen/Qwen2.5-7B-Instruct</h3>
+      <p><strong style="color:var(--text)">Role:</strong> Main LLM for reasoning, tool selection, and response generation.<br><strong style="color:var(--text)">Why:</strong> Multilingual (ES + EN), free via HuggingFace Inference API, strong instruction-following. Verified working — only model available free in HF chat API at time of integration.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔢</div>
+      <h3>paraphrase-multilingual-MiniLM-L12-v2</h3>
+      <p><strong style="color:var(--text)">Role:</strong> Semantic embedding of book chunks + user queries.<br><strong style="color:var(--text)">Why:</strong> Multilingual (50+ languages including ES), 384-dim vectors, ~400MB, runs on CPU. Recommended by Professor La Cruz. Enables Spanish queries over English book content.</p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">🎯</div>
+      <h3>cross-encoder/ms-marco-MiniLM-L-6-v2</h3>
+      <p><strong style="color:var(--text)">Role:</strong> Reranker — scores (query, chunk) pairs for true relevance.<br><strong style="color:var(--text)">Why:</strong> Cross-encoders see both query and passage jointly → dramatically more accurate than cosine similarity alone. Critical for medical precision.</p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">⚡</div>
+      <h3>FAISS-CPU + TF-IDF (dual mode)</h3>
+      <p><strong style="color:var(--text)">Role:</strong> Vector database for similarity search.<br><strong style="color:var(--text)">Why:</strong> FAISS = semantic retrieval from real books (post-ingest). TF-IDF = lightweight fallback when index not present. Justification for TF-IDF: CPU-only, XAI-interpretable weights, effective for 20-condition corpus.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 11 — KNOWLEDGE BASE
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">KNOWLEDGE BASE</div>
+  <div class="slide-title">Real Medical Literature — 150MB of Clinical Evidence</div>
+  <div class="cards cols-4" style="margin-bottom:14px;">
+    <div class="card teal">
+      <div class="card-icon">📖</div>
+      <h3>Harrison's Principles</h3>
+      <p>Gold standard internal medicine reference. 19th edition in Spanish.<br><strong style="color:var(--teal)">17,678 chunks</strong></p>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📗</div>
+      <h3>Oxford Handbook</h3>
+      <p>Clinical Medicine 10th ed. Concise, dense sections ideal for RAG chunking.<br><strong style="color:var(--blue)">8,675 chunks</strong></p>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">📙</div>
+      <h3>Symptom to Diagnosis</h3>
+      <p>Structured exactly as: symptom → workup → diagnosis. Perfect for this use case.<br><strong style="color:var(--purple)">6,128 chunks</strong></p>
+    </div>
+    <div class="card green">
+      <div class="card-icon">💊</div>
+      <h3>Top 100 Drugs Clinical</h3>
+      <p>Closes the loop: condition → treatment → medication. Used by get_drug_info tool.<br><strong style="color:var(--green)">2,081 chunks</strong></p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num">34,562</div><div class="label">Total fragments indexed in FAISS</div></div>
+    <div class="stat"><div class="num">150MB</div><div class="label">PDF source material</div></div>
+    <div class="stat"><div class="num">384</div><div class="label">Embedding dimensions per chunk</div></div>
+    <div class="stat"><div class="num">&lt;1s</div><div class="label">FAISS search latency (CPU)</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 12 — FULL ARCHITECTURE MAP
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">SYSTEM ARCHITECTURE</div>
+  <div class="slide-title">Phase 2 — Complete Module Map</div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--teal);margin-bottom:8px;">src/ — INTELLIGENCE LAYER</div>
+      <div class="checklist">
+        <div class="check-item done"><div class="ci-icon">🤖</div><div><div class="ci-text">agent.py</div><div class="ci-sub">Main orchestrator — routes to ReAct or RAG fallback</div></div></div>
+        <div class="check-item done"><div class="ci-icon">⚡</div><div><div class="ci-text">agent_loop.py</div><div class="ci-sub">ReAct loop: Thought → Action → Observation (max 6 iter)</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🔧</div><div><div class="ci-text">tools.py</div><div class="ci-sub">4 medical tools the LLM can call autonomously</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🧠</div><div><div class="ci-text">llm.py</div><div class="ci-sub">HuggingFace InferenceClient — Qwen2.5-7B wrapper</div></div></div>
+        <div class="check-item done"><div class="ci-icon">💬</div><div><div class="ci-text">memory.py</div><div class="ci-sub">Session-based multi-turn conversation history</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">schemas.py</div><div class="ci-sub">Pydantic v2 — strict request/response validation</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--purple);margin-bottom:8px;">src/rag/ — RETRIEVAL LAYER</div>
+      <div class="checklist">
+        <div class="check-item done"><div class="ci-icon">🔢</div><div><div class="ci-text">embeddings.py</div><div class="ci-sub">Singleton MiniLM model loader — encode() function</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🔍</div><div><div class="ci-text">retriever.py</div><div class="ci-sub">FAISS search — top-10 chunks, score ≥ 0.25 threshold</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🎯</div><div><div class="ci-text">reranker.py</div><div class="ci-sub">Cross-encoder reranking — top-5 by true relevance</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🛡️</div><div><div class="ci-text">semantic_fallback.py</div><div class="ci-sub">Honest "I don't know" when confidence is too low</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🗺️</div><div><div class="ci-text">section_mapping.py</div><div class="ci-sub">Maps page → chapter name for each book</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 13 — UI & API
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">USER INTERFACE & API</div>
+  <div class="slide-title">Web Application & REST Endpoints</div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--teal);margin-bottom:8px;">UI FEATURES</div>
+      <div class="key-points">
+        <div class="kp">
+          <div class="kp-icon">🩺</div>
+          <div>
+            <div class="kp-title">Dark Clinical Theme</div>
+            <div class="kp-text">Single-page chat interface. Animated triage badges (4 levels). Emergency detection banner. Zero framework — pure HTML5 + CSS3 + Vanilla JS.</div>
+          </div>
+        </div>
+        <div class="kp">
+          <div class="kp-icon">⚡</div>
+          <div>
+            <div class="kp-title">Agent Trajectory Viewer</div>
+            <div class="kp-text">Expandable panel showing every Thought → Action → Observation step. Displays which tools were used. Full transparency of agent reasoning (XAI).</div>
+          </div>
+        </div>
+        <div class="kp">
+          <div class="kp-icon">💬</div>
+          <div>
+            <div class="kp-title">Multi-turn Conversation</div>
+            <div class="kp-text">Session memory persists across messages. "Nueva consulta" button resets session and clears history. Shift+Enter for multiline input.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--purple);margin-bottom:8px;">REST API ENDPOINTS</div>
+      <div class="checklist">
+        <div class="check-item done"><div class="ci-icon">📨</div><div><div class="ci-text">POST /api/query</div><div class="ci-sub">Main endpoint — runs ReAct agent or RAG fallback</div></div></div>
+        <div class="check-item done"><div class="ci-icon">❤️</div><div><div class="ci-text">GET /api/health</div><div class="ci-sub">Mode, indexed chunks, LLM status, book list</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🔄</div><div><div class="ci-text">POST /api/reload</div><div class="ci-sub">Hot-reload FAISS index (add book → ingest → reload)</div></div></div>
+        <div class="check-item done"><div class="ci-icon">🗑️</div><div><div class="ci-text">POST /api/reset</div><div class="ci-sub">Clear session memory — start fresh conversation</div></div></div>
+      </div>
+      <div class="alert teal" style="margin-top:12px;">
+        <div class="alert-title">🌐 RUNNING AT</div>
+        http://localhost:5000 · Flask 3.0 · Python 3.13 · Local, zero cloud cost
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 14 — 8-STEP FRAMEWORK
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">AI AGENT FRAMEWORK COVERAGE</div>
+  <div class="slide-title">How MEDI-IA Covers the 8-Step AI Agent Framework</div>
+  <table class="fw-table">
+    <tr>
+      <th>STEP</th>
+      <th>FRAMEWORK REQUIREMENT</th>
+      <th>MEDI-IA IMPLEMENTATION</th>
+      <th>STATUS</th>
+    </tr>
+    <tr><td>1. Purpose & Scope</td><td>Use case, user needs, constraints</td><td>Medical diff. diagnosis · books-only policy · no hallucination constraint</td><td class="ok">✅</td></tr>
+    <tr><td>2. System Prompt</td><td>Role/persona, instructions, guardrails</td><td>src/prompts/system.txt — ReAct format, citation rules, safety disclaimer</td><td class="ok">✅</td></tr>
+    <tr><td>3. Choose LLM</td><td>Base model, parameters, cost/latency</td><td>Qwen2.5-7B via HuggingFace free API · temp=0.2 · max_tokens=1024</td><td class="ok">✅</td></tr>
+    <tr><td>4. Tools & Integrations</td><td>Custom functions, APIs, data sources</td><td>4 medical tools + FAISS local DB + HuggingFace Inference API</td><td class="ok">✅</td></tr>
+    <tr><td>5. Memory Systems</td><td>Episodic memory, vector database</td><td>memory.py (multi-turn sessions) + FAISS (34,562 semantic vectors)</td><td class="ok">✅</td></tr>
+    <tr><td>6. Orchestration</td><td>Workflows, error handling, fallbacks</td><td>ReAct loop (agent_loop.py) + semantic fallback + TF-IDF fallback</td><td class="ok">✅</td></tr>
+    <tr><td>7. User Interface</td><td>Chat UI, API endpoints, transparency</td><td>Flask web app + REST API + trajectory viewer (XAI explainability)</td><td class="ok">✅</td></tr>
+    <tr><td>8. Testing & Evals</td><td>Unit tests, quality metrics, iteration</td><td>12/12 pytest tests · formal eval metrics (precision@k) pending</td><td class="warn">⚠️ Partial</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 15 — ACHIEVED vs PENDING
+══════════════════════════════════════════ -->
+<div class="slide content-slide">
+  <div class="slide-tag">CURRENT STATUS</div>
+  <div class="slide-title">What's Done — What's Remaining</div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--green);letter-spacing:1px;margin-bottom:8px;">ACHIEVED IN PHASE 2 ✅</div>
+      <div class="checklist">
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Full PDF ingestion pipeline</div><div class="ci-sub">ingest.py → 34,562 FAISS chunks from 4 books</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Dual RAG mode (dense + sparse)</div><div class="ci-sub">FAISS + sentence-transformers OR TF-IDF fallback</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Cross-encoder reranker</div><div class="ci-sub">ms-marco-MiniLM — improves precision over cosine only</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">ReAct Agent — Qwen2.5-7B</div><div class="ci-sub">HuggingFace free API · 4 tools · 6-iteration max loop</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Multi-turn conversation memory</div><div class="ci-sub">Per-session history · up to 10 turns retained</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Pydantic v2 validation</div><div class="ci-sub">Strict input/output schemas for all API endpoints</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">12/12 pytest tests passing</div><div class="ci-sub">section_mapping · fallback · schemas · retriever</div></div></div>
+        <div class="check-item done"><div class="ci-icon">✅</div><div><div class="ci-text">Makefile + .env + CLAUDE.md</div><div class="ci-sub">Professional project structure and management</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--yellow);letter-spacing:1px;margin-bottom:8px;">STILL TO DO ⏳</div>
+      <div class="checklist">
+        <div class="check-item partial"><div class="ci-icon">⚠️</div><div><div class="ci-text">Formal evaluation metrics</div><div class="ci-sub">precision@k, answer quality, triage accuracy on real cases</div></div></div>
+        <div class="check-item partial"><div class="ci-icon">⚠️</div><div><div class="ci-text">Expand corpus to 200+ conditions</div><div class="ci-sub">HuggingFace: gretelai/symptom_to_diagnosis dataset</div></div></div>
+        <div class="check-item pending"><div class="ci-icon">⏳</div><div><div class="ci-text">Clinical validation</div><div class="ci-sub">Medical students reviewing triage accuracy on real cases</div></div></div>
+        <div class="check-item pending"><div class="ci-icon">⏳</div><div><div class="ci-text">Cloud deployment</div><div class="ci-sub">HuggingFace Spaces or Railway for public access</div></div></div>
+        <div class="check-item pending"><div class="ci-icon">⏳</div><div><div class="ci-text">Voice interface</div><div class="ci-sub">Speech-to-text for low-literacy / emergency contexts</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SLIDE 16 — CONCLUSION
+══════════════════════════════════════════ -->
+<div class="slide final-slide">
+  <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:3px;">CONCLUSION</div>
+  <h2>From Proposal to<br>Working Agent</h2>
+
+  <div style="display:flex;gap:40px;margin-top:4px;align-items:center;">
+    <div style="text-align:center;">
+      <div style="font-size:13px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:6px;">PHASE 1 PROPOSED</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.8;">BioBERT / BETO<br>SNOMED CT ontology<br>FLAN-T5 generation<br>Vue 3 · Cloud GPU<br>3-level triage</div>
+    </div>
+    <div style="font-size:40px;color:var(--teal);">→</div>
+    <div style="text-align:center;">
+      <div style="font-size:13px;font-family:'DM Mono',monospace;color:var(--teal);margin-bottom:6px;">PHASE 2 IMPLEMENTED</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.8;">Qwen2.5-7B + MiniLM + Cross-Encoder<br>4 real clinical PDFs · 34K chunks<br>ReAct Agent · 4 Tools<br>Flask · Local · Free<br>4-level triage + emergencia</div>
+    </div>
+  </div>
+
+  <div class="quote" style="max-width:700px;">
+    "The core RAG insight — retrieve grounded context, then generate — remains identical between Phase 1 and Phase 2. Phase 2 proves it works: a real agent that reads actual medical books, reasons step by step, cites every source, and never invents."
+  </div>
+
+  <div class="badges" style="margin-top:6px;">
+    <span class="badge teal">ReAct Agent ✓</span>
+    <span class="badge blue">HuggingFace Free ✓</span>
+    <span class="badge purple">34,562 fragments ✓</span>
+    <span class="badge green">12/12 tests ✓</span>
+    <span class="badge red">Zero GPU needed ✓</span>
+  </div>
+  <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;">
+    ⚠️ This does not replace professional medical consultation.
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button onclick="prevSlide()">← Prev</button>
+  <div class="slide-counter" id="counter">1 / 16</div>
+  <button onclick="nextSlide()">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const counter = document.getElementById('counter');
+const bar = document.getElementById('progressBar');
+let cur = 0;
+
+function goTo(n) {
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('exit');
+  const prev = cur;
+  setTimeout(() => slides[prev].classList.remove('exit'), 420);
+  cur = Math.max(0, Math.min(slides.length - 1, n));
+  slides[cur].classList.add('active');
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+  bar.style.width = `${((cur + 1) / slides.length) * 100}%`;
+}
+function nextSlide() { if (cur < slides.length - 1) goTo(cur + 1); }
+function prevSlide() { if (cur > 0) goTo(cur - 1); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevSlide();
+});
+bar.style.width = `${(1 / slides.length) * 100}%`;
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/Scripts/python.exe -c \"import fitz; print\\('fitz ok'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import pypdf; print\\('pypdf ok'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import pdfplumber; print\\('pdfplumber ok'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import sentence_transformers; print\\('ST ok'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"import faiss; print\\('FAISS ok'\\)\")",
+      "Bash(venv/Scripts/pip.exe install *)",
+      "Bash(venv/Scripts/python.exe ingest.py)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 venv/Scripts/python.exe ingest.py)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/ -v)",
+      "Bash(grep -E \"Q:|GRAVEDAD|FUENTES|^$\")"
+    ]
+  }
+}
