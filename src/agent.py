@@ -23,6 +23,10 @@ def run(sintomas: str, session_id: str = "default") -> dict:
     Con HF_TOKEN: usa agente ReAct con Qwen2.5-7B + tools.
     Sin HF_TOKEN: usa pipeline RAG con template.
     """
+    from src.guardrails import is_medical_query, refusal_result
+    if not is_medical_query(sintomas):
+        return refusal_result()
+
     if HF_TOKEN:
         return _run_react_agent(sintomas, session_id)
     return _run_rag_fallback(sintomas)
