@@ -14,7 +14,10 @@
       "Bash(venv/Scripts/python.exe -m pytest tests/ -v)",
       "Bash(grep -E \"Q:|GRAVEDAD|FUENTES|^$\")",
       "Bash(npx skills *)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(venv/Scripts/python.exe -c \"import weasyprint; pdf = weasyprint.HTML\\(string='<h1>Test</h1>'\\).write_pdf\\(\\); print\\('PDF OK, bytes:', len\\(pdf\\)\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"from reportlab.pdfgen import canvas; import io; buf=io.BytesIO\\(\\); c=canvas.Canvas\\(buf\\); c.drawString\\(100,750,'Test'\\); c.save\\(\\); print\\('reportlab OK, bytes:', len\\(buf.getvalue\\(\\)\\)\\)\")",
+      "Bash(venv\\\\Scripts\\\\pytest.exe tests/test_pipeline.py::TestChatStream -v)"
     ]
   }
 }

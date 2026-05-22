@@ -1,0 +1,11 @@
+Collecting reportlab
+  Downloading reportlab-4.5.1-py3-none-any.whl.metadata (1.7 kB)
+Requirement already satisfied: pillow>=9.0.0 in c:\users\misae\desktop\agentes proeycto\files\medi-ia_codigo_app\venv\lib\site-packages (from reportlab) (12.2.0)
+Requirement already satisfied: charset-normalizer in c:\users\misae\desktop\agentes proeycto\files\medi-ia_codigo_app\venv\lib\site-packages (from reportlab) (3.4.7)
+Downloading reportlab-4.5.1-py3-none-any.whl (2.0 MB)
+   ---------------------------------------- 2.0/2.0 MB 18.7 MB/s  0:00:00
+Installing collected packages: reportlab
+Successfully installed reportlab-4.5.1
+
+[notice] A new release of pip is available: 25.2 -> 26.1.1
+[notice] To update, run: python.exe -m pip install --upgrade pip

@@ -4,6 +4,7 @@ Modelo: Qwen/Qwen2.5-7B-Instruct (multilingue, gratis)
 """
 
 import os
+from typing import Iterator
 from huggingface_hub import InferenceClient
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")
@@ -34,6 +35,24 @@ def chat(messages: list[dict], max_tokens: int = 1024, temperature: float = 0.3)
         temperature=temperature,
     )
     return response.choices[0].message.content.strip()
+
+
+def chat_stream(messages: list[dict], max_tokens: int = 1024, temperature: float = 0.3) -> Iterator[str]:
+    """
+    Llama al modelo con stream=True y hace yield de cada token de texto.
+    """
+    client = get_client()
+    stream = client.chat_completion(
+        model=HF_MODEL,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        stream=True,
+    )
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta
 
 
 def is_available() -> bool:

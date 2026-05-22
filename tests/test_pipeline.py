@@ -84,3 +84,29 @@ class TestRetriever:
                 assert r["score"] >= MIN_SCORE
         except FileNotFoundError:
             pytest.skip("Indice FAISS no encontrado.")
+
+
+class TestChatStream:
+    def test_chat_stream_returns_iterator(self, monkeypatch):
+        """chat_stream debe retornar un iterador de strings."""
+        from src.llm import chat_stream
+
+        chunks = ["Hola", " mundo", " médico"]
+
+        def fake_completion(**kwargs):
+            for text in chunks:
+                obj = type("Chunk", (), {
+                    "choices": [type("Choice", (), {
+                        "delta": type("Delta", (), {"content": text})()
+                    })()]
+                })()
+                yield obj
+
+        monkeypatch.setenv("HF_TOKEN", "fake-token")
+        import src.llm as llm_mod
+        llm_mod._client = type("FakeClient", (), {
+            "chat_completion": lambda self, **kw: fake_completion(**kw)
+        })()
+
+        result = list(chat_stream([{"role": "user", "content": "test"}], max_tokens=10))
+        assert result == chunks
