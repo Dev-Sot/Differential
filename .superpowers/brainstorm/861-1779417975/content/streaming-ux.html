@@ -1,0 +1,95 @@
+<style>
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; }
+.mockup { border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+.mockup-header { padding: 10px 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.5; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.mockup-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 260px; }
+
+.msg-user { align-self: flex-end; background: #3b82f6; color: white; padding: 8px 12px; border-radius: 10px 3px 10px 10px; font-size: 12px; max-width: 80%; }
+.msg-ai { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px 10px 10px 10px; padding: 10px 12px; font-size: 12px; max-width: 90%; }
+
+.step { font-size: 10.5px; font-family: monospace; padding: 5px 8px; border-radius: 5px; margin-bottom: 4px; }
+.step-thought { background: rgba(59,130,246,0.12); border-left: 2px solid #3b82f6; color: #93c5fd; }
+.step-tool { background: rgba(16,185,129,0.12); border-left: 2px solid #10b981; color: #6ee7b7; }
+.step-obs { background: rgba(139,92,246,0.12); border-left: 2px solid #8b5cf6; color: #c4b5fd; }
+
+.cursor { display: inline-block; width: 2px; height: 12px; background: #10b981; animation: blink 1s infinite; vertical-align: middle; margin-left: 2px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.typing-dots span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #10b981; margin: 0 2px; animation: bounce 1s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 600; }
+.badge-green { background: rgba(16,185,129,0.2); color: #10b981; }
+.badge-blue { background: rgba(59,130,246,0.2); color: #60a5fa; }
+
+.pros-cons { display: flex; gap: 10px; margin-top: 8px; }
+.pros, .cons { flex: 1; font-size: 11px; line-height: 1.6; }
+.pros { color: #6ee7b7; }
+.cons { color: #fca5a5; }
+.pros h5, .cons h5 { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.8; }
+</style>
+
+<h2>¿Cómo debe funcionar el streaming?</h2>
+<p class="subtitle">El agente ReAct tiene dos partes: el razonamiento interno (Thought/Action/Observation) y la respuesta final. ¿Qué transmitimos en tiempo real?</p>
+
+<div class="split">
+
+  <!-- Opción A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Solo la respuesta final</h3>
+      <p>El agente piensa internamente (invisible). Cuando termina, los tokens de la respuesta final aparecen palabra por palabra.</p>
+
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-header">Preview</div>
+        <div class="mockup-body">
+          <div class="msg-user">Tengo fiebre y dolor muscular</div>
+          <div class="msg-ai">
+            <div style="font-size:10px;color:#94a3b8;margin-bottom:6px">🤖 Analizando... <span class="typing-dots"><span></span><span></span><span></span></span></div>
+            <div style="color:#e2e8f0">
+              <strong>Condición principal sugerida:</strong> Síndrome gripal<br>
+              <strong>Nivel de urgencia:</strong> Moderada<br>
+              <strong>Fundamento:</strong> Según Harrison (p.301), la combinación de fie<span class="cursor"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros"><h5>Pros</h5>Más simple · Respuesta limpia · Menos tokens de UI</div>
+        <div class="cons"><h5>Contras</h5>El usuario no sabe que está pasando durante el razonamiento (20-30s de espera)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opción B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Razonamiento en vivo + respuesta</h3>
+      <p>Los pasos ReAct (Thought, Tool calls, Observations) aparecen en tiempo real mientras el agente trabaja. Luego la respuesta final.</p>
+
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-header">Preview</div>
+        <div class="mockup-body">
+          <div class="msg-user">Tengo fiebre y dolor muscular</div>
+          <div class="msg-ai">
+            <div class="step step-thought">💭 Pensando: Buscaré síntomas de fiebre con dolor muscular...</div>
+            <div class="step step-tool">⚙ Llamando: search_symptoms("fiebre dolor muscular")<span class="cursor"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros"><h5>Pros</h5>El usuario ve el progreso · Sensación de transparencia · No hay "pantalla negra"</div>
+        <div class="cons"><h5>Contras</h5>Más complejo de implementar · La UI actual debe refactorizarse para updates incrementales</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;text-align:center">Selecciona la opción que prefieres y dime en el chat.</p>
