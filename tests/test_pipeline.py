@@ -137,3 +137,59 @@ class TestChatStream:
 
         result = list(chat_stream([{"role": "user", "content": "test"}], max_tokens=10))
         assert result == ["Respuesta"]  # None chunk was skipped
+
+
+class TestStreamReact:
+    def test_stream_react_yields_event_types(self, monkeypatch):
+        """stream_react debe emitir thought, tool_call, observation y done."""
+        import src.agent_loop as al
+
+        call_count = [0]
+        def fake_chat(messages, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return "Thought: voy a buscar\nAction: search_symptoms\nInput: fiebre"
+            return "Final Answer: El paciente presenta síndrome gripal."
+
+        def fake_chat_stream(messages, **kwargs):
+            yield "El paciente "
+            yield "presenta síndrome gripal."
+
+        def fake_execute_tool(name, inp):
+            return "Fragmento relevante de Harrison p.301"
+
+        monkeypatch.setattr(al, "chat", fake_chat)
+        monkeypatch.setattr("src.agent_loop.chat_stream", fake_chat_stream, raising=False)
+        monkeypatch.setattr(al, "execute_tool", fake_execute_tool)
+        monkeypatch.setattr(al, "get_history", lambda sid: [{"role": "user", "content": "fiebre"}])
+        monkeypatch.setattr(al, "add_turn", lambda *a: None)
+        monkeypatch.setattr(al, "set_system", lambda *a: None)
+
+        events = list(al.stream_react("test-session", "tengo fiebre"))
+        types = [e["type"] for e in events]
+
+        assert "thought" in types
+        assert "tool_call" in types
+        assert "observation" in types
+        assert "final_start" in types
+        assert "token" in types
+        assert types[-1] == "done"
+
+    def test_stream_react_done_has_required_fields(self, monkeypatch):
+        """El evento done debe tener todos los campos requeridos."""
+        import src.agent_loop as al
+
+        monkeypatch.setattr(al, "chat", lambda *a, **kw: "Final Answer: Diagnóstico de prueba.")
+        monkeypatch.setattr("src.agent_loop.chat_stream", lambda *a, **kw: iter(["Diagnóstico de prueba."]), raising=False)
+        monkeypatch.setattr(al, "get_history", lambda sid: [{"role": "user", "content": "test"}])
+        monkeypatch.setattr(al, "add_turn", lambda *a: None)
+        monkeypatch.setattr(al, "set_system", lambda *a: None)
+
+        events = list(al.stream_react("test-session", "test"))
+        done = next(e for e in events if e["type"] == "done")
+
+        required = ["gravedad", "gravedad_label", "gravedad_color", "gravedad_icon",
+                    "condicion_principal", "recomendacion", "respuesta",
+                    "trajectory", "fuentes", "confianza", "modo", "tools_used"]
+        for field in required:
+            assert field in done, f"Campo faltante en done: {field}"

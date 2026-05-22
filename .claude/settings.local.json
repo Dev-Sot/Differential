@@ -17,7 +17,12 @@
       "Bash(bash *)",
       "Bash(venv/Scripts/python.exe -c \"import weasyprint; pdf = weasyprint.HTML\\(string='<h1>Test</h1>'\\).write_pdf\\(\\); print\\('PDF OK, bytes:', len\\(pdf\\)\\)\")",
       "Bash(venv/Scripts/python.exe -c \"from reportlab.pdfgen import canvas; import io; buf=io.BytesIO\\(\\); c=canvas.Canvas\\(buf\\); c.drawString\\(100,750,'Test'\\); c.save\\(\\); print\\('reportlab OK, bytes:', len\\(buf.getvalue\\(\\)\\)\\)\")",
-      "Bash(venv\\\\Scripts\\\\pytest.exe tests/test_pipeline.py::TestChatStream -v)"
+      "Bash(venv\\\\Scripts\\\\pytest.exe tests/test_pipeline.py::TestChatStream -v)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\misae\\\\Desktop\\\\Agentes Proeycto\\\\files\\\\MEDI-IA_Codigo_App\" | Where-Object {$_.Name -eq \"=4.0.0\"})",
+      "Bash(python -m pytest tests/test_pipeline.py::TestChatStream -v)",
+      "Bash(python -m pytest tests/ -v)",
+      "PowerShell(cd \"C:\\\\Users\\\\misae\\\\Desktop\\\\Agentes Proeycto\\\\files\\\\MEDI-IA_Codigo_App\" && Get-ChildItem -Force | Where-Object {$_.Name -eq \"=4.0.0\"})",
+      "Bash(venv\\\\Scripts\\\\pytest.exe tests/test_pipeline.py::TestStreamReact -v)"
     ]
   }
 }

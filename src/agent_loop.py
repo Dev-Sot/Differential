@@ -8,7 +8,8 @@ Patron: Thought -> Action -> Input -> Observation -> ... -> Final Answer
 
 import re
 import os
-from src.llm import chat
+from typing import Iterator
+from src.llm import chat, chat_stream
 from src.tools import execute_tool, tools_description, TOOLS
 from src.memory import get_history, add_turn, set_system
 
@@ -180,4 +181,128 @@ def run_react(session_id: str, user_message: str) -> dict:
         "fuentes": sources,
         "iteraciones": iteration + 1,
         "modo": f"ReAct Agent (Qwen2.5-7B) — {len(tools_used)} tools usadas",
+    }
+
+
+def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
+    """
+    Versión generadora de run_react: hace yield de cada evento ReAct
+    (thought, tool_call, observation, token, done) en tiempo real.
+    """
+    system_prompt = _load_system_prompt()
+    set_system(session_id, system_prompt)
+    add_turn(session_id, "user", user_message)
+
+    trajectory = []
+    observations = []
+    final_answer = None
+
+    for iteration in range(MAX_ITERATIONS):
+        accumulated = ""
+        if observations:
+            accumulated = "\n\n".join(
+                f"Observation {i+1}: {obs}" for i, obs in enumerate(observations)
+            )
+
+        history = get_history(session_id)
+
+        if accumulated and iteration > 0:
+            messages = history[:-1] + [{
+                "role": "user",
+                "content": (
+                    f"{history[-1]['content']}\n\n"
+                    f"Contexto recopilado hasta ahora:\n{accumulated}\n\n"
+                    f"Continua con el razonamiento o da la respuesta final."
+                )
+            }]
+        else:
+            messages = history
+
+        try:
+            llm_response = chat(messages, max_tokens=800, temperature=0.2)
+        except Exception as e:
+            yield {"type": "error", "message": f"Error al contactar el modelo: {e}"}
+            return
+
+        final_answer = _extract_final_answer(llm_response)
+        if final_answer:
+            break
+
+        action, action_input = _parse_action(llm_response)
+
+        if not action:
+            final_answer = llm_response
+            break
+
+        thought_match = re.search(r"Thought:\s*(.+?)(?=\nAction|$)", llm_response,
+                                   re.IGNORECASE | re.DOTALL)
+        thought = thought_match.group(1).strip() if thought_match else llm_response
+
+        step = {"type": "thought", "content": thought, "action": action}
+        trajectory.append(step)
+        yield step
+
+        yield {"type": "tool_call", "tool": action, "input": action_input or ""}
+
+        observation = execute_tool(action, action_input or "")
+        observations.append(f"[{action}({action_input})]\n{observation}")
+
+        obs_step = {"type": "observation", "tool": action, "content": observation[:300]}
+        trajectory.append(obs_step)
+        yield obs_step
+
+    # Construir mensajes para la respuesta final si se agotaron iteraciones
+    if not final_answer:
+        if observations:
+            context = "\n\n".join(observations)
+            messages = get_history(session_id) + [{
+                "role": "user",
+                "content": (
+                    f"Con base en toda la informacion recopilada:\n{context}\n\n"
+                    f"Da ahora tu respuesta final estructurada sobre los sintomas: {user_message}"
+                )
+            }]
+        else:
+            messages = get_history(session_id)
+    else:
+        messages = get_history(session_id)
+
+    # Stream de la respuesta final token a token
+    yield {"type": "final_start"}
+
+    final_tokens = []
+    try:
+        for token in chat_stream(messages, max_tokens=1000, temperature=0.2):
+            final_tokens.append(token)
+            yield {"type": "token", "content": token}
+    except Exception as e:
+        yield {"type": "error", "message": f"Error en streaming de respuesta: {e}"}
+        return
+
+    if not final_answer:
+        final_answer = "".join(final_tokens)
+
+    add_turn(session_id, "assistant", final_answer)
+
+    urgency = _extract_urgency_from_response(final_answer)
+    tools_used = list({s["action"] for s in trajectory if s["type"] == "thought" and "action" in s})
+
+    from src.agent import GRAVITY_LEVELS, _extract_condition, _extract_recommendation
+    nivel = GRAVITY_LEVELS.get(urgency, GRAVITY_LEVELS["moderada"])
+
+    yield {
+        "type": "done",
+        "gravedad": urgency,
+        "gravedad_label": nivel["label"],
+        "gravedad_color": nivel["color"],
+        "gravedad_icon": nivel["icon"],
+        "gravedad_descripcion": nivel["description"],
+        "condicion_principal": _extract_condition(final_answer),
+        "recomendacion": _extract_recommendation(final_answer),
+        "respuesta": final_answer,
+        "trajectory": trajectory[:3],
+        "fuentes": [],
+        "confianza": min(95, 60 + len(trajectory) * 10),
+        "modo": f"ReAct Agent (Qwen2.5-7B) — {len(tools_used)} tools usadas",
+        "tools_used": tools_used,
     }
