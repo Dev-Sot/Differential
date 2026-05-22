@@ -51,7 +51,7 @@ def chat_stream(messages: list[dict], max_tokens: int = 1024, temperature: float
     )
     for chunk in stream:
         delta = chunk.choices[0].delta.content
-        if delta:
+        if delta is not None:
             yield delta
 
 

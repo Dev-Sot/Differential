@@ -110,3 +110,30 @@ class TestChatStream:
 
         result = list(chat_stream([{"role": "user", "content": "test"}], max_tokens=10))
         assert result == chunks
+
+    def test_chat_stream_skips_none_content(self, monkeypatch):
+        """chat_stream debe ignorar chunks con delta.content = None."""
+        from src.llm import chat_stream
+
+        def fake_completion(**kwargs):
+            # First chunk: None content (role-only chunk, common in HF streams)
+            yield type("Chunk", (), {
+                "choices": [type("Choice", (), {
+                    "delta": type("Delta", (), {"content": None})()
+                })()]
+            })()
+            # Second chunk: real content
+            yield type("Chunk", (), {
+                "choices": [type("Choice", (), {
+                    "delta": type("Delta", (), {"content": "Respuesta"})()
+                })()]
+            })()
+
+        monkeypatch.setenv("HF_TOKEN", "fake-token")
+        import src.llm as llm_mod
+        llm_mod._client = type("FakeClient", (), {
+            "chat_completion": lambda self, **kw: fake_completion(**kw)
+        })()
+
+        result = list(chat_stream([{"role": "user", "content": "test"}], max_tokens=10))
+        assert result == ["Respuesta"]  # None chunk was skipped
