@@ -1,15 +1,6 @@
 FROM python:3.13-slim
 
-# Dependencias de sistema para WeasyPrint (Cairo, Pango, GDK-PixBuf)
-# y fuentes para el PDF export
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info \
-    fonts-liberation \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

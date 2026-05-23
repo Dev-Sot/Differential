@@ -274,116 +274,188 @@ def export_pdf():
         return jsonify({"error": "No hay datos para exportar"}), 400
 
     try:
-        from weasyprint import HTML
-        html_content = _build_pdf_html(data)
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        pdf_bytes = _build_pdf_bytes(data)
         return Response(
             pdf_bytes,
             mimetype="application/pdf",
             headers={"Content-Disposition": "attachment; filename=medi-ia-reporte.pdf"},
         )
-    except ImportError:
-        return jsonify({"error": "WeasyPrint no esta instalado correctamente."}), 500
     except Exception as e:
+        log.error("rid=%s pdf_error=%s", g.rid, e)
         return jsonify({"error": f"Error al generar PDF: {e}"}), 500
 
 
-def _build_pdf_html(data: dict) -> str:
-    import html as _html
+def _build_pdf_bytes(data: dict) -> bytes:
+    from fpdf import FPDF
     from datetime import datetime
-
-    def esc(val):
-        return _html.escape(str(val or ""))
+    import re
 
     gravedad = data.get("gravedad", "moderada")
-    sev_styles = {
-        "leve":       ("#22c55e", "#f0fdf4"),
-        "moderada":   ("#f59e0b", "#fffbeb"),
-        "grave":      ("#ef4444", "#fef2f2"),
-        "emergencia": ("#8b5cf6", "#f5f3ff"),
-    }
-    fg, bg = sev_styles.get(gravedad, ("#f59e0b", "#fffbeb"))
+    sev_fg = {
+        "leve":       (22, 163, 74),
+        "moderada":   (180, 110, 0),
+        "grave":      (185, 28, 28),
+        "emergencia": (91, 33, 182),
+    }.get(gravedad, (180, 110, 0))
+    sev_bg = {
+        "leve":       (240, 253, 244),
+        "moderada":   (255, 251, 235),
+        "grave":      (254, 242, 242),
+        "emergencia": (245, 243, 255),
+    }.get(gravedad, (255, 251, 235))
 
-    respuesta_html = esc(data.get("respuesta", "")).replace("\n\n", "</p><p>").replace("\n", "<br>")
+    EMERALD = (16, 185, 129)
+    BLUE    = (59, 130, 246)
+    SLATE   = (71, 85, 105)
+    MUTED   = (148, 163, 184)
+    DARK    = (15, 23, 42)
 
-    fuentes_html = ""
-    if data.get("fuentes"):
-        fuentes_html = f"""
-        <div class="section">
-          <div class="section-label">Fuentes bibliograficas</div>
-          <div class="sources">{esc(", ".join(data["fuentes"]))}</div>
-        </div>"""
+    def safe(text):
+        """Normalize Unicode to Latin-1 safe string (core PDF fonts)."""
+        replacements = {
+            "—": "-", "–": "-",
+            "“": '"', "”": '"',
+            "‘": "'", "’": "'",
+            "…": "...",
+        }
+        s = str(text or "")
+        for k, v in replacements.items():
+            s = s.replace(k, v)
+        return s.encode("latin-1", errors="replace").decode("latin-1")
 
+    def clean(text):
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text or "")
+        skip = [
+            "condicion principal", "condicion principal sugerida",
+            "nivel de urgencia", "recomendacion",
+            "esto no reemplaza", "este reporte",
+            "sintomas clave",
+        ]
+        lines = [
+            l for l in text.split("\n")
+            if l.strip() and not any(l.strip().lower().startswith(s) for s in skip)
+        ]
+        return safe("\n".join(lines).strip())
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_margins(20, 20, 20)
+    pdf.set_auto_page_break(auto=True, margin=20)
+    W = pdf.w - 40
+
+    def label(text):
+        pdf.set_font("Helvetica", "B", 7.5)
+        pdf.set_text_color(*MUTED)
+        pdf.cell(0, 5, text.upper(), ln=True)
+        pdf.ln(1)
+
+    def vbar(color, x, y, h):
+        pdf.set_fill_color(*color)
+        pdf.rect(x, y, 2, h, style="F")
+
+    def hline():
+        pdf.set_draw_color(226, 232, 240)
+        pdf.set_line_width(0.3)
+        pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
+        pdf.ln(4)
+
+    # Header
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*EMERALD)
+    pdf.cell(0, 12, "MEDI-IA", ln=True)
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(*MUTED)
+    pdf.set_y(pdf.get_y() - 9)
+    pdf.cell(0, 9, f"Reporte de evaluacion medica  |  {fecha}", align="R", ln=True)
+    pdf.set_draw_color(*EMERALD)
+    pdf.set_line_width(1.0)
+    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
+    pdf.ln(8)
 
-    return f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<style>
-  body {{ font-family: Arial, Helvetica, sans-serif; margin: 48px; color: #1e293b; font-size: 13px; line-height: 1.65; }}
-  .header {{ display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid #10b981; padding-bottom: 14px; margin-bottom: 28px; }}
-  .logo {{ font-size: 22px; font-weight: bold; color: #10b981; }}
-  .logo em {{ color: #1e293b; font-style: normal; }}
-  .date {{ font-size: 10px; color: #94a3b8; text-align: right; }}
-  .query-box {{ background: #eff6ff; border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 6px; margin-bottom: 22px; }}
-  .query-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #3b82f6; margin-bottom: 4px; }}
-  .meta {{ display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }}
-  .sev-pill {{ display: inline-block; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 11px; background: {bg}; color: {fg}; border: 1px solid {fg}; }}
-  .condition {{ font-size: 17px; font-weight: 700; color: #0f172a; }}
-  .section {{ margin-bottom: 20px; }}
-  .section-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }}
-  .response-box {{ background: #f8fafc; border-left: 3px solid #10b981; padding: 14px 16px; border-radius: 6px; color: #334155; }}
-  .response-box p {{ margin: 0 0 8px; }}
-  .response-box p:last-child {{ margin: 0; }}
-  .rec-box {{ background: #f0fdf4; border: 1px solid rgba(16,185,129,0.3); padding: 12px 16px; border-radius: 6px; }}
-  .sources {{ font-size: 11px; color: #64748b; font-style: italic; }}
-  .mode {{ font-size: 10px; color: #94a3b8; font-family: monospace; }}
-  .disclaimer {{ font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 28px; font-style: italic; }}
-</style>
-</head>
-<body>
+    # Query box
+    query = safe(data.get("query", ""))
+    if query:
+        y0 = pdf.get_y()
+        pdf.set_xy(25, y0 + 1)
+        pdf.set_font("Helvetica", "B", 7)
+        pdf.set_text_color(*BLUE)
+        pdf.cell(0, 4, "CONSULTA DEL PACIENTE", ln=True)
+        pdf.set_x(25)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(*DARK)
+        pdf.multi_cell(W - 5, 5.5, query)
+        vbar(BLUE, 20, y0, pdf.get_y() - y0)
+        pdf.ln(7)
 
-<div class="header">
-  <div class="logo">MEDI-<em>IA</em></div>
-  <div class="date">Reporte de evaluacion medica<br>{fecha}</div>
-</div>
+    # Severity pill + condition
+    lbl  = safe(data.get("gravedad_label", gravedad.upper()))
+    cond = safe(data.get("condicion_principal", ""))
+    pill_w = min(len(lbl) * 2.6 + 10, 45)
+    pdf.set_font("Helvetica", "B", 9)
+    pdf.set_fill_color(*sev_bg)
+    pdf.set_text_color(*sev_fg)
+    pdf.set_draw_color(*sev_fg)
+    pdf.set_line_width(0.4)
+    pdf.cell(pill_w, 7, lbl, border=1, fill=True, align="C", ln=False)
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_text_color(*DARK)
+    pdf.cell(5, 7, "", ln=False)
+    pdf.multi_cell(W - pill_w - 5, 7, cond)
+    pdf.ln(7)
 
-<div class="query-box">
-  <div class="query-label">Consulta del paciente</div>
-  {esc(data.get("query", ""))}
-</div>
+    # Analysis
+    label("Analisis medico")
+    y0 = pdf.get_y()
+    pdf.set_xy(25, y0)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(*SLATE)
+    pdf.multi_cell(W - 5, 5.5, clean(data.get("respuesta", "")))
+    vbar(EMERALD, 20, y0, pdf.get_y() - y0)
+    pdf.ln(7)
 
-<div class="meta">
-  <span class="sev-pill">{esc(data.get("gravedad_label", gravedad.upper()))}</span>
-  <span class="condition">{esc(data.get("condicion_principal", ""))}</span>
-</div>
+    # Recommendation
+    label("Recomendacion")
+    rec_y = pdf.get_y()
+    pdf.set_x(20)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(*DARK)
+    pdf.set_fill_color(240, 253, 244)
+    pdf.multi_cell(W, 5.5, safe(data.get("recomendacion", "")), fill=True)
+    rec_h = pdf.get_y() - rec_y
+    pdf.set_draw_color(*EMERALD)
+    pdf.set_line_width(0.4)
+    pdf.rect(20, rec_y, W, rec_h)
+    pdf.ln(7)
 
-<div class="section">
-  <div class="section-label">Analisis medico</div>
-  <div class="response-box"><p>{respuesta_html}</p></div>
-</div>
+    # Sources
+    fuentes = data.get("fuentes", [])
+    if fuentes:
+        label("Fuentes bibliograficas")
+        pdf.set_font("Helvetica", "I", 9)
+        pdf.set_text_color(*MUTED)
+        pdf.multi_cell(W, 5, safe(", ".join(fuentes)))
+        pdf.ln(5)
 
-<div class="section">
-  <div class="section-label">Recomendacion</div>
-  <div class="rec-box">{esc(data.get("recomendacion", ""))}</div>
-</div>
+    # Engine
+    label("Motor de IA")
+    pdf.set_font("Courier", "", 9)
+    pdf.set_text_color(*MUTED)
+    pdf.cell(0, 5, safe(data.get("modo", "")), ln=True)
+    pdf.ln(7)
 
-{fuentes_html}
+    # Disclaimer
+    hline()
+    pdf.set_font("Helvetica", "I", 8.5)
+    pdf.set_text_color(*MUTED)
+    pdf.multi_cell(W, 5,
+        "MEDI-IA no reemplaza la consulta medica profesional. "
+        "Este reporte es generado por inteligencia artificial y debe ser validado "
+        "por un profesional de la salud calificado. "
+        "En caso de emergencia llame al 123 o dirigase a urgencias inmediatamente."
+    )
 
-<div class="section">
-  <div class="section-label">Motor de IA</div>
-  <div class="mode">{esc(data.get("modo", ""))}</div>
-</div>
-
-<div class="disclaimer">
-  MEDI-IA no reemplaza la consulta medica profesional. Este reporte es generado por
-  inteligencia artificial y debe ser validado por un profesional de la salud calificado.
-  En caso de emergencia llame al 123 o dirijase a urgencias inmediatamente.
-</div>
-
-</body>
-</html>"""
+    return bytes(pdf.output())
 
 
 if __name__ == "__main__":

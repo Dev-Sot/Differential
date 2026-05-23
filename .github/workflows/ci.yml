@@ -19,14 +19,6 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      # WeasyPrint necesita Cairo/Pango en el runner (igual que el Dockerfile)
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libcairo2 libpango-1.0-0 libpangocairo-1.0-0 \
-            libgdk-pixbuf2.0-0 libffi-dev shared-mime-info fonts-liberation
-
       - name: Install Python dependencies
         run: pip install --no-cache-dir -r requirements.txt
 
