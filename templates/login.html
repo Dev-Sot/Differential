@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDI-IA — Iniciar sesión</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --emerald: #10b981;
+    --emerald-dark: #059669;
+    --emerald-light: #d1fae5;
+    --red: #ef4444;
+    --red-light: #fee2e2;
+    --text: #0f172a;
+    --text-2: #475569;
+    --text-3: #94a3b8;
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow-lg);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--emerald), #3b82f6);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+  .logo-text strong { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; }
+  .logo-text span { font-size: 11px; color: var(--text-3); display: block; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: var(--text-2); margin-bottom: 28px; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+  }
+  .input-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 9px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="password"]:focus {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+    background: var(--surface);
+  }
+  .btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--emerald);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+  .btn:hover { background: var(--emerald-dark); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .error {
+    background: var(--red-light);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: none;
+    align-items: center;
+    gap: 7px;
+  }
+  .error.show { display: flex; }
+  .footer-note {
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--text-3);
+    text-align: center;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🩺</div>
+    <div class="logo-text">
+      <strong>MEDI-IA</strong>
+      <span>Asistente médico v4</span>
+    </div>
+  </div>
+
+  <h1>Iniciar sesión</h1>
+  <p class="subtitle">Introduce la contraseña para acceder al asistente.</p>
+
+  <div class="error" id="errorMsg">⚠️ <span id="errorText">Contraseña incorrecta.</span></div>
+
+  <form id="loginForm" onsubmit="doLogin(event)">
+    <label for="pwd">Contraseña</label>
+    <div class="input-wrap">
+      <input type="password" id="pwd" placeholder="••••••••" autofocus autocomplete="current-password">
+    </div>
+    <button class="btn" id="loginBtn" type="submit">Entrar</button>
+  </form>
+
+  <p class="footer-note">MEDI-IA no reemplaza la consulta médica profesional.</p>
+</div>
+
+<script>
+async function doLogin(e) {
+  e.preventDefault();
+  const pwd = document.getElementById('pwd').value;
+  const btn = document.getElementById('loginBtn');
+  const errBox = document.getElementById('errorMsg');
+  const errText = document.getElementById('errorText');
+
+  if (!pwd) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  errBox.classList.remove('show');
+
+  try {
+    const r = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd }),
+    });
+    if (r.ok) {
+      window.location.href = '/';
+    } else {
+      const data = await r.json().catch(() => ({}));
+      errText.textContent = data.error || 'Contraseña incorrecta.';
+      errBox.classList.add('show');
+      document.getElementById('pwd').value = '';
+      document.getElementById('pwd').focus();
+    }
+  } catch {
+    errText.textContent = 'Error de conexión. Intenta de nuevo.';
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+</script>
+</body>
+</html>

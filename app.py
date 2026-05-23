@@ -6,12 +6,13 @@ import sys
 import os
 import uuid
 import json
+import functools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context
+from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context, redirect, url_for
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.agent import run, get_health
@@ -28,6 +29,20 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
+
+
+def require_auth(f):
+    """Decorator: exige sesion autenticada si AUTH_PASSWORD esta definida."""
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if AUTH_PASSWORD and not session.get("authenticated"):
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "No autenticado. Inicia sesion en /login"}), 401
+            return redirect(url_for("login_page"))
+        return f(*args, **kwargs)
+    return decorated
+
 
 def _get_session_id() -> str:
     if "session_id" not in session:
@@ -35,12 +50,41 @@ def _get_session_id() -> str:
     return session["session_id"]
 
 
+@app.route("/login", methods=["GET"])
+def login_page():
+    if not AUTH_PASSWORD or session.get("authenticated"):
+        return redirect(url_for("index"))
+    return render_template("login.html")
+
+
+@app.route("/auth/login", methods=["POST"])
+@limiter.limit("5 per minute")
+def auth_login():
+    data = request.get_json()
+    password = (data or {}).get("password", "")
+    if not AUTH_PASSWORD:
+        session["authenticated"] = True
+        return jsonify({"ok": True})
+    if password == AUTH_PASSWORD:
+        session["authenticated"] = True
+        return jsonify({"ok": True})
+    return jsonify({"error": "Contraseña incorrecta"}), 401
+
+
+@app.route("/auth/logout", methods=["POST"])
+def auth_logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
 @app.route("/")
+@require_auth
 def index():
     return render_template("index.html")
 
 
 @app.route("/api/query", methods=["POST"])
+@require_auth
 @limiter.limit("10 per minute")
 def query_agent():
     data = request.get_json()
@@ -87,6 +131,7 @@ def query_agent():
 
 
 @app.route("/api/reset", methods=["POST"])
+@require_auth
 def reset_session():
     """Reinicia la conversacion (nueva sesion)."""
     session_id = _get_session_id()
@@ -96,11 +141,13 @@ def reset_session():
 
 
 @app.route("/api/health", methods=["GET"])
+@require_auth
 def health_check():
     return jsonify(get_health())
 
 
 @app.route("/api/reload", methods=["POST"])
+@require_auth
 def reload_index():
     try:
         from src.rag import retriever
@@ -113,6 +160,7 @@ def reload_index():
 
 
 @app.route("/api/stream", methods=["POST"])
+@require_auth
 @limiter.limit("10 per minute")
 def stream_query():
     """Endpoint SSE: hace streaming token a token del agente ReAct."""
@@ -180,6 +228,7 @@ def stream_query():
 
 
 @app.route("/api/export/pdf", methods=["POST"])
+@require_auth
 @limiter.limit("5 per minute")
 def export_pdf():
     """Genera un PDF del reporte de diagnostico y lo devuelve como descarga."""

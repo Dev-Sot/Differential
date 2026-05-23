@@ -915,6 +915,9 @@
       <div class="meta-chip" style="color:var(--emerald);border-color:rgba(16,185,129,0.3);">
         <span class="dot" style="width:5px;height:5px;"></span> En línea
       </div>
+      <button onclick="doLogout()" style="padding:4px 12px;border:1px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-3);font-size:11.5px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-strong)'">
+        Salir
+      </button>
     </div>
   </div>
 
@@ -1009,6 +1012,7 @@ async function sendMessage() {
     });
 
     if (!resp.ok) {
+      if (handleUnauth(resp.status)) return;
       const err = await resp.json().catch(() => ({}));
       removeEl(typId);
       addError(err.error || 'Error al procesar la consulta.');
@@ -1277,6 +1281,16 @@ function resetSession() {
 function removeEl(id) { document.getElementById(id)?.remove(); }
 function setLoading(s) { loading = s; sendBtn.disabled = s; }
 function scrollDown() { setTimeout(() => chatZone.scrollTop = chatZone.scrollHeight, 50); }
+
+async function doLogout() {
+  await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+  window.location.href = '/login';
+}
+
+function handleUnauth(status) {
+  if (status === 401) { window.location.href = '/login'; return true; }
+  return false;
+}
 
 function esc(str) {
   if (str == null) return '';
