@@ -865,19 +865,19 @@
     <div class="status-panel">
       <div class="status-row">
         <span class="status-key">Estado</span>
-        <span class="status-val online-dot"><span class="dot"></span> Activo</span>
+        <span class="status-val online-dot" id="sidebarEstado"><span class="dot" id="sidebarDot"></span> Activo</span>
       </div>
       <div class="status-row">
         <span class="status-key">Motor</span>
-        <span class="status-val">Qwen 2.5-7B</span>
+        <span class="status-val" id="sidebarMotor">Qwen 2.5-7B</span>
       </div>
       <div class="status-row">
         <span class="status-key">Índice</span>
-        <span class="status-val">34,562 doc.</span>
+        <span class="status-val" id="sidebarIndice">Cargando...</span>
       </div>
       <div class="status-row">
         <span class="status-key">Modo</span>
-        <span class="status-val">ReAct</span>
+        <span class="status-val" id="sidebarModo">—</span>
       </div>
     </div>
   </div>
@@ -1291,6 +1291,52 @@ function fmt(text) {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
+
+// Carga estado real del servidor al iniciar
+async function loadHealthStatus() {
+  try {
+    const r = await fetch('/api/health');
+    if (!r.ok) throw new Error();
+    const h = await r.json();
+
+    const degraded = h.status === 'degraded' || !h.indice_ok;
+
+    // Dot color
+    const dot = document.getElementById('sidebarDot');
+    if (dot) dot.style.background = degraded ? 'var(--amber)' : 'var(--emerald)';
+
+    // Estado
+    const estado = document.getElementById('sidebarEstado');
+    if (estado) estado.innerHTML = `<span class="dot" id="sidebarDot" style="background:${degraded ? 'var(--amber)' : 'var(--emerald)'}"></span> ${degraded ? 'Degradado' : 'Activo'}`;
+
+    // Índice
+    const indice = document.getElementById('sidebarIndice');
+    if (indice) indice.textContent = degraded
+      ? 'Sin índice'
+      : h.chunks_indexados.toLocaleString('es') + ' doc.';
+
+    // Modo
+    const modo = document.getElementById('sidebarModo');
+    if (modo) modo.textContent = h.hf_activo ? 'ReAct' : 'RAG';
+
+    // Motor
+    const motor = document.getElementById('sidebarMotor');
+    if (motor) motor.textContent = h.hf_activo ? 'Qwen 2.5-7B' : 'RAG Template';
+
+    // Aviso visible si index falta
+    if (degraded) {
+      const warn = document.createElement('div');
+      warn.style.cssText = 'margin:0 14px 10px;padding:9px 12px;background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;font-size:11px;color:#92400e;line-height:1.4;';
+      warn.innerHTML = '⚠️ Índice FAISS no encontrado.<br>Ejecuta <code style="background:rgba(0,0,0,.08);padding:1px 4px;border-radius:3px">make ingest</code> para activar el análisis médico.';
+      document.querySelector('.sidebar-footer')?.before(warn);
+    }
+  } catch {
+    // Si el server no responde, dejamos los valores por defecto
+    document.getElementById('sidebarIndice').textContent = '—';
+  }
+}
+
+loadHealthStatus();
 </script>
 </body>
 </html>

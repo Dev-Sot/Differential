@@ -102,9 +102,16 @@ def _extract_recommendation(text: str) -> str:
 
 def get_health() -> dict:
     from src.rag.retriever import get_index_stats
-    stats = get_index_stats()
+    try:
+        stats = get_index_stats()
+        index_ok = True
+    except FileNotFoundError:
+        stats = {"total_chunks": 0, "libros": []}
+        index_ok = False
+
     return {
-        "status": "ok",
+        "status": "ok" if index_ok else "degraded",
+        "indice_ok": index_ok,
         "modo": "ReAct Agent (Qwen2.5-7B via HuggingFace)" if HF_TOKEN else "RAG Template",
         "hf_activo": bool(HF_TOKEN),
         "chunks_indexados": stats["total_chunks"],

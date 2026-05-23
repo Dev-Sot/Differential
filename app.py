@@ -53,7 +53,13 @@ def query_agent():
         return jsonify(ErrorResponse(error=str(e)).model_dump()), 400
 
     session_id = _get_session_id()
-    result = run(consulta.message, session_id=session_id)
+    try:
+        result = run(consulta.message, session_id=session_id)
+    except FileNotFoundError:
+        return jsonify({
+            "success": False,
+            "error": "Base de conocimiento no disponible. Ejecuta 'make ingest' para construir el indice FAISS.",
+        }), 503
 
     nivel = result.get("gravedad_info", {})
     gravedad = result.get("gravedad", "moderada")
@@ -129,7 +135,13 @@ def stream_query():
 
     # Sin HF_TOKEN: RAG fallback — emite un solo evento done
     if not os.getenv("HF_TOKEN"):
-        result = run(consulta.message, session_id=session_id)
+        try:
+            result = run(consulta.message, session_id=session_id)
+        except FileNotFoundError:
+            def _no_index():
+                yield f"data: {json.dumps({'type': 'error', 'message': 'Base de conocimiento no disponible. Ejecuta make ingest.'})}\n\n"
+            return Response(stream_with_context(_no_index()), mimetype="text/event-stream",
+                            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
         from src.agent import GRAVITY_LEVELS
         nivel = GRAVITY_LEVELS.get(result.get("gravedad", "moderada"), GRAVITY_LEVELS["moderada"])
         payload = {
