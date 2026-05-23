@@ -1,7 +1,7 @@
 PYTHON = venv/Scripts/python.exe
 PIP    = venv/Scripts/pip.exe
 
-.PHONY: run ingest test install reload health docker-build docker-run docker-stop docker-ingest
+.PHONY: run ingest test install reload health docker-build docker-run docker-stop docker-ingest sessions cleanup
 
 ## Iniciar servidor Flask
 run:
@@ -42,3 +42,11 @@ docker-stop:
 ## Docker: construir indice FAISS dentro del contenedor
 docker-ingest:
 	docker compose exec medi-ia python ingest.py
+
+## Listar sesiones guardadas en SQLite
+sessions:
+	$(PYTHON) manage.py sessions
+
+## Limpiar sesiones inactivas (default: 30 dias). Uso: make cleanup DAYS=7
+cleanup:
+	$(PYTHON) manage.py cleanup --days $(or $(DAYS),30)

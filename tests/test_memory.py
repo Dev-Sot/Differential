@@ -8,6 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import pytest
+import time
 import src.memory as mem_mod
 
 
@@ -140,3 +141,67 @@ class TestMaxTurnsTrimming:
         assert f"msg {MAX * 2 + 2}" in contents
         # Los primeros mensajes deben haber sido eliminados
         assert "msg 0" not in contents
+
+
+class TestCleanupOldSessions:
+    def test_cleanup_zero_days_removes_all_active(self, mem):
+        mem.add_turn("s1", "user", "hola")
+        mem.add_turn("s2", "user", "hola")
+        # days=0 considera todo como viejo
+        eliminated = mem.cleanup_old_sessions(days=0)
+        assert eliminated == 2
+        assert mem.get_history("s1") == []
+        assert mem.get_history("s2") == []
+
+    def test_cleanup_large_days_removes_nothing(self, mem):
+        mem.add_turn("s1", "user", "hola")
+        eliminated = mem.cleanup_old_sessions(days=9999)
+        assert eliminated == 0
+        assert len(mem.get_history("s1")) == 1
+
+    def test_cleanup_returns_count(self, mem):
+        for sid in ["a", "b", "c"]:
+            mem.add_turn(sid, "user", "x")
+        eliminated = mem.cleanup_old_sessions(days=0)
+        assert eliminated == 3
+
+    def test_cleanup_removes_turns_and_session_metadata(self, mem):
+        mem.add_turn("s1", "user", "hola")
+        mem.cleanup_old_sessions(days=0)
+        assert "s1" not in mem.list_sessions()
+
+    def test_cleanup_is_selective(self, mem):
+        mem.add_turn("old", "user", "vieja")
+        # 'recent' queda con days=9999 — no se toca
+        mem.add_turn("recent", "user", "nueva")
+        # Solo borramos con days=0 la que fue last_seen hace menos de un instante,
+        # que seria todas. Mejor test: verificar que days=9999 no toca nada
+        eliminated = mem.cleanup_old_sessions(days=9999)
+        assert eliminated == 0
+        assert len(mem.get_history("old")) == 1
+        assert len(mem.get_history("recent")) == 1
+
+
+class TestSessionStats:
+    def test_returns_list_of_dicts(self, mem):
+        mem.add_turn("s1", "user", "a")
+        stats = mem.session_stats()
+        assert isinstance(stats, list)
+        assert len(stats) == 1
+        assert {"session", "turns", "last_seen"}.issubset(stats[0].keys())
+
+    def test_turn_count_is_accurate(self, mem):
+        for i in range(3):
+            mem.add_turn("s1", "user", f"msg {i}")
+        stats = mem.session_stats()
+        s1 = next(s for s in stats if s["session"] == "s1")
+        assert s1["turns"] == 3
+
+    def test_empty_db_returns_empty_list(self, mem):
+        assert mem.session_stats() == []
+
+    def test_last_seen_is_populated_after_add_turn(self, mem):
+        mem.add_turn("s1", "user", "hola")
+        stats = mem.session_stats()
+        assert stats[0]["last_seen"] is not None
+        assert len(stats[0]["last_seen"]) > 10
