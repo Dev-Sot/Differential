@@ -6,6 +6,7 @@
 <title>MEDI-IA — Asistente Médico Inteligente</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   :root {
     --bg: #f0f4f8;
@@ -36,6 +37,13 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Lucide icons */
+  i[data-lucide] { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ico-sm i[data-lucide], .ico-sm { width: 14px; height: 14px; }
+  .ico-md i[data-lucide], .ico-md { width: 16px; height: 16px; }
+  .ico-lg i[data-lucide], .ico-lg { width: 20px; height: 20px; }
+  .ico-xl i[data-lucide], .ico-xl { width: 32px; height: 32px; stroke-width: 1.25; }
 
   body {
     font-family: 'Inter', sans-serif;
@@ -887,28 +895,28 @@
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon">🩺</div>
+    <div class="logo-icon"><i data-lucide="stethoscope" style="width:20px;height:20px;color:white;stroke-width:1.75"></i></div>
     <div class="logo-text">
       <strong>MEDI-IA</strong>
-      <span>Asistente médico v4</span>
+      <span>Asistente médico</span>
     </div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-label">Consulta</div>
     <button class="sidebar-btn active">
-      <span class="icon">💬</span> Síntomas
+      <span class="icon ico-md"><i data-lucide="message-square"></i></span> Síntomas
     </button>
     <button class="sidebar-btn" onclick="window.open('/api/health')">
-      <span class="icon">🔬</span> Estado del sistema
+      <span class="icon ico-md"><i data-lucide="activity"></i></span> Estado del sistema
     </button>
   </div>
 
   <div class="sidebar-section">
-    <div class="sidebar-label">Estado del agente</div>
+    <div class="sidebar-label">Estado</div>
     <div class="status-panel">
       <div class="status-row">
-        <span class="status-key">Estado</span>
+        <span class="status-key">Sistema</span>
         <span class="status-val online-dot" id="sidebarEstado"><span class="dot" id="sidebarDot"></span> Activo</span>
       </div>
       <div class="status-row">
@@ -929,16 +937,16 @@
   <div class="sidebar-section" style="margin-top:4px">
     <div class="sidebar-label">Herramientas activas</div>
     <div class="tool-list">
-      <div class="tool-item"><span class="ti">🔍</span> search_symptoms</div>
-      <div class="tool-item"><span class="ti">⚠️</span> assess_urgency</div>
-      <div class="tool-item"><span class="ti">💊</span> get_drug_info</div>
-      <div class="tool-item"><span class="ti">📖</span> get_section</div>
+      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="search"></i></span> search_symptoms</div>
+      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="alert-triangle"></i></span> assess_urgency</div>
+      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="pill"></i></span> get_drug_info</div>
+      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="book-open"></i></span> get_section</div>
     </div>
   </div>
 
   <div class="sidebar-footer">
     <button class="reset-btn" onclick="resetSession()">
-      <span>↺</span> Nueva consulta
+      <i data-lucide="rotate-ccw" style="width:13px;height:13px"></i> Nueva consulta
     </button>
   </div>
 </aside>
@@ -949,18 +957,13 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title">
-      <span>🩺</span>
+      <i data-lucide="stethoscope" style="width:17px;height:17px;color:var(--emerald);stroke-width:2"></i>
       <span>MEDI-IA</span>
       <span class="breadcrumb">&nbsp;/ Evaluación de síntomas</span>
     </div>
     <div class="topbar-meta">
-      <div class="meta-chip"><span class="icon">📚</span> FAISS + Reranker</div>
-      <div class="meta-chip"><span class="icon">🤖</span> HuggingFace</div>
-      <div class="meta-chip" style="color:var(--emerald);border-color:rgba(16,185,129,0.3);">
-        <span class="dot" style="width:5px;height:5px;"></span> En línea
-      </div>
-      <button onclick="doLogout()" style="padding:4px 12px;border:1px solid var(--border-strong);border-radius:20px;background:transparent;color:var(--text-3);font-size:11.5px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-strong)'">
-        Salir
+      <button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-strong);border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-strong)'">
+        <i data-lucide="log-out" style="width:13px;height:13px"></i> Salir
       </button>
     </div>
   </div>
@@ -968,23 +971,23 @@
   <!-- Chat -->
   <div class="chat-zone" id="chatZone">
     <div class="welcome" id="welcomeState">
-      <div class="welcome-logo">🩺</div>
+      <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
       <h2>¿Cómo te sientes hoy?</h2>
-      <p>Describe tus síntomas con el mayor detalle posible. El agente analizará tu consulta con inteligencia artificial médica y una base de conocimiento de 34 mil fragmentos.</p>
+      <p>Describe tus síntomas con el mayor detalle posible. El agente analizará tu consulta con la base de conocimiento médico y te entregará un diagnóstico diferencial.</p>
       <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">🌡️</span> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">❤️</span> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">😮‍💨</span> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">🔥</span> Ardor al orinar y micción frecuente</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">🤕</span> Dolor de cabeza intenso con náuseas</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">👁️</span> Picazón en los ojos y estornudos</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="thermometer"></i></span> Fiebre y dolor muscular</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="heart"></i></span> Dolor en el pecho y brazo</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="wind"></i></span> Tos con flema y dificultad respiratoria</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="droplets"></i></span> Ardor al orinar y micción frecuente</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="brain"></i></span> Dolor de cabeza intenso con náuseas</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="eye"></i></span> Picazón en los ojos y estornudos</button>
       </div>
     </div>
   </div>
 
   <!-- Emergency bar -->
   <div class="emergency-bar" id="emergencyBar">
-    <span class="em-icon">🚨</span>
+    <span class="em-icon"><i data-lucide="alert-octagon" style="width:22px;height:22px;color:#5b21b6;stroke-width:2"></i></span>
     <div>
       <div class="em-msg">POSIBLE EMERGENCIA MÉDICA DETECTADA</div>
       <div class="em-sub">Llame al 123 (Emergencias Colombia) o diríjase a urgencias de inmediato</div>
@@ -1000,7 +1003,7 @@
       </button>
     </div>
     <div class="input-hint">
-      <span>ℹ️ No reemplaza consulta médica profesional</span>
+      <span>No reemplaza la consulta médica profesional</span>
       <span>Enter para enviar · Shift+Enter para nueva línea</span>
     </div>
   </div>
@@ -1026,7 +1029,10 @@ userInput.addEventListener('keydown', e => {
 });
 
 function fillEx(btn) {
-  userInput.value = btn.querySelector('.chip-icon').nextSibling.textContent.trim();
+  // Obtener solo el texto, ignorando el elemento icon
+  const clone = btn.cloneNode(true);
+  clone.querySelectorAll('.chip-icon, i, svg').forEach(el => el.remove());
+  userInput.value = clone.textContent.trim();
   userInput.focus();
 }
 
@@ -1116,8 +1122,9 @@ async function sendMessage() {
 function addUserMsg(text) {
   const d = document.createElement('div');
   d.className = 'msg user';
-  d.innerHTML = `<div class="av user-av">👤</div><div class="user-bubble">${esc(text)}</div>`;
+  d.innerHTML = `<div class="av user-av"><i data-lucide="user" style="width:16px;height:16px;stroke-width:2;color:var(--blue)"></i></div><div class="user-bubble">${esc(text)}</div>`;
   chatZone.appendChild(d);
+  lucide.createIcons();
   scrollDown();
 }
 
@@ -1127,12 +1134,13 @@ function addTyping() {
   d.id = id;
   d.className = 'typing-row';
   d.innerHTML = `
-    <div class="av ai-av">🤖</div>
+    <div class="av ai-av"><i data-lucide="bot" style="width:16px;height:16px;stroke-width:2;color:var(--emerald)"></i></div>
     <div class="typing-card">
       <div class="td"></div><div class="td"></div><div class="td"></div>
       <span id="${id}_status" style="font-size:11.5px;color:var(--text-3);margin-left:8px;font-family:'JetBrains Mono',monospace;">Analizando síntomas...</span>
     </div>`;
   chatZone.appendChild(d);
+  lucide.createIcons();
   scrollDown();
   return id;
 }
@@ -1148,11 +1156,12 @@ function addStreamCard() {
   d.id = id;
   d.className = 'msg';
   d.innerHTML = `
-    <div class="av ai-av">🤖</div>
+    <div class="av ai-av"><i data-lucide="bot" style="width:16px;height:16px;stroke-width:2;color:var(--emerald)"></i></div>
     <div class="ai-card">
       <div class="card-body" id="${id}_body" style="min-height:48px;white-space:pre-wrap;"></div>
     </div>`;
   chatZone.appendChild(d);
+  lucide.createIcons();
   scrollDown();
   return id;
 }
@@ -1229,11 +1238,11 @@ function addAICard(data) {
   const d = document.createElement('div');
   d.className = 'msg';
   d.innerHTML = `
-    <div class="av ai-av">🤖</div>
+    <div class="av ai-av"><i data-lucide="bot" style="width:16px;height:16px;stroke-width:2;color:var(--emerald)"></i></div>
     <div class="ai-card">
 
       <div class="card-header">
-        <span class="sev-pill ${sev}">${esc(data.gravedad_icon)} ${esc(data.gravedad_label)}</span>
+        <span class="sev-pill ${sev}">${esc(data.gravedad_label)}</span>
         <span class="card-condition">${esc(data.condicion_principal)}</span>
         <div class="confidence">
           <div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div>
@@ -1244,7 +1253,7 @@ function addAICard(data) {
       <div class="card-body">${fmt(data.respuesta)}</div>
 
       <div class="rec-box">
-        <div class="rec-icon">✅</div>
+        <div class="rec-icon"><i data-lucide="check-circle" style="width:15px;height:15px;color:var(--emerald);stroke-width:2"></i></div>
         <div class="rec-content">
           <div class="rec-label">Recomendación</div>
           <div class="rec-text">${esc(data.recomendacion)}</div>
@@ -1252,9 +1261,9 @@ function addAICard(data) {
       </div>
 
       <div class="card-foot">
-        <button class="export-btn" id="${exportBtnId}">⬇ PDF</button>
+        <button class="export-btn" id="${exportBtnId}"><i data-lucide="download" style="width:12px;height:12px"></i> PDF</button>
         ${hasDetails
-          ? `<button class="details-btn" id="${detailsBtnId}">⚙ Detalles del análisis <span class="arrow">▼</span></button>`
+          ? `<button class="details-btn" id="${detailsBtnId}"><i data-lucide="sliders-horizontal" style="width:12px;height:12px"></i> Detalles del análisis <span class="arrow">▼</span></button>`
           : ''}
       </div>
 
@@ -1268,6 +1277,7 @@ function addAICard(data) {
     </div>`;
 
   chatZone.appendChild(d);
+  lucide.createIcons();
   document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
   document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
   scrollDown();
@@ -1303,8 +1313,9 @@ async function exportPDF(data, btn) {
 function addError(msg) {
   const d = document.createElement('div');
   d.className = 'msg';
-  d.innerHTML = `<div class="av ai-av">🤖</div><div class="error-card">⚠️ ${esc(msg)}</div>`;
+  d.innerHTML = `<div class="av ai-av"><i data-lucide="bot" style="width:16px;height:16px;stroke-width:2;color:var(--emerald)"></i></div><div class="error-card"><i data-lucide="alert-circle" style="width:15px;height:15px;flex-shrink:0"></i> ${esc(msg)}</div>`;
   chatZone.appendChild(d);
+  lucide.createIcons();
   scrollDown();
 }
 
@@ -1324,15 +1335,16 @@ function resetSession() {
     w.id = 'welcomeState';
     w.className = 'welcome';
     w.innerHTML = `
-      <div class="welcome-logo">🩺</div>
+      <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
       <h2>Nueva consulta</h2>
       <p>Sesión reiniciada. Describe tus síntomas para comenzar.</p>
       <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">🌡️</span> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">❤️</span> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">😮‍💨</span> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon">🔥</span> Ardor al orinar y micción frecuente</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="thermometer"></i></span> Fiebre y dolor muscular</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="heart"></i></span> Dolor en el pecho y brazo</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="wind"></i></span> Tos con flema y dificultad respiratoria</button>
+        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="droplets"></i></span> Ardor al orinar y micción frecuente</button>
       </div>`;
+    lucide.createIcons();
     chatZone.appendChild(w);
   });
 }
@@ -1409,6 +1421,7 @@ async function loadHealthStatus() {
   }
 }
 
+lucide.createIcons();
 loadHealthStatus();
 </script>
 </body>
