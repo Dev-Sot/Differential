@@ -38,12 +38,8 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* Lucide icons */
-  i[data-lucide] { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .ico-sm i[data-lucide], .ico-sm { width: 14px; height: 14px; }
-  .ico-md i[data-lucide], .ico-md { width: 16px; height: 16px; }
-  .ico-lg i[data-lucide], .ico-lg { width: 20px; height: 20px; }
-  .ico-xl i[data-lucide], .ico-xl { width: 32px; height: 32px; stroke-width: 1.25; }
+  /* Lucide — los SVGs generados heredan el style= del <i> original */
+  svg.lucide { display: block; flex-shrink: 0; }
 
   body {
     font-family: 'Inter', sans-serif;
@@ -142,7 +138,7 @@
 
   .sidebar-btn:hover { background: var(--surface-2); color: var(--text); }
   .sidebar-btn.active { background: var(--emerald-light); color: var(--emerald-dark); font-weight: 500; }
-  .sidebar-btn .icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+  .sidebar-btn svg.lucide { opacity: 0.75; }
 
   .status-panel {
     margin: 0 14px;
@@ -212,7 +208,7 @@
     color: var(--text-2);
   }
 
-  .tool-item .ti { font-size: 13px; }
+  .tool-item svg.lucide { opacity: 0.6; }
 
   .sidebar-footer {
     margin-top: auto;
@@ -879,6 +875,99 @@
   .export-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
   .export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  /* ========= DARK MODE ========= */
+  [data-theme="dark"] {
+    --bg: #0c1221;
+    --surface: #151f30;
+    --surface-2: #111827;
+    --border: #1e2d42;
+    --border-strong: #2d4060;
+    --text: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #506070;
+    --text-4: #2d4060;
+    --emerald-light: rgba(16,185,129,0.12);
+    --blue-light: rgba(59,130,246,0.12);
+    --amber-light: rgba(245,158,11,0.12);
+    --red-light: rgba(239,68,68,0.12);
+    --purple-light: rgba(139,92,246,0.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  }
+
+  [data-theme="dark"] .rec-box {
+    background: linear-gradient(135deg, rgba(16,185,129,0.07), rgba(59,130,246,0.07));
+  }
+  [data-theme="dark"] .traj-thought { background: rgba(59,130,246,0.08); }
+  [data-theme="dark"] .traj-obs     { background: rgba(16,185,129,0.08); }
+  [data-theme="dark"] .card-body strong { color: var(--text); }
+  [data-theme="dark"] .export-btn:hover { background: rgba(59,130,246,0.15); }
+  [data-theme="dark"] .emergency-bar {
+    background: rgba(139,92,246,0.12);
+    border-color: rgba(139,92,246,0.35);
+  }
+  [data-theme="dark"] .src-chip {
+    background: rgba(245,158,11,0.1);
+    color: #fbbf24;
+    border-color: rgba(245,158,11,0.2);
+  }
+  [data-theme="dark"] .tool-badge {
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+    border-color: rgba(59,130,246,0.2);
+  }
+  [data-theme="dark"] .mini-badge {
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
+  }
+  [data-theme="dark"] .input-wrap {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+  [data-theme="dark"] .input-wrap:focus-within {
+    background: var(--surface);
+    border-color: var(--emerald);
+  }
+
+  /* Transicion suave al cambiar tema */
+  body, .sidebar, .topbar, .ai-card, .card-header, .card-foot,
+  .rec-box, .details-panel, .input-bar, .input-wrap, .status-panel,
+  .typing-card, .welcome-logo, .ex-chip {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+  }
+
+  /* Boton toggle tema */
+  .theme-btn {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .theme-btn:hover { background: var(--surface-2); color: var(--text-2); }
+
+  /* ========= EMERGENCY CARD ========= */
+  .card-emergency {
+    border-color: rgba(139,92,246,0.5) !important;
+    border-left: 3px solid var(--purple) !important;
+    box-shadow: 0 4px 24px rgba(139,92,246,0.14), var(--shadow-md) !important;
+  }
+  .card-emergency .card-header {
+    background: linear-gradient(135deg, rgba(139,92,246,0.07), rgba(239,68,68,0.04));
+  }
+  [data-theme="dark"] .card-emergency {
+    border-color: rgba(139,92,246,0.45) !important;
+    box-shadow: 0 4px 28px rgba(139,92,246,0.28), var(--shadow-md) !important;
+  }
+  [data-theme="dark"] .card-emergency .card-header {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(239,68,68,0.07));
+  }
+
   /* ========= RESPONSIVE ========= */
   @media (max-width: 768px) {
     .sidebar { display: none; }
@@ -905,10 +994,10 @@
   <div class="sidebar-section">
     <div class="sidebar-label">Consulta</div>
     <button class="sidebar-btn active">
-      <span class="icon ico-md"><i data-lucide="message-square"></i></span> Síntomas
+      <i data-lucide="message-square" style="width:15px;height:15px;stroke-width:2"></i> Síntomas
     </button>
     <button class="sidebar-btn" onclick="window.open('/api/health')">
-      <span class="icon ico-md"><i data-lucide="activity"></i></span> Estado del sistema
+      <i data-lucide="activity" style="width:15px;height:15px;stroke-width:2"></i> Estado del sistema
     </button>
   </div>
 
@@ -937,10 +1026,10 @@
   <div class="sidebar-section" style="margin-top:4px">
     <div class="sidebar-label">Herramientas activas</div>
     <div class="tool-list">
-      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="search"></i></span> search_symptoms</div>
-      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="alert-triangle"></i></span> assess_urgency</div>
-      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="pill"></i></span> get_drug_info</div>
-      <div class="tool-item"><span class="ti ico-sm"><i data-lucide="book-open"></i></span> get_section</div>
+      <div class="tool-item"><i data-lucide="search" style="width:13px;height:13px;stroke-width:2"></i> search_symptoms</div>
+      <div class="tool-item"><i data-lucide="alert-triangle" style="width:13px;height:13px;stroke-width:2"></i> assess_urgency</div>
+      <div class="tool-item"><i data-lucide="pill" style="width:13px;height:13px;stroke-width:2"></i> get_drug_info</div>
+      <div class="tool-item"><i data-lucide="book-open" style="width:13px;height:13px;stroke-width:2"></i> get_section</div>
     </div>
   </div>
 
@@ -962,6 +1051,9 @@
       <span class="breadcrumb">&nbsp;/ Evaluación de síntomas</span>
     </div>
     <div class="topbar-meta">
+      <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
+        <i data-lucide="moon" id="themeIcon" style="width:15px;height:15px;stroke-width:2"></i>
+      </button>
       <button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-strong);border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-strong)'">
         <i data-lucide="log-out" style="width:13px;height:13px"></i> Salir
       </button>
@@ -975,12 +1067,12 @@
       <h2>¿Cómo te sientes hoy?</h2>
       <p>Describe tus síntomas con el mayor detalle posible. El agente analizará tu consulta con la base de conocimiento médico y te entregará un diagnóstico diferencial.</p>
       <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="thermometer"></i></span> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="heart"></i></span> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="wind"></i></span> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="droplets"></i></span> Ardor al orinar y micción frecuente</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="brain"></i></span> Dolor de cabeza intenso con náuseas</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="eye"></i></span> Picazón en los ojos y estornudos</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="brain" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor de cabeza intenso con náuseas</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="eye" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Picazón en los ojos y estornudos</button>
       </div>
     </div>
   </div>
@@ -1239,7 +1331,7 @@ function addAICard(data) {
   d.className = 'msg';
   d.innerHTML = `
     <div class="av ai-av"><i data-lucide="bot" style="width:16px;height:16px;stroke-width:2;color:var(--emerald)"></i></div>
-    <div class="ai-card">
+    <div class="ai-card${sev === 'emergencia' ? ' card-emergency' : ''}">
 
       <div class="card-header">
         <span class="sev-pill ${sev}">${esc(data.gravedad_label)}</span>
@@ -1250,7 +1342,7 @@ function addAICard(data) {
         </div>
       </div>
 
-      <div class="card-body">${fmt(data.respuesta)}</div>
+      <div class="card-body">${fmt(cleanResponse(data.respuesta))}</div>
 
       <div class="rec-box">
         <div class="rec-icon"><i data-lucide="check-circle" style="width:15px;height:15px;color:var(--emerald);stroke-width:2"></i></div>
@@ -1339,10 +1431,10 @@ function resetSession() {
       <h2>Nueva consulta</h2>
       <p>Sesión reiniciada. Describe tus síntomas para comenzar.</p>
       <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="thermometer"></i></span> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="heart"></i></span> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="wind"></i></span> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><span class="chip-icon ico-sm"><i data-lucide="droplets"></i></span> Ardor al orinar y micción frecuente</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
+        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
       </div>`;
     lucide.createIcons();
     chatZone.appendChild(w);
@@ -1370,12 +1462,58 @@ function esc(str) {
   return d.innerHTML;
 }
 
+function cleanResponse(text) {
+  if (!text) return '';
+  const skip = [
+    'condicion principal sugerida',
+    'condición principal sugerida',
+    'nivel de urgencia',
+    'recomendacion',
+    'recomendación',
+    'esto no reemplaza',
+    'este reporte no reemplaza',
+    'sintomas clave que coinciden',
+    'síntomas clave que coinciden',
+  ];
+  return text
+    .split('\n')
+    .filter(line => {
+      const l = line.trim().toLowerCase();
+      return l.length > 0 && !skip.some(p => l.startsWith(p));
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function fmt(text) {
   if (!text) return '';
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
+
+// ── Tema oscuro ──────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('medi-theme', next);
+  _syncThemeIcon(next);
+}
+
+function _syncThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (!icon) return;
+  icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
+  lucide.createIcons({ nodes: [icon] });
+}
+
+// Aplica el tema guardado antes de pintar el DOM visible
+(function initTheme() {
+  const saved = localStorage.getItem('medi-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
 
 // Carga estado real del servidor al iniciar
 async function loadHealthStatus() {
@@ -1422,6 +1560,7 @@ async function loadHealthStatus() {
 }
 
 lucide.createIcons();
+_syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
 loadHealthStatus();
 </script>
 </body>
