@@ -7,20 +7,43 @@ import os
 import uuid
 import json
 import functools
+import logging
+import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context, redirect, url_for, g
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.agent import run, get_health
 from src.schemas import ConsultaRequest, ErrorResponse
 from src.memory import clear_session
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-5s %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+log = logging.getLogger("medi-ia")
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+
+
+@app.before_request
+def _before_request():
+    g.rid = str(uuid.uuid4())[:8]
+    g.t0 = time.monotonic()
+
+
+@app.after_request
+def _after_request(response):
+    elapsed_ms = int((time.monotonic() - g.get("t0", time.monotonic())) * 1000)
+    rid = g.get("rid", "-")
+    log.info("rid=%s %s %s %d %dms", rid, request.method, request.path, response.status_code, elapsed_ms)
+    return response
 
 limiter = Limiter(
     get_remote_address,
@@ -67,7 +90,9 @@ def auth_login():
         return jsonify({"ok": True})
     if password == AUTH_PASSWORD:
         session["authenticated"] = True
+        log.info("rid=%s auth_ok ip=%s", g.rid, request.remote_addr)
         return jsonify({"ok": True})
+    log.warning("rid=%s auth_fail ip=%s", g.rid, request.remote_addr)
     return jsonify({"error": "Contraseña incorrecta"}), 401
 
 
@@ -97,13 +122,17 @@ def query_agent():
         return jsonify(ErrorResponse(error=str(e)).model_dump()), 400
 
     session_id = _get_session_id()
+    t_inf = time.monotonic()
     try:
         result = run(consulta.message, session_id=session_id)
     except FileNotFoundError:
+        log.error("rid=%s faiss_index_missing", g.rid)
         return jsonify({
             "success": False,
             "error": "Base de conocimiento no disponible. Ejecuta 'make ingest' para construir el indice FAISS.",
         }), 503
+    inf_ms = int((time.monotonic() - t_inf) * 1000)
+    log.info("rid=%s inference_ms=%d session=%s mode=%s", g.rid, inf_ms, session_id[:8], result.get("modo", "?"))
 
     nivel = result.get("gravedad_info", {})
     gravedad = result.get("gravedad", "moderada")
@@ -216,11 +245,19 @@ def stream_query():
     # Con HF_TOKEN: streaming completo
     from src.agent_loop import stream_react
 
+    rid = g.rid
+    t_stream = time.monotonic()
+
     def generate():
         try:
             for event in stream_react(session_id, consulta.message):
                 yield f"data: {json.dumps(event)}\n\n"
+                if event.get("type") == "done":
+                    stream_ms = int((time.monotonic() - t_stream) * 1000)
+                    log.info("rid=%s stream_ms=%d session=%s iters=%d",
+                             rid, stream_ms, session_id[:8], event.get("iteraciones", 0))
         except Exception as e:
+            log.error("rid=%s stream_error=%s", rid, e)
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream",
