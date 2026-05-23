@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      # WeasyPrint necesita Cairo/Pango en el runner (igual que el Dockerfile)
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libcairo2 libpango-1.0-0 libpangocairo-1.0-0 \
+            libgdk-pixbuf2.0-0 libffi-dev shared-mime-info fonts-liberation
+
+      - name: Install Python dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Run tests
+        env:
+          # Sin HF_TOKEN el sistema corre en modo RAG-template — correcto para CI
+          HF_TOKEN: ""
+          SECRET_KEY: "ci-secret-key-not-for-production"
+          AUTH_PASSWORD: ""
+          FLASK_DEBUG: "False"
+        run: pytest tests/ -v --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: .pytest_cache/
+          retention-days: 7

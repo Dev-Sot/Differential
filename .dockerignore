@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+.pytest_cache/
+data/
+memory.db
+libros/*.pdf
+index/books.index
+presentation/
+medi-ia-clean/
+*.md
+tests/

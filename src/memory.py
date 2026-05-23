@@ -9,7 +9,12 @@ from contextlib import contextmanager
 
 MAX_TURNS = 10
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "memory.db")
+_BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+_DATA_DIR = os.path.join(_BASE_DIR, "data")
+os.makedirs(_DATA_DIR, exist_ok=True)
+
+# Configurable via MEMORY_DB_PATH para deploy personalizado
+DB_PATH = os.getenv("MEMORY_DB_PATH", os.path.join(_DATA_DIR, "memory.db"))
 
 
 def _init_schema() -> None:

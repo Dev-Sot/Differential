@@ -8,5 +8,6 @@ libros/*.pdf
 .env
 .DS_Store
 memory.db
+data/
 .claude/
 =4.0.0
