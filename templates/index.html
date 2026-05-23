@@ -662,22 +662,66 @@
 
   /* Card footer */
   .card-foot {
-    padding: 8px 18px;
+    padding: 10px 18px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    font-size: 10.5px;
-    color: var(--text-3);
+    gap: 8px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
   }
 
-  .mode-tag {
+  /* Details gear button */
+  .details-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
     font-family: 'JetBrains Mono', monospace;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .details-btn:hover { background: var(--surface); color: var(--text-2); }
+  .details-btn .arrow { font-size: 9px; transition: transform 0.2s; display: inline-block; }
+  .details-btn.open .arrow { transform: rotate(180deg); }
+
+  /* Details panel (collapsible) */
+  .details-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+    background: var(--surface-2);
+  }
+  .details-panel.open { max-height: 1200px; border-top: 1px solid var(--border); }
+
+  .details-section {
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .details-section:last-child { border-bottom: none; }
+
+  .details-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 7px;
   }
 
-  .disclaimer-note { font-style: italic; max-width: 340px; line-height: 1.4; }
+  .card-disclaimer {
+    padding: 7px 18px;
+    font-size: 10px;
+    color: var(--text-4);
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
 
   /* Typing */
   .typing-row { display: flex; gap: 12px; align-items: flex-end; }
@@ -1123,62 +1167,71 @@ function appendToken(id, token) {
 }
 
 function addAICard(data) {
-  const sev    = data.gravedad || 'moderada';
-  const conf   = Math.max(5, Math.min(100, data.confianza || 0));
-  const traj   = data.trajectory || [];
-  const tools  = data.tools_used || [];
-  const srcs   = data.fuentes || [];
-  const exportBtnId = 'expbtn_' + Date.now();
+  const sev   = data.gravedad || 'moderada';
+  const conf  = Math.max(5, Math.min(100, data.confianza || 0));
+  const traj  = data.trajectory || [];
+  const tools = data.tools_used || [];
+  const srcs  = data.fuentes || [];
+  const iters = data.iteraciones || 0;
+  const exportBtnId  = 'expbtn_'   + Date.now();
+  const detailsBtnId = 'detbtn_'   + Date.now();
+  const panelId      = 'detpanel_' + Date.now();
 
-  // Trajectory HTML
-  let trajHtml = '';
-  const steps = traj.filter(s => s.type !== 'final');
-  if (steps.length) {
-    const stepsHtml = steps.map(s => {
-      if (s.type === 'thought') return `
-        <div class="traj-step traj-thought">
-          <span class="mini-badge">${esc(s.action || 'think')}</span><br>
-          ${esc((s.content || '').substring(0, 160))}
-        </div>`;
-      if (s.type === 'observation') return `
-        <div class="traj-step traj-obs">
-          <span class="mini-badge">obs: ${esc(s.tool || '')}</span><br>
-          ${esc((s.content || '').substring(0, 200))}
-        </div>`;
-      return '';
-    }).join('');
-
-    if (stepsHtml) {
-      const count = traj.filter(s => s.type === 'thought').length;
-      trajHtml = `
-        <div class="trajectory">
-          <button class="traj-toggle" onclick="toggleTraj(this)">
-            ⚡ Razonamiento del agente · ${count} pasos
-            <span class="arrow">▼</span>
-          </button>
-          <div class="traj-steps">${stepsHtml}</div>
-        </div>`;
-    }
-  }
-
-  // Tools strip
-  const toolsHtml = tools.length
-    ? `<div class="tools-strip">${tools.map(t => `<span class="tool-badge">⚙ ${esc(t)}</span>`).join('')}</div>`
-    : '';
-
-  // Sources
-  const srcsHtml = srcs.length
-    ? `<div class="sources-row">
-        <span class="src-label">📚 Fuentes:</span>
-        ${srcs.map(f => `<span class="src-chip">${esc(f.split(' ').slice(0,3).join(' '))}</span>`).join('')}
+  // ── Contenido del panel de detalles ─────────────────────────────────────
+  const toolsSec = tools.length
+    ? `<div class="details-section">
+        <div class="details-label">Herramientas utilizadas</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${tools.map(t => `<span class="tool-badge">⚙ ${esc(t)}</span>`).join('')}
+        </div>
        </div>`
     : '';
+
+  const srcsSec = srcs.length
+    ? `<div class="details-section">
+        <div class="details-label">Fuentes bibliográficas</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${srcs.map(f => `<span class="src-chip">${esc(f.split(' ').slice(0,3).join(' '))}</span>`).join('')}
+        </div>
+       </div>`
+    : '';
+
+  const modeSec = `<div class="details-section">
+    <div class="details-label">Motor de IA</div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-2);">
+      ⚙ ${esc(data.modo || '')}${iters ? ` · ${iters} paso${iters !== 1 ? 's' : ''}` : ''}
+    </span>
+  </div>`;
+
+  const steps = traj.filter(s => s.type !== 'final');
+  const stepsHtml = steps.map(s => {
+    if (s.type === 'thought') return `
+      <div class="traj-step traj-thought">
+        <span class="mini-badge">${esc(s.action || 'think')}</span><br>
+        ${esc((s.content || '').substring(0, 200))}
+      </div>`;
+    if (s.type === 'observation') return `
+      <div class="traj-step traj-obs">
+        <span class="mini-badge">obs: ${esc(s.tool || '')}</span><br>
+        ${esc((s.content || '').substring(0, 200))}
+      </div>`;
+    return '';
+  }).join('');
+  const trajSec = stepsHtml
+    ? `<div class="details-section">
+        <div class="details-label">Razonamiento del agente</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">${stepsHtml}</div>
+       </div>`
+    : '';
+
+  const hasDetails = toolsSec || srcsSec || trajSec;
 
   const d = document.createElement('div');
   d.className = 'msg';
   d.innerHTML = `
     <div class="av ai-av">🤖</div>
     <div class="ai-card">
+
       <div class="card-header">
         <span class="sev-pill ${sev}">${esc(data.gravedad_icon)} ${esc(data.gravedad_label)}</span>
         <span class="card-condition">${esc(data.condicion_principal)}</span>
@@ -1187,9 +1240,6 @@ function addAICard(data) {
           <span class="conf-num">${data.confianza}%</span>
         </div>
       </div>
-
-      ${trajHtml}
-      ${toolsHtml}
 
       <div class="card-body">${fmt(data.respuesta)}</div>
 
@@ -1201,18 +1251,25 @@ function addAICard(data) {
         </div>
       </div>
 
-      ${srcsHtml}
-
       <div class="card-foot">
-        <span class="mode-tag">⚙ ${esc(data.modo || '')}</span>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="export-btn" id="${exportBtnId}">⬇ PDF</button>
-          <span class="disclaimer-note">${esc(data.disclaimer || 'MEDI-IA no reemplaza la consulta médica profesional.')}</span>
-        </div>
+        <button class="export-btn" id="${exportBtnId}">⬇ PDF</button>
+        ${hasDetails
+          ? `<button class="details-btn" id="${detailsBtnId}">⚙ Detalles del análisis <span class="arrow">▼</span></button>`
+          : ''}
       </div>
+
+      ${hasDetails
+        ? `<div class="details-panel" id="${panelId}">
+            ${toolsSec}${srcsSec}${modeSec}${trajSec}
+           </div>`
+        : ''}
+
+      <div class="card-disclaimer">MEDI-IA no reemplaza la consulta médica profesional. En emergencias llame al 123.</div>
     </div>`;
+
   chatZone.appendChild(d);
   document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
+  document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
   scrollDown();
 }
 
@@ -1251,9 +1308,11 @@ function addError(msg) {
   scrollDown();
 }
 
-function toggleTraj(btn) {
-  btn.classList.toggle('open');
-  btn.nextElementSibling.classList.toggle('open');
+function toggleDetails(panelId, btn) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
 }
 
 function resetSession() {
