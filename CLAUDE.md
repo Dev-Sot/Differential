@@ -58,9 +58,9 @@ Consulta usuario
       → LLM: Qwen2.5-7B via huggingface_hub.InferenceClient
   → [Si RAG] src/agent.py:_run_rag_fallback()
       → retrieve top-10 (FAISS IndexFlatIP cosine)
-      → rerank top-5 (cross-encoder ms-marco-MiniLM-L-6-v2)
+      → rerank top-5 (cross-encoder mmarco-mMiniLMv2-L12-H384-v1, multilingue)
       → enrich_chunks (agrega nombre de seccion)
-      → needs_fallback? (threshold: rerank_score < -9.0)
+      → needs_fallback? (threshold: rerank_score < -3.0, configurable via RERANK_THRESHOLD)
 ```
 
 ### Modelos de ML en uso
@@ -68,7 +68,7 @@ Consulta usuario
 | Modelo | Uso | Tamaño |
 |--------|-----|--------|
 | paraphrase-multilingual-MiniLM-L12-v2 | Embeddings para FAISS (ingesta + query) | ~400MB |
-| cross-encoder/ms-marco-MiniLM-L-6-v2 | Reranker — modelo INGLES sobre texto español/ingles | ~80MB |
+| cross-encoder/mmarco-mMiniLMv2-L12-H384-v1 | Reranker multilingue (mMARCO, 26 idiomas) — sobreescribible con RERANKER_MODEL | ~120MB |
 | Qwen/Qwen2.5-7B-Instruct | LLM ReAct — llamado via HuggingFace Inference API | remoto |
 
 Ambos sentence-transformers se cargan como singletons (globals en embeddings.py y reranker.py).
@@ -126,10 +126,12 @@ del archivo, hay que actualizar `section_mapping.py` Y el BOOK_MAP en `tools.py:
    El LLM debe generar `Input: sintomas|||contexto` / `Input: harrison|||tema`.
    Si el LLM no usa el separador, `execute_tool` lo maneja: usa todo el input como primer param.
 
-3. **Score thresholds calibrados para el modelo English ms-marco sobre texto español**:
-   - FAISS MIN_SCORE = 0.25 (cosine similarity normalizado)
-   - Reranker RERANK_THRESHOLD = -9.0 (ms-marco devuelve scores muy negativos para texto no-ingles)
-   No cambiar estos valores sin revaluar con queries reales.
+3. **Score thresholds del pipeline RAG**:
+   - FAISS MIN_SCORE = 0.25 (cosine similarity normalizado) — hardcoded en retriever.py
+   - Reranker RERANK_THRESHOLD = -3.0 default (configurable via env RERANK_THRESHOLD)
+   El modelo mmarco multilingue da scores mas significativos que ms-marco en español.
+   Chunks relevantes suelen marcar > 0; < -3 indica baja relevancia. Ajustar con
+   queries reales si hay demasiados fallbacks (bajar hacia -6) o falsos positivos (subir hacia 0).
 
 4. **Chunk size = 400 chars / overlap = 80** en ingest.py. Si cambias esto, debes re-ingestar
    todos los PDFs — el indice existente se invalida.

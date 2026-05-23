@@ -1,12 +1,18 @@
 """
-Reranker con cross-encoder.
+Reranker con cross-encoder multilingue.
 Toma los chunks recuperados por FAISS y los reordena por relevancia real
 frente a la query del usuario. Mejora significativamente la precision.
 """
 
+import os
 from sentence_transformers import CrossEncoder
 
-CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# Modelo multilingue entrenado en mMARCO (26 idiomas, incluido espanol).
+# Sobreescribible con RERANKER_MODEL en .env para experimentar sin tocar codigo.
+CROSS_ENCODER_MODEL = os.getenv(
+    "RERANKER_MODEL",
+    "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+)
 
 _cross_encoder: CrossEncoder | None = None
 

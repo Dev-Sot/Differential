@@ -3,7 +3,11 @@ Fallback semantico: cuando el retriever no encuentra resultados
 con suficiente confianza, responde honestamente en lugar de inventar.
 """
 
-RERANK_THRESHOLD = -9.0  # cross-encoder ms-marco devuelve scores negativos; -9 es umbral conservador
+import os
+
+# mmarco-mMiniLMv2 multilingue: chunks relevantes suelen marcar > 0,
+# irrelevantes < -3. Sobreescribible con RERANK_THRESHOLD en .env.
+RERANK_THRESHOLD = float(os.getenv("RERANK_THRESHOLD", "-3.0"))
 FAISS_THRESHOLD = 0.25   # score minimo del retriever FAISS si no hay reranker
 
 
