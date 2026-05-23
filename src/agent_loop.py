@@ -16,6 +16,13 @@ from src.memory import get_history, add_turn, set_system
 MAX_ITERATIONS = 6  # maximo de ciclos Thought-Action-Observation
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
+_GRAVITY_LEVELS = {
+    "leve":       {"label": "LEVE",       "color": "#22c55e", "icon": "🟢", "description": "No requiere atencion urgente."},
+    "moderada":   {"label": "MODERADA",   "color": "#f59e0b", "icon": "🟡", "description": "Consulta medica en 24-48 horas."},
+    "grave":      {"label": "GRAVE",      "color": "#ef4444", "icon": "🔴", "description": "Atencion medica pronto."},
+    "emergencia": {"label": "EMERGENCIA", "color": "#8b5cf6", "icon": "🚨", "description": "Llama al 123 o ve a urgencias AHORA."},
+}
+
 
 def _load_system_prompt() -> str:
     path = os.path.join(PROMPTS_DIR, "system.txt")
@@ -38,6 +45,16 @@ def _extract_final_answer(text: str) -> str | None:
     """Extrae la respuesta final si el LLM la produjo."""
     match = re.search(r"Final Answer:\s*(.+)", text, re.IGNORECASE | re.DOTALL)
     return match.group(1).strip() if match else None
+
+
+def _extract_condition(text: str) -> str:
+    match = re.search(r"Condicion principal sugerida[:\*]*\s*\*?\*?([^\n\*]+)", text, re.IGNORECASE)
+    return match.group(1).strip() if match else "Ver respuesta completa"
+
+
+def _extract_recommendation(text: str) -> str:
+    match = re.search(r"Recomendacion[:\*]*\s*\*?\*?([^\n]+)", text, re.IGNORECASE)
+    return match.group(1).strip() if match else "Consultar con un medico."
 
 
 def _extract_urgency_from_response(text: str) -> str:
@@ -238,24 +255,38 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
                                    re.IGNORECASE | re.DOTALL)
         thought = thought_match.group(1).strip() if thought_match else llm_response
 
-        step = {"type": "thought", "content": thought, "action": action}
+        step = {"type": "thought", "content": thought, "action": action, "input": action_input or ""}
         trajectory.append(step)
         yield step
 
         yield {"type": "tool_call", "tool": action, "input": action_input or ""}
 
-        observation = execute_tool(action, action_input or "")
+        try:
+            observation = execute_tool(action, action_input or "")
+        except Exception as e:
+            yield {"type": "error", "message": f"Error ejecutando {action}: {e}"}
+            return
         observations.append(f"[{action}({action_input})]\n{observation}")
 
         obs_step = {"type": "observation", "tool": action, "content": observation[:300]}
         trajectory.append(obs_step)
         yield obs_step
 
-    # Construir mensajes para la respuesta final si se agotaron iteraciones
-    if not final_answer:
+    # Stream de la respuesta final token a token
+    yield {"type": "final_start"}
+
+    final_tokens = []
+    if final_answer:
+        # LLM already answered mid-loop — stream the existing answer without re-querying
+        for token in final_answer.split():
+            t = token + " "
+            final_tokens.append(t)
+            yield {"type": "token", "content": t}
+    else:
+        # LLM exhausted iterations — call chat_stream with enriched context
         if observations:
             context = "\n\n".join(observations)
-            messages = get_history(session_id) + [{
+            stream_messages = get_history(session_id) + [{
                 "role": "user",
                 "content": (
                     f"Con base en toda la informacion recopilada:\n{context}\n\n"
@@ -263,23 +294,14 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
                 )
             }]
         else:
-            messages = get_history(session_id)
-    else:
-        messages = get_history(session_id)
-
-    # Stream de la respuesta final token a token
-    yield {"type": "final_start"}
-
-    final_tokens = []
-    try:
-        for token in chat_stream(messages, max_tokens=1000, temperature=0.2):
-            final_tokens.append(token)
-            yield {"type": "token", "content": token}
-    except Exception as e:
-        yield {"type": "error", "message": f"Error en streaming de respuesta: {e}"}
-        return
-
-    if not final_answer:
+            stream_messages = get_history(session_id)
+        try:
+            for token in chat_stream(stream_messages, max_tokens=1000, temperature=0.2):
+                final_tokens.append(token)
+                yield {"type": "token", "content": token}
+        except Exception as e:
+            yield {"type": "error", "message": f"Error en streaming de respuesta: {e}"}
+            return
         final_answer = "".join(final_tokens)
 
     add_turn(session_id, "assistant", final_answer)
@@ -287,8 +309,14 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
     urgency = _extract_urgency_from_response(final_answer)
     tools_used = list({s["action"] for s in trajectory if s["type"] == "thought" and "action" in s})
 
-    from src.agent import GRAVITY_LEVELS, _extract_condition, _extract_recommendation
-    nivel = GRAVITY_LEVELS.get(urgency, GRAVITY_LEVELS["moderada"])
+    nivel = _GRAVITY_LEVELS.get(urgency, _GRAVITY_LEVELS["moderada"])
+
+    fuentes = list({
+        line.split("|")[0].replace("[", "").strip()
+        for obs in observations
+        for line in obs.split("\n")
+        if "|" in line and any(k in line for k in ("Harrison", "Oxford", "Symptom", "Drug"))
+    })
 
     yield {
         "type": "done",
@@ -301,7 +329,7 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
         "recomendacion": _extract_recommendation(final_answer),
         "respuesta": final_answer,
         "trajectory": trajectory[:3],
-        "fuentes": [],
+        "fuentes": fuentes,
         "confianza": min(95, 60 + len(trajectory) * 10),
         "modo": f"ReAct Agent (Qwen2.5-7B) — {len(tools_used)} tools usadas",
         "tools_used": tools_used,

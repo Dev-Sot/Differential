@@ -810,6 +810,23 @@
     gap: 8px;
   }
 
+  /* Export PDF button */
+  .export-btn {
+    font-size: 10.5px;
+    padding: 4px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .export-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+  .export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* ========= RESPONSIVE ========= */
   @media (max-width: 768px) {
     .sidebar { display: none; }
@@ -966,7 +983,7 @@ function fillEx(btn) {
   userInput.focus();
 }
 
-function sendMessage() {
+async function sendMessage() {
   const msg = userInput.value.trim();
   if (!msg || loading) return;
 
@@ -979,26 +996,73 @@ function sendMessage() {
   userInput.value = '';
   userInput.style.height = 'auto';
   setLoading(true);
+  emergencyBar.classList.remove('show');
 
   const typId = addTyping();
+  let streamCardId = null;
 
-  fetch('/api/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: msg })
-  })
-  .then(r => r.json())
-  .then(data => {
-    removeEl(typId);
-    if (data.success) {
-      addAICard(data);
-      if (data.urgencia === 'emergencia') emergencyBar.classList.add('show');
-    } else {
-      addError(data.error || 'Error al procesar la consulta.');
+  try {
+    const resp = await fetch('/api/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      removeEl(typId);
+      addError(err.error || 'Error al procesar la consulta.');
+      return;
     }
-  })
-  .catch(() => { removeEl(typId); addError('Error de conexión. Intenta de nuevo.'); })
-  .finally(() => setLoading(false));
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop(); // guarda fragmento incompleto
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith('data:')) continue;
+        let event;
+        try { event = JSON.parse(chunk.slice(5).trim()); } catch { continue; }
+
+        if (event.type === 'thought') {
+          updateTypingStatus(typId, `🧠 ${event.action || 'pensando'}...`);
+        } else if (event.type === 'tool_call') {
+          const preview = (event.input || '').substring(0, 35);
+          updateTypingStatus(typId, `⚙️ ${event.tool}(${preview})`);
+        } else if (event.type === 'observation') {
+          updateTypingStatus(typId, `📊 obs: ${event.tool || ''}`);
+        } else if (event.type === 'final_start') {
+          removeEl(typId);
+          streamCardId = addStreamCard();
+        } else if (event.type === 'token') {
+          appendToken(streamCardId, event.content);
+        } else if (event.type === 'done') {
+          if (streamCardId) removeEl(streamCardId);
+          else removeEl(typId);
+          addAICard({ ...event, query: msg });
+          if (event.gravedad === 'emergencia') emergencyBar.classList.add('show');
+        } else if (event.type === 'error') {
+          removeEl(typId);
+          if (streamCardId) removeEl(streamCardId);
+          addError(event.message || 'Error desconocido.');
+        }
+      }
+    }
+  } catch (e) {
+    removeEl(typId);
+    if (streamCardId) removeEl(streamCardId);
+    addError('Error de conexión. Intenta de nuevo.');
+  } finally {
+    setLoading(false);
+  }
 }
 
 function addUserMsg(text) {
@@ -1018,11 +1082,40 @@ function addTyping() {
     <div class="av ai-av">🤖</div>
     <div class="typing-card">
       <div class="td"></div><div class="td"></div><div class="td"></div>
-      <span style="font-size:11.5px;color:var(--text-3);margin-left:8px;font-family:'JetBrains Mono',monospace;">Analizando síntomas...</span>
+      <span id="${id}_status" style="font-size:11.5px;color:var(--text-3);margin-left:8px;font-family:'JetBrains Mono',monospace;">Analizando síntomas...</span>
     </div>`;
   chatZone.appendChild(d);
   scrollDown();
   return id;
+}
+
+function updateTypingStatus(id, text) {
+  const el = document.getElementById(id + '_status');
+  if (el) el.textContent = text;
+}
+
+function addStreamCard() {
+  const id = 'stream_' + Date.now();
+  const d = document.createElement('div');
+  d.id = id;
+  d.className = 'msg';
+  d.innerHTML = `
+    <div class="av ai-av">🤖</div>
+    <div class="ai-card">
+      <div class="card-body" id="${id}_body" style="min-height:48px;white-space:pre-wrap;"></div>
+    </div>`;
+  chatZone.appendChild(d);
+  scrollDown();
+  return id;
+}
+
+function appendToken(id, token) {
+  const body = document.getElementById(id + '_body');
+  if (!body) return;
+  body.textContent += token;
+  if (chatZone.scrollHeight - chatZone.scrollTop - chatZone.clientHeight < 120) {
+    chatZone.scrollTop = chatZone.scrollHeight;
+  }
 }
 
 function addAICard(data) {
@@ -1031,6 +1124,7 @@ function addAICard(data) {
   const traj   = data.trajectory || [];
   const tools  = data.tools_used || [];
   const srcs   = data.fuentes || [];
+  const exportBtnId = 'expbtn_' + Date.now();
 
   // Trajectory HTML
   let trajHtml = '';
@@ -1107,11 +1201,42 @@ function addAICard(data) {
 
       <div class="card-foot">
         <span class="mode-tag">⚙ ${esc(data.modo || '')}</span>
-        <span class="disclaimer-note">${esc(data.disclaimer)}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="export-btn" id="${exportBtnId}">⬇ PDF</button>
+          <span class="disclaimer-note">${esc(data.disclaimer || 'MEDI-IA no reemplaza la consulta médica profesional.')}</span>
+        </div>
       </div>
     </div>`;
   chatZone.appendChild(d);
+  document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
   scrollDown();
+}
+
+async function exportPDF(data, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
+  try {
+    const resp = await fetch('/api/export/pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      alert('Error: ' + (err.error || 'No se pudo generar el PDF'));
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `medi-ia-reporte-${Date.now()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert('Error de conexión al generar PDF.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ PDF'; }
+  }
 }
 
 function addError(msg) {

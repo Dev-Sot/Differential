@@ -7,5 +7,6 @@ index/books.index
 libros/*.pdf
 .env
 .DS_Store
+memory.db
 .claude/
 =4.0.0
