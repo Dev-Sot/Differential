@@ -817,6 +817,31 @@
 
   textarea::placeholder { color: var(--text-4); }
 
+  .mic-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text-3);
+  }
+  .mic-btn:hover { background: var(--surface-2); color: var(--text-2); }
+  .mic-btn.listening {
+    background: rgba(239,68,68,0.1);
+    color: var(--red);
+    animation: mic-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes mic-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    50%      { box-shadow: 0 0 0 7px rgba(239,68,68,0.18); }
+  }
+
   .send-btn {
     width: 40px;
     height: 40px;
@@ -1090,6 +1115,9 @@
   <div class="input-bar">
     <div class="input-wrap">
       <textarea id="userInput" rows="1" placeholder="Describe tus síntomas... (ej: tengo fiebre, escalofríos y dolor de garganta)"></textarea>
+      <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Dictar síntomas por voz">
+        <i data-lucide="mic" id="micIcon" style="width:17px;height:17px;stroke-width:2"></i>
+      </button>
       <button class="send-btn" id="sendBtn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
@@ -1493,6 +1521,71 @@ function fmt(text) {
     .split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
 
+// ── Input de voz ─────────────────────────────────────────────────────────────
+const PLACEHOLDER_DEFAULT = 'Describe tus síntomas... (ej: tengo fiebre, escalofríos y dolor de garganta)';
+let recognition = null;
+let isListening  = false;
+
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    const btn = document.getElementById('micBtn');
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  recognition = new SR();
+  recognition.lang            = 'es-ES';
+  recognition.continuous      = false;
+  recognition.interimResults  = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    _setMicState(true);
+    userInput.placeholder = 'Escuchando... habla ahora';
+  };
+
+  recognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    userInput.value = final || interim;
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+  };
+
+  recognition.onend   = () => _stopListening();
+  recognition.onerror = (e) => { console.warn('voz:', e.error); _stopListening(); };
+}
+
+function toggleVoice() {
+  if (!recognition) return;
+  if (isListening) {
+    recognition.stop();
+  } else {
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    try { recognition.start(); } catch (e) { console.warn('voz start:', e); }
+  }
+}
+
+function _stopListening() {
+  isListening = false;
+  _setMicState(false);
+  userInput.placeholder = PLACEHOLDER_DEFAULT;
+}
+
+function _setMicState(active) {
+  const btn  = document.getElementById('micBtn');
+  const icon = document.getElementById('micIcon');
+  if (!btn || !icon) return;
+  btn.classList.toggle('listening', active);
+  icon.setAttribute('data-lucide', active ? 'mic-off' : 'mic');
+  lucide.createIcons({ nodes: [icon] });
+}
+
 // ── Tema oscuro ──────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1561,6 +1654,7 @@ async function loadHealthStatus() {
 
 lucide.createIcons();
 _syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
+initVoice();
 loadHealthStatus();
 </script>
 </body>
