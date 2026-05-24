@@ -21,7 +21,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.agent import run, get_health
 from src.schemas import ConsultaRequest, ErrorResponse
-from src.memory import clear_session, save_feedback, get_feedback_stats
+from src.memory import clear_session, save_feedback, get_feedback_stats, get_history
 
 logging.basicConfig(
     level=logging.INFO,
@@ -501,6 +501,129 @@ def _build_pdf_bytes(data: dict) -> bytes:
         "Este reporte es generado por inteligencia artificial y debe ser validado "
         "por un profesional de la salud calificado. "
         "En caso de emergencia llame al 123 o dirigase a urgencias inmediatamente."
+    )
+
+    return bytes(pdf.output())
+
+
+@app.route("/api/export/conversation", methods=["GET"])
+@require_auth
+@limiter.limit("5 per minute")
+def export_conversation():
+    """Genera un PDF con todos los turnos de la sesión actual."""
+    session_id = _get_session_id()
+    history = get_history(session_id)
+    turns = [t for t in history if t["role"] != "system"]
+    if not turns:
+        return jsonify({"error": "La sesión está vacía"}), 400
+    try:
+        pdf_bytes = _build_conversation_pdf(turns)
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=medi-ia-sesion.pdf"},
+        )
+    except Exception as e:
+        log.error("rid=%s conversation_pdf_error=%s", g.rid, e)
+        return jsonify({"error": f"Error al generar PDF: {e}"}), 500
+
+
+def _build_conversation_pdf(turns: list) -> bytes:
+    from fpdf import FPDF
+    from datetime import datetime
+    import re
+
+    EMERALD = (16, 185, 129)
+    BLUE    = (59, 130, 246)
+    SLATE   = (71, 85, 105)
+    MUTED   = (148, 163, 184)
+    DARK    = (15, 23, 42)
+    USER_BG = (219, 234, 254)   # blue-100
+    ASST_BG = (209, 250, 229)   # emerald-100
+
+    def safe(text):
+        replacements = {"—": "-", "–": "-", "“": '"', "”": '"',
+                        "‘": "'", "’": "'", "…": "..."}
+        s = str(text or "")
+        for k, v in replacements.items():
+            s = s.replace(k, v)
+        return s.encode("latin-1", errors="replace").decode("latin-1")
+
+    def strip_md(text):
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text or "")
+        text = re.sub(r"\*(.*?)\*", r"\1", text)
+        return text
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_margins(20, 20, 20)
+    pdf.set_auto_page_break(auto=True, margin=20)
+    W = pdf.w - 40
+
+    # Header
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*EMERALD)
+    pdf.cell(0, 12, "MEDI-IA", ln=True)
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(*MUTED)
+    pdf.set_y(pdf.get_y() - 9)
+    pdf.cell(0, 9, f"Historial de sesion  |  {fecha}", align="R", ln=True)
+    pdf.set_draw_color(*EMERALD)
+    pdf.set_line_width(1.0)
+    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
+    pdf.ln(10)
+
+    for turn in turns:
+        role = turn.get("role", "")
+        content = safe(strip_md(turn.get("content", "")))
+        if not content.strip():
+            continue
+
+        if role == "user":
+            # Barra azul + etiqueta
+            bar_color = BLUE
+            bg_color  = USER_BG
+            label_txt = "PACIENTE"
+            label_color = BLUE
+        else:
+            bar_color = EMERALD
+            bg_color  = ASST_BG
+            label_txt = "MEDI-IA"
+            label_color = (5, 150, 105)
+
+        y0 = pdf.get_y()
+        # Etiqueta de rol
+        pdf.set_font("Helvetica", "B", 7)
+        pdf.set_text_color(*label_color)
+        pdf.set_x(25)
+        pdf.cell(0, 4, label_txt, ln=True)
+        pdf.ln(1)
+        # Contenido con fondo
+        pdf.set_x(25)
+        pdf.set_font("Helvetica", "", 9.5)
+        pdf.set_text_color(*SLATE)
+        pdf.set_fill_color(*bg_color)
+        x_before = pdf.get_x()
+        y_before = pdf.get_y()
+        pdf.multi_cell(W - 5, 5.2, content, fill=True)
+        # Barra lateral de color
+        bar_h = pdf.get_y() - y0
+        pdf.set_fill_color(*bar_color)
+        pdf.rect(20, y0, 2, bar_h, style="F")
+        pdf.ln(6)
+
+    # Disclaimer
+    pdf.set_draw_color(226, 232, 240)
+    pdf.set_line_width(0.3)
+    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(*MUTED)
+    pdf.multi_cell(W, 4.5,
+        "MEDI-IA no reemplaza la consulta medica profesional. "
+        "Este historial es generado por inteligencia artificial y debe ser validado "
+        "por un profesional de la salud. En emergencias llame al 123."
     )
 
     return bytes(pdf.output())

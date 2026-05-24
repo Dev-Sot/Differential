@@ -235,6 +235,26 @@
 
   .reset-btn:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
 
+  .export-conv-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+  .export-conv-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+  .export-conv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* ========= MAIN ========= */
   .main {
     flex: 1;
@@ -1238,6 +1258,9 @@
   </div>
 
   <div class="sidebar-footer">
+    <button class="export-conv-btn" id="exportConvBtn" onclick="exportConversation(this)">
+      <i data-lucide="file-text" style="width:13px;height:13px"></i> Exportar sesión
+    </button>
     <button class="reset-btn" onclick="resetSession()">
       <i data-lucide="rotate-ccw" style="width:13px;height:13px"></i> Nueva consulta
     </button>
@@ -1798,6 +1821,35 @@ function toggleSidebar() {
 function closeSidebar() {
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebarBackdrop').classList.remove('show');
+}
+
+// ── Exportar sesión completa como PDF ─────────────────────────────────────────
+async function exportConversation(btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" style="width:13px;height:13px"></i> Generando...'; lucide.createIcons({ nodes: [btn] }); }
+  try {
+    const r = await fetch('/api/export/conversation');
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      showToast(err.error || 'Error al generar PDF', 'error');
+      return;
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'medi-ia-sesion.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('PDF de sesión descargado', 'success');
+  } catch {
+    showToast('No se pudo exportar la sesión', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="file-text" style="width:13px;height:13px"></i> Exportar sesión';
+      lucide.createIcons({ nodes: [btn] });
+    }
+  }
 }
 
 // ── Feedback 👍👎 ─────────────────────────────────────────────────────────────
