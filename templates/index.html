@@ -954,6 +954,10 @@
     background: var(--surface);
     border-color: var(--emerald);
   }
+  [data-theme="dark"] .copy-btn:hover { background: rgba(16,185,129,0.12); }
+  [data-theme="dark"] .hist-item:hover { background: rgba(255,255,255,0.04); }
+  [data-theme="dark"] .followup-chip { background: var(--surface-2); border-color: var(--border-strong); }
+  [data-theme="dark"] .followup-chip:hover { background: rgba(16,185,129,0.12); }
 
   /* Transicion suave al cambiar tema */
   body, .sidebar, .topbar, .ai-card, .card-header, .card-foot,
@@ -993,14 +997,126 @@
     background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(239,68,68,0.07));
   }
 
+  /* Copy button */
+  .copy-btn {
+    font-size: 10.5px;
+    padding: 4px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .copy-btn:hover { background: var(--emerald-light); border-color: var(--emerald); color: var(--emerald-dark); }
+
+  /* History items in sidebar */
+  .hist-item {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .hist-item:hover { background: var(--surface-2); color: var(--text); }
+  .hist-meta { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .hist-query { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-condition { font-size: 10px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+  .hist-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; margin-bottom: 6px; }
+  .hist-clear { font-size: 11px; background: transparent; border: none; color: var(--text-3); cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
+  .hist-clear:hover { color: var(--red); }
+
+  /* Follow-up suggestion chips */
+  .followup-row {
+    padding-left: 46px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    animation: slideIn 0.25s ease;
+  }
+  .followup-chip {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 5px 13px;
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .followup-chip:hover {
+    background: var(--emerald-light);
+    border-color: var(--emerald);
+    color: var(--emerald-dark);
+    transform: translateY(-1px);
+  }
+
+  /* Hamburger button (mobile only) */
+  .hamburger-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-2);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    margin-right: 6px;
+  }
+  .hamburger-btn:hover { background: var(--surface-2); }
+
+  /* Sidebar backdrop (mobile) */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 150;
+  }
+  .sidebar-backdrop.show { display: block; }
+
   /* ========= RESPONSIVE ========= */
   @media (max-width: 768px) {
-    .sidebar { display: none; }
+    .hamburger-btn { display: flex; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: calc(-1 * var(--sidebar-w));
+      height: 100%;
+      transition: left 0.3s ease, box-shadow 0.3s ease;
+      z-index: 200;
+    }
+    .sidebar.open {
+      left: 0;
+      box-shadow: var(--shadow-lg);
+    }
     .topbar { padding: 0 16px; }
     .chat-zone { padding: 16px; }
     .input-bar { padding: 12px 16px; }
     .chips-grid { grid-template-columns: 1fr; }
     .emergency-bar { margin: 0 16px 12px; }
+    .followup-row { padding-left: 0; }
   }
 </style>
 </head>
@@ -1024,6 +1140,14 @@
     <button class="sidebar-btn" onclick="window.open('/api/health')">
       <i data-lucide="activity" style="width:15px;height:15px;stroke-width:2"></i> Estado del sistema
     </button>
+  </div>
+
+  <div class="sidebar-section" id="historySec" style="display:none">
+    <div class="hist-header">
+      <span class="sidebar-label" style="margin-bottom:0">Historial</span>
+      <button class="hist-clear" onclick="clearHistory()" title="Limpiar historial">✕</button>
+    </div>
+    <div id="historyList"></div>
   </div>
 
   <div class="sidebar-section">
@@ -1071,6 +1195,9 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title">
+      <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menú">
+        <i data-lucide="menu" style="width:18px;height:18px;stroke-width:2"></i>
+      </button>
       <i data-lucide="stethoscope" style="width:17px;height:17px;color:var(--emerald);stroke-width:2"></i>
       <span>MEDI-IA</span>
       <span class="breadcrumb">&nbsp;/ Evaluación de síntomas</span>
@@ -1130,6 +1257,8 @@
 
 </div><!-- /main -->
 
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
 <script>
 const chatZone = document.getElementById('chatZone');
 const userInput = document.getElementById('userInput');
@@ -1137,6 +1266,7 @@ const sendBtn   = document.getElementById('sendBtn');
 const emergencyBar = document.getElementById('emergencyBar');
 let isFirstMsg = true;
 let loading = false;
+let currentFollowupId = null;
 
 // Auto-resize textarea
 userInput.addEventListener('input', () => {
@@ -1159,6 +1289,8 @@ function fillEx(btn) {
 async function sendMessage() {
   const msg = userInput.value.trim();
   if (!msg || loading) return;
+
+  if (currentFollowupId) { removeEl(currentFollowupId); currentFollowupId = null; }
 
   if (isFirstMsg) {
     document.getElementById('welcomeState')?.remove();
@@ -1303,6 +1435,7 @@ function addAICard(data) {
   const srcs  = data.fuentes || [];
   const iters = data.iteraciones || 0;
   const exportBtnId  = 'expbtn_'   + Date.now();
+  const copyBtnId    = 'copybtn_'  + Date.now();
   const detailsBtnId = 'detbtn_'   + Date.now();
   const panelId      = 'detpanel_' + Date.now();
 
@@ -1382,6 +1515,7 @@ function addAICard(data) {
 
       <div class="card-foot">
         <button class="export-btn" id="${exportBtnId}"><i data-lucide="download" style="width:12px;height:12px"></i> PDF</button>
+        <button class="copy-btn" id="${copyBtnId}"><i data-lucide="copy" style="width:12px;height:12px"></i> Copiar</button>
         ${hasDetails
           ? `<button class="details-btn" id="${detailsBtnId}"><i data-lucide="sliders-horizontal" style="width:12px;height:12px"></i> Detalles del análisis <span class="arrow">▼</span></button>`
           : ''}
@@ -1399,12 +1533,15 @@ function addAICard(data) {
   chatZone.appendChild(d);
   lucide.createIcons();
   document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
+  document.getElementById(copyBtnId)?.addEventListener('click', function() { copyResponse(data, this); });
   document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
+  saveToHistory(data.query, data.condicion_principal);
+  addFollowupChips(data);
   scrollDown();
 }
 
 async function exportPDF(data, btn) {
-  if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Generando...'; }
   try {
     const resp = await fetch('/api/export/pdf', {
       method: 'POST',
@@ -1413,7 +1550,7 @@ async function exportPDF(data, btn) {
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      alert('Error: ' + (err.error || 'No se pudo generar el PDF'));
+      showToast('Error al generar PDF: ' + (err.error || 'intenta de nuevo'));
       return;
     }
     const blob = await resp.blob();
@@ -1423,10 +1560,15 @@ async function exportPDF(data, btn) {
     a.download = `medi-ia-reporte-${Date.now()}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
+    showToast('PDF descargado', 'success');
   } catch {
-    alert('Error de conexión al generar PDF.');
+    showToast('Error de conexión al generar PDF.');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '⬇ PDF'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="download" style="width:12px;height:12px"></i> PDF`;
+      lucide.createIcons({ nodes: [btn] });
+    }
   }
 }
 
@@ -1447,26 +1589,27 @@ function toggleDetails(panelId, btn) {
 }
 
 function resetSession() {
-  fetch('/api/reset', { method: 'POST' }).then(() => {
-    chatZone.innerHTML = '';
-    isFirstMsg = true;
-    emergencyBar.classList.remove('show');
-    const w = document.createElement('div');
-    w.id = 'welcomeState';
-    w.className = 'welcome';
-    w.innerHTML = `
-      <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
-      <h2>Nueva consulta</h2>
-      <p>Sesión reiniciada. Describe tus síntomas para comenzar.</p>
-      <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
-      </div>`;
-    lucide.createIcons();
-    chatZone.appendChild(w);
-  });
+  fetch('/api/reset', { method: 'POST' }).catch(() => {});
+  chatZone.innerHTML = '';
+  isFirstMsg = true;
+  currentFollowupId = null;
+  emergencyBar.classList.remove('show');
+  const w = document.createElement('div');
+  w.id = 'welcomeState';
+  w.className = 'welcome';
+  w.innerHTML = `
+    <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
+    <h2>Nueva consulta</h2>
+    <p>Sesión reiniciada. Describe tus síntomas para comenzar.</p>
+    <div class="chips-grid">
+      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
+      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
+      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
+      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
+    </div>`;
+  lucide.createIcons();
+  chatZone.appendChild(w);
+  showToast('Sesión reiniciada', 'success');
 }
 
 function removeEl(id) { document.getElementById(id)?.remove(); }
@@ -1521,10 +1664,148 @@ function fmt(text) {
     .split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
 
+// ── Follow-up chips ──────────────────────────────────────────────────────────
+const FOLLOWUP_POOL = {
+  leve:       ['¿Puedo tratarme en casa?', '¿Cuánto tiempo suele durar?', '¿Qué medicamentos de venta libre ayudan?', '¿Debo hacer reposo?'],
+  moderada:   ['¿Qué exámenes pueden solicitarme?', '¿Cuándo debo ir al médico?', '¿Empeora si no lo trato?', '¿Puede haber complicaciones?'],
+  grave:      ['¿Cuáles son las señales de alarma?', '¿Debo ir a urgencias hoy?', '¿Qué tratamiento suelen dar?', '¿Puede empeorar rápido?'],
+  emergencia: ['¿Qué hacer mientras llega la ayuda?', '¿Qué información dar al médico?', '¿Qué NO debo hacer?'],
+};
+
+function addFollowupChips(data) {
+  if (currentFollowupId) removeEl(currentFollowupId);
+  const pool = FOLLOWUP_POOL[data.gravedad] || FOLLOWUP_POOL.moderada;
+  const picks = pool.slice(0, 3);
+  const id = 'followup_' + Date.now();
+  const d = document.createElement('div');
+  d.id = id;
+  d.className = 'followup-row';
+  d.innerHTML = picks.map(q =>
+    `<button class="followup-chip">${esc(q)}</button>`
+  ).join('');
+  chatZone.appendChild(d);
+  d.querySelectorAll('.followup-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      userInput.value = btn.textContent;
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+      userInput.focus();
+    });
+  });
+  currentFollowupId = id;
+  scrollDown();
+}
+
+// ── Sidebar móvil ─────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const isOpen   = sidebar.classList.toggle('open');
+  backdrop.classList.toggle('show', isOpen);
+}
+
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
+}
+
+// ── Copiar respuesta ─────────────────────────────────────────────────────────
+function copyResponse(data, btn) {
+  const lines = [
+    'DIAGNÓSTICO DIFERENCIAL — MEDI-IA',
+    '',
+    `Condición principal: ${data.condicion_principal}`,
+    `Gravedad: ${data.gravedad_label}`,
+    `Confianza: ${data.confianza}%`,
+    '',
+    cleanResponse(data.respuesta),
+    '',
+    `Recomendación: ${data.recomendacion}`,
+  ];
+  if (data.fuentes?.length) lines.push('', `Fuentes: ${data.fuentes.join(', ')}`);
+
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    showToast('Copiado al portapapeles', 'success');
+    if (btn) {
+      btn.innerHTML = `<i data-lucide="check" style="width:12px;height:12px"></i> Copiado`;
+      lucide.createIcons({ nodes: [btn] });
+      setTimeout(() => {
+        btn.innerHTML = `<i data-lucide="copy" style="width:12px;height:12px"></i> Copiar`;
+        lucide.createIcons({ nodes: [btn] });
+      }, 2000);
+    }
+  }).catch(() => showToast('No se pudo copiar al portapapeles.', 'error'));
+}
+
+// ── Historial de consultas (localStorage) ────────────────────────────────────
+const HISTORY_KEY = 'medi-history';
+const MAX_HISTORY = 15;
+
+function saveToHistory(query, condition) {
+  if (!query) return;
+  const hist = getHistory();
+  hist.unshift({ id: Date.now(), query, condition: condition || '', ts: Date.now() });
+  if (hist.length > MAX_HISTORY) hist.length = MAX_HISTORY;
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
+  renderHistory();
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+function renderHistory() {
+  const hist = getHistory();
+  const sec  = document.getElementById('historySec');
+  const list = document.getElementById('historyList');
+  if (!sec || !list) return;
+  if (!hist.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  list.innerHTML = hist.map(h => `
+    <button class="hist-item" data-hid="${h.id}">
+      <i data-lucide="clock" style="width:11px;height:11px;opacity:0.45;flex-shrink:0;margin-top:3px"></i>
+      <div class="hist-meta">
+        <span class="hist-query">${esc(h.query.substring(0, 42))}</span>
+        ${h.condition ? `<span class="hist-condition">${esc(h.condition.substring(0, 32))}</span>` : ''}
+      </div>
+    </button>`).join('');
+  lucide.createIcons({ nodes: [list] });
+  list.querySelectorAll('.hist-item').forEach(btn => {
+    btn.addEventListener('click', () => fillHistory(Number(btn.dataset.hid)));
+  });
+}
+
+function fillHistory(id) {
+  const entry = getHistory().find(h => h.id === id);
+  if (!entry) return;
+  userInput.value = entry.query;
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+  userInput.focus();
+}
+
 // ── Input de voz ─────────────────────────────────────────────────────────────
 const PLACEHOLDER_DEFAULT = 'Describe tus síntomas... (ej: tengo fiebre, escalofríos y dolor de garganta)';
 let recognition = null;
 let isListening  = false;
+
+function showToast(msg, type = 'error') {
+  const t = document.createElement('div');
+  const bg = type === 'error' ? 'var(--red)' : 'var(--emerald)';
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(0);
+    padding:11px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;
+    z-index:9999;background:${bg};color:#fff;box-shadow:var(--shadow-lg);
+    white-space:nowrap;animation:slideIn 0.25s ease;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.style.opacity = '0', 3000);
+  setTimeout(() => t.remove(), 3400);
+}
 
 function initVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1533,10 +1814,11 @@ function initVoice() {
     if (btn) btn.style.display = 'none';
     return;
   }
+
   recognition = new SR();
-  recognition.lang            = 'es-ES';
-  recognition.continuous      = false;
-  recognition.interimResults  = true;
+  recognition.lang           = 'es-ES';
+  recognition.continuous     = false;
+  recognition.interimResults = true;
 
   recognition.onstart = () => {
     isListening = true;
@@ -1556,18 +1838,35 @@ function initVoice() {
     userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
   };
 
-  recognition.onend   = () => _stopListening();
-  recognition.onerror = (e) => { console.warn('voz:', e.error); _stopListening(); };
+  recognition.onend = () => _stopListening();
+
+  recognition.onerror = (e) => {
+    const msgs = {
+      'not-allowed': 'Permiso de micrófono denegado. Actívalo en Configuración del navegador.',
+      'network':     'El reconocimiento de voz requiere conexión a internet.',
+      'no-speech':   'No se detectó voz. Intenta de nuevo.',
+    };
+    if (msgs[e.error]) showToast(msgs[e.error]);
+    _stopListening();
+  };
 }
 
 function toggleVoice() {
-  if (!recognition) return;
+  if (!recognition) { showToast('Tu navegador no soporta entrada de voz.'); return; }
   if (isListening) {
     recognition.stop();
   } else {
     userInput.value = '';
     userInput.style.height = 'auto';
-    try { recognition.start(); } catch (e) { console.warn('voz start:', e); }
+    try {
+      recognition.start();
+    } catch (e) {
+      // Puede lanzar si ya hay una sesion activa — recrear y reintentar
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      initVoice();
+      try { recognition.start(); } catch (_) { showToast('No se pudo iniciar el micrófono.'); }
+    }
   }
 }
 
@@ -1578,12 +1877,12 @@ function _stopListening() {
 }
 
 function _setMicState(active) {
-  const btn  = document.getElementById('micBtn');
-  const icon = document.getElementById('micIcon');
-  if (!btn || !icon) return;
+  const btn = document.getElementById('micBtn');
+  if (!btn) return;
   btn.classList.toggle('listening', active);
-  icon.setAttribute('data-lucide', active ? 'mic-off' : 'mic');
-  lucide.createIcons({ nodes: [icon] });
+  // Reemplazar innerHTML con un <i> fresco para que lucide lo procese correctamente
+  btn.innerHTML = `<i data-lucide="${active ? 'mic-off' : 'mic'}" style="width:17px;height:17px;stroke-width:2;pointer-events:none"></i>`;
+  lucide.createIcons({ nodes: [btn] });
 }
 
 // ── Tema oscuro ──────────────────────────────────────────────────────────────
@@ -1655,6 +1954,7 @@ async function loadHealthStatus() {
 lucide.createIcons();
 _syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
 initVoice();
+renderHistory();
 loadHealthStatus();
 </script>
 </body>

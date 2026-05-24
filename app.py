@@ -9,6 +9,8 @@ import json
 import functools
 import logging
 import time
+import threading
+from collections import deque
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
@@ -27,6 +29,46 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 log = logging.getLogger("medi-ia")
+
+# ── Métricas en memoria (se pierden al reiniciar) ─────────────────────────────
+_mtx       = threading.Lock()
+_query_ts  = deque(maxlen=10_000)   # float timestamps de queries completadas
+_lat_log   = deque(maxlen=2_000)    # (ts: float, ms: int) por query
+_err_count = [0]                    # lista para mutación sin global
+_start_mono = time.monotonic()
+
+
+def _record_query(latency_ms: int) -> None:
+    now = time.time()
+    with _mtx:
+        _query_ts.append(now)
+        _lat_log.append((now, latency_ms))
+
+
+def _record_error() -> None:
+    with _mtx:
+        _err_count[0] += 1
+
+
+# ── Cron de limpieza de sesiones inactivas ────────────────────────────────────
+def _start_cleanup_cron() -> None:
+    days       = int(os.getenv("CLEANUP_DAYS", "30"))
+    interval_s = int(os.getenv("CLEANUP_INTERVAL_HOURS", "24")) * 3600
+
+    def _loop():
+        while True:
+            time.sleep(interval_s)
+            try:
+                from src.memory import cleanup_old_sessions
+                n = cleanup_old_sessions(days=days)
+                log.info("cleanup_cron removed=%d sessions older_than=%d_days", n, days)
+            except Exception as exc:
+                log.error("cleanup_cron error=%s", exc)
+
+    t = threading.Thread(target=_loop, name="cleanup-cron", daemon=True)
+    t.start()
+    log.info("cleanup_cron started interval_h=%d days_threshold=%d", interval_s // 3600, days)
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
@@ -127,12 +169,14 @@ def query_agent():
         result = run(consulta.message, session_id=session_id)
     except FileNotFoundError:
         log.error("rid=%s faiss_index_missing", g.rid)
+        _record_error()
         return jsonify({
             "success": False,
             "error": "Base de conocimiento no disponible. Ejecuta 'make ingest' para construir el indice FAISS.",
         }), 503
     inf_ms = int((time.monotonic() - t_inf) * 1000)
     log.info("rid=%s inference_ms=%d session=%s mode=%s", g.rid, inf_ms, session_id[:8], result.get("modo", "?"))
+    _record_query(inf_ms)
 
     nivel = result.get("gravedad_info", {})
     gravedad = result.get("gravedad", "moderada")
@@ -256,8 +300,10 @@ def stream_query():
                     stream_ms = int((time.monotonic() - t_stream) * 1000)
                     log.info("rid=%s stream_ms=%d session=%s iters=%d",
                              rid, stream_ms, session_id[:8], event.get("iteraciones", 0))
+                    _record_query(stream_ms)
         except Exception as e:
             log.error("rid=%s stream_error=%s", rid, e)
+            _record_error()
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream",
@@ -458,6 +504,39 @@ def _build_pdf_bytes(data: dict) -> bytes:
     return bytes(pdf.output())
 
 
+@app.route("/api/metrics", methods=["GET"])
+@require_auth
+def get_metrics():
+    """Métricas básicas en memoria: queries/hora, latencia, errores, uptime."""
+    now = time.time()
+    cutoff_1h  = now - 3_600
+    cutoff_24h = now - 86_400
+
+    with _mtx:
+        q_1h   = sum(1 for ts in _query_ts if ts > cutoff_1h)
+        q_24h  = sum(1 for ts in _query_ts if ts > cutoff_24h)
+        q_total = len(_query_ts)
+        lats_1h = [ms for ts, ms in _lat_log if ts > cutoff_1h]
+        errors  = _err_count[0]
+
+    avg_ms = round(sum(lats_1h) / len(lats_1h)) if lats_1h else 0
+    p95_ms = 0
+    if lats_1h:
+        sorted_lats = sorted(lats_1h)
+        p95_ms = sorted_lats[max(0, int(len(sorted_lats) * 0.95) - 1)]
+
+    return jsonify({
+        "queries_last_1h":      q_1h,
+        "queries_last_24h":     q_24h,
+        "queries_session_total": q_total,
+        "avg_latency_ms":       avg_ms,
+        "p95_latency_ms":       p95_ms,
+        "error_count":          errors,
+        "uptime_s":             int(time.monotonic() - _start_mono),
+    })
+
+
 if __name__ == "__main__":
     print("[MEDI-IA] Iniciando servidor...")
+    _start_cleanup_cron()
     app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

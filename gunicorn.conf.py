@@ -29,3 +29,10 @@ accesslog = "-"
 errorlog = "-"
 loglevel = "info"
 access_log_format = '%(h)s "%(r)s" %(s)s %(b)s %(D)sus'
+
+
+def post_worker_init(worker):
+    """Arranca el cron de limpieza solo en el primer worker (age==1) para no duplicarlo."""
+    if getattr(worker, "age", 1) == 1:
+        from app import _start_cleanup_cron
+        _start_cleanup_cron()
