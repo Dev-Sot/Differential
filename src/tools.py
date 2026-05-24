@@ -4,9 +4,19 @@ Cada tool tiene: nombre, descripcion, funcion ejecutable.
 """
 
 import json
+import threading
 from src.rag.retriever import retrieve
 from src.rag.reranker import rerank
 from src.rag.section_mapping import enrich_chunks
+
+# Almacena los últimos chunks recuperados por request (thread-safe).
+# Se usa para la trazabilidad RAG en la UI.
+_tl = threading.local()
+
+
+def get_last_chunks() -> list[dict]:
+    """Devuelve los chunks del último search_symptoms en este hilo."""
+    return getattr(_tl, "last_chunks", [])
 
 
 def search_symptoms(query: str) -> str:
@@ -17,6 +27,7 @@ def search_symptoms(query: str) -> str:
     candidates = retrieve(query, top_k=10)
     ranked = rerank(query, candidates, top_k=4)
     enriched = enrich_chunks(ranked)
+    _tl.last_chunks = enriched  # capturar para trazabilidad
 
     if not enriched:
         return "No se encontraron fragmentos relevantes para estos sintomas."

@@ -21,7 +21,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from src.agent import run, get_health
 from src.schemas import ConsultaRequest, ErrorResponse
-from src.memory import clear_session
+from src.memory import clear_session, save_feedback, get_feedback_stats
 
 logging.basicConfig(
     level=logging.INFO,
@@ -195,6 +195,7 @@ def query_agent():
         "urgencia": result.get("urgencia", gravedad),
         "confianza": result.get("score_confianza", 0),
         "fuentes": result.get("fuentes", []),
+        "rag_chunks": result.get("rag_chunks", []),
         "modo": result.get("modo", ""),
         "trajectory": result.get("trajectory", []),
         "tools_used": result.get("tools_used", []),
@@ -277,6 +278,7 @@ def stream_query():
             "respuesta": result.get("respuesta", ""),
             "trajectory": result.get("trajectory", []),
             "fuentes": result.get("fuentes", []),
+            "rag_chunks": result.get("rag_chunks", []),
             "confianza": result.get("score_confianza", 0),
             "modo": result.get("modo", "RAG Template"),
             "tools_used": result.get("tools_used", []),
@@ -504,10 +506,36 @@ def _build_pdf_bytes(data: dict) -> bytes:
     return bytes(pdf.output())
 
 
+@app.route("/metrics", methods=["GET"])
+@require_auth
+def metrics_page():
+    return render_template("metrics.html")
+
+
+@app.route("/api/feedback", methods=["POST"])
+@require_auth
+@limiter.limit("30 per minute")
+def feedback():
+    data = request.get_json()
+    if not data or "rating" not in data:
+        return jsonify({"error": "rating requerido (1 o -1)"}), 400
+    rating = data["rating"]
+    if rating not in (1, -1):
+        return jsonify({"error": "rating debe ser 1 o -1"}), 400
+    session_id = _get_session_id()
+    try:
+        save_feedback(session_id, data.get("condicion", ""), rating)
+    except Exception as e:
+        log.error("rid=%s feedback_error=%s", g.rid, e)
+        return jsonify({"error": "No se pudo guardar el feedback"}), 500
+    return jsonify({"ok": True})
+
+
 @app.route("/api/metrics", methods=["GET"])
 @require_auth
 def get_metrics():
-    """Métricas básicas en memoria: queries/hora, latencia, errores, uptime."""
+    """Métricas básicas en memoria: queries/hora, latencia, errores, uptime, feedback."""
+    from datetime import datetime, timedelta
     now = time.time()
     cutoff_1h  = now - 3_600
     cutoff_24h = now - 86_400
@@ -518,6 +546,12 @@ def get_metrics():
         q_total = len(_query_ts)
         lats_1h = [ms for ts, ms in _lat_log if ts > cutoff_1h]
         errors  = _err_count[0]
+        # Distribución horaria — 24 buckets (bucket 0 = más antiguo, 23 = hora actual)
+        hourly = [0] * 24
+        for ts in _query_ts:
+            age_h = (now - ts) / 3600
+            if 0 <= age_h < 24:
+                hourly[23 - int(age_h)] += 1
 
     avg_ms = round(sum(lats_1h) / len(lats_1h)) if lats_1h else 0
     p95_ms = 0
@@ -525,14 +559,27 @@ def get_metrics():
         sorted_lats = sorted(lats_1h)
         p95_ms = sorted_lats[max(0, int(len(sorted_lats) * 0.95) - 1)]
 
+    now_dt = datetime.now()
+    labels = [(now_dt - timedelta(hours=23 - i)).strftime("%H:00") for i in range(24)]
+
+    try:
+        fb = get_feedback_stats()
+    except Exception:
+        fb = {"total": 0, "positive": 0, "negative": 0}
+
     return jsonify({
-        "queries_last_1h":      q_1h,
-        "queries_last_24h":     q_24h,
+        "queries_last_1h":       q_1h,
+        "queries_last_24h":      q_24h,
         "queries_session_total": q_total,
-        "avg_latency_ms":       avg_ms,
-        "p95_latency_ms":       p95_ms,
-        "error_count":          errors,
-        "uptime_s":             int(time.monotonic() - _start_mono),
+        "avg_latency_ms":        avg_ms,
+        "p95_latency_ms":        p95_ms,
+        "error_count":           errors,
+        "uptime_s":              int(time.monotonic() - _start_mono),
+        "hourly_last_24h":       hourly,
+        "hourly_labels":         labels,
+        "feedback_total":        fb["total"],
+        "feedback_positive":     fb["positive"],
+        "feedback_negative":     fb["negative"],
     })
 
 

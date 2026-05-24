@@ -33,11 +33,19 @@ def _init_schema() -> None:
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON turns(session)")
-    # Tabla de metadatos de sesion — registra ultimo acceso para cleanup
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             session   TEXT PRIMARY KEY,
             last_seen TEXT NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            session   TEXT NOT NULL,
+            condicion TEXT,
+            rating    INTEGER NOT NULL,
+            ts        TEXT NOT NULL
         )
     """)
     conn.commit()
@@ -151,6 +159,27 @@ def cleanup_old_sessions(days: int = 30) -> int:
             conn.execute(f"DELETE FROM turns WHERE session IN ({placeholders})", stale_ids)
             conn.execute(f"DELETE FROM sessions WHERE session IN ({placeholders})", stale_ids)
     return len(stale_ids)
+
+
+def save_feedback(session_id: str, condicion: str, rating: int) -> None:
+    """Guarda una valoracion (1=positivo, -1=negativo) para una condicion diagnosticada."""
+    with _db() as conn:
+        conn.execute(
+            "INSERT INTO feedback (session, condicion, rating, ts) VALUES (?, ?, ?, ?)",
+            (session_id, condicion or "", rating, _now_iso()),
+        )
+
+
+def get_feedback_stats() -> dict:
+    """Resumen global de valoraciones: total, positivos, negativos."""
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT rating, COUNT(*) AS cnt FROM feedback GROUP BY rating"
+        ).fetchall()
+    total    = sum(r["cnt"] for r in rows)
+    positive = next((r["cnt"] for r in rows if r["rating"] == 1),  0)
+    negative = next((r["cnt"] for r in rows if r["rating"] == -1), 0)
+    return {"total": total, "positive": positive, "negative": negative}
 
 
 def session_stats() -> list[dict]:

@@ -10,7 +10,7 @@ import re
 import os
 from typing import Iterator
 from src.llm import chat, chat_stream
-from src.tools import execute_tool, tools_description, TOOLS
+from src.tools import execute_tool, tools_description, TOOLS, get_last_chunks
 from src.memory import get_history, add_turn, set_system
 
 MAX_ITERATIONS = 6  # maximo de ciclos Thought-Action-Observation
@@ -188,6 +188,19 @@ def run_react(session_id: str, user_message: str) -> dict:
         for line in obs.split("\n")
         if "|" in line and ("Harrison" in line or "Oxford" in line or "Symptom" in line or "Drug" in line)
     })
+    raw = get_last_chunks()
+    rag_chunks = [
+        {
+            "rank": i + 1,
+            "book": c.get("book", ""),
+            "page": c.get("page", ""),
+            "seccion": c.get("seccion", ""),
+            "text_preview": c.get("text", "")[:120],
+            "faiss_score": round(float(c.get("score", 0)), 4),
+            "rerank_score": round(float(c.get("rerank_score", 0)), 3),
+        }
+        for i, c in enumerate(raw)
+    ]
 
     return {
         "respuesta": final_answer,
@@ -196,6 +209,7 @@ def run_react(session_id: str, user_message: str) -> dict:
         "trajectory": trajectory,
         "tools_used": tools_used,
         "fuentes": sources,
+        "rag_chunks": rag_chunks,
         "iteraciones": iteration + 1,
         "modo": f"ReAct Agent (Qwen2.5-7B) — {len(tools_used)} tools usadas",
     }
@@ -318,6 +332,20 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
         if "|" in line and any(k in line for k in ("Harrison", "Oxford", "Symptom", "Drug"))
     })
 
+    raw = get_last_chunks()
+    rag_chunks = [
+        {
+            "rank": i + 1,
+            "book": c.get("book", ""),
+            "page": c.get("page", ""),
+            "seccion": c.get("seccion", ""),
+            "text_preview": c.get("text", "")[:120],
+            "faiss_score": round(float(c.get("score", 0)), 4),
+            "rerank_score": round(float(c.get("rerank_score", 0)), 3),
+        }
+        for i, c in enumerate(raw)
+    ]
+
     yield {
         "type": "done",
         "gravedad": urgency,
@@ -330,6 +358,7 @@ def stream_react(session_id: str, user_message: str) -> Iterator[dict]:
         "respuesta": final_answer,
         "trajectory": trajectory[:3],
         "fuentes": fuentes,
+        "rag_chunks": rag_chunks,
         "confianza": min(95, 60 + len(trajectory) * 10),
         "modo": f"ReAct Agent (Qwen2.5-7B) — {len(tools_used)} tools usadas",
         "tools_used": tools_used,

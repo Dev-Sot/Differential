@@ -71,6 +71,18 @@ def _run_rag_fallback(sintomas: str) -> dict:
         f"{top['text']}\n\nEsto no reemplaza la consulta medica profesional."
     )
     fuentes = list({c["book"] for c in enriched})
+    rag_chunks = [
+        {
+            "rank": i + 1,
+            "book": c.get("book", ""),
+            "page": c.get("page", ""),
+            "seccion": c.get("seccion", ""),
+            "text_preview": c.get("text", "")[:120],
+            "faiss_score": round(float(c.get("score", 0)), 4),
+            "rerank_score": round(float(c.get("rerank_score", 0)), 3),
+        }
+        for i, c in enumerate(enriched)
+    ]
 
     return {
         "respuesta": respuesta,
@@ -82,6 +94,7 @@ def _run_rag_fallback(sintomas: str) -> dict:
         "urgencia": "moderada",
         "score_confianza": round(top.get("score", 0) * 100, 1),
         "fuentes": fuentes,
+        "rag_chunks": rag_chunks,
         "modo": "RAG Template (sin HF_TOKEN)",
         "trajectory": [],
         "tools_used": [],

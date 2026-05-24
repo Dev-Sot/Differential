@@ -997,6 +997,58 @@
     background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(239,68,68,0.07));
   }
 
+  /* Feedback buttons */
+  .feedback-group { display:flex; gap:4px; margin-left:auto; }
+  .feedback-btn {
+    width:30px; height:30px; border-radius:7px;
+    border:1px solid var(--border-strong); background:transparent;
+    color:var(--text-3); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.15s; flex-shrink:0;
+  }
+  .feedback-btn:hover { background:var(--surface-2); color:var(--text-2); }
+  .feedback-btn.positive { background:var(--emerald-light); border-color:var(--emerald); color:var(--emerald-dark); }
+  .feedback-btn.negative { background:var(--red-light); border-color:var(--red); color:var(--red); }
+  .feedback-btn:disabled { cursor:default; }
+
+  /* RAG trazabilidad chunks */
+  .rag-list { display:flex; flex-direction:column; gap:7px; }
+  .rag-chunk {
+    border:1px solid var(--border); border-radius:8px;
+    padding:8px 11px; background:var(--surface);
+  }
+  .rag-chunk-hdr {
+    display:flex; align-items:center; gap:7px;
+    margin-bottom:5px; flex-wrap:wrap;
+  }
+  .rag-rank {
+    font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace;
+    background:var(--blue-light); color:var(--blue);
+    padding:1px 7px; border-radius:10px; flex-shrink:0;
+  }
+  .rag-book {
+    font-size:11px; font-weight:600; color:var(--text-2);
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .rag-page { font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--text-3); flex-shrink:0; }
+  .rag-scores { display:flex; align-items:center; gap:4px; flex-shrink:0; flex-wrap:wrap; }
+  .rag-slabel { font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-3); }
+  .rag-bar { width:38px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .rag-fill { height:100%; background:var(--blue); border-radius:2px; }
+  .rag-snum { font-size:9.5px; font-family:'JetBrains Mono',monospace; color:var(--text-3); }
+  .rag-rerank {
+    font-size:10px; font-family:'JetBrains Mono',monospace; font-weight:600;
+    padding:1px 6px; border-radius:8px;
+  }
+  .rag-rerank.pos { background:var(--emerald-light); color:var(--emerald-dark); }
+  .rag-rerank.neg { background:var(--red-light); color:var(--red); }
+  .rag-chunk-txt {
+    font-size:10.5px; color:var(--text-3); font-family:'JetBrains Mono',monospace;
+    line-height:1.5; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  [data-theme="dark"] .rag-chunk { background:var(--surface-2); }
+
   /* Copy button */
   .copy-btn {
     font-size: 10.5px;
@@ -1139,6 +1191,9 @@
     </button>
     <button class="sidebar-btn" onclick="window.open('/api/health')">
       <i data-lucide="activity" style="width:15px;height:15px;stroke-width:2"></i> Estado del sistema
+    </button>
+    <button class="sidebar-btn" onclick="window.location.href='/metrics'">
+      <i data-lucide="bar-chart-2" style="width:15px;height:15px;stroke-width:2"></i> Métricas
     </button>
   </div>
 
@@ -1438,6 +1493,7 @@ function addAICard(data) {
   const copyBtnId    = 'copybtn_'  + Date.now();
   const detailsBtnId = 'detbtn_'   + Date.now();
   const panelId      = 'detpanel_' + Date.now();
+  const feedbackId   = 'fb_'       + Date.now();
 
   // ── Contenido del panel de detalles ─────────────────────────────────────
   const toolsSec = tools.length
@@ -1486,7 +1542,36 @@ function addAICard(data) {
        </div>`
     : '';
 
-  const hasDetails = toolsSec || srcsSec || trajSec;
+  // ── Trazabilidad RAG ──────────────────────────────────────────────────────
+  const chunks = data.rag_chunks || [];
+  const chunksSec = chunks.length ? `
+    <div class="details-section">
+      <div class="details-label">Trazabilidad RAG — ${chunks.length} fragmento${chunks.length !== 1 ? 's' : ''} recuperado${chunks.length !== 1 ? 's' : ''}</div>
+      <div class="rag-list">
+        ${chunks.map(c => {
+          const faissW = Math.round(Math.min(100, (c.faiss_score || 0) * 100));
+          const rrClass = (c.rerank_score || 0) >= 0 ? 'pos' : 'neg';
+          const bookShort = (c.book || '').split(' ').slice(0, 3).join(' ');
+          return `<div class="rag-chunk">
+            <div class="rag-chunk-hdr">
+              <span class="rag-rank">#${c.rank}</span>
+              <span class="rag-book">${esc(bookShort)}</span>
+              <span class="rag-page">p.${c.page}</span>
+              <div class="rag-scores">
+                <span class="rag-slabel">FAISS</span>
+                <div class="rag-bar"><div class="rag-fill" style="width:${faissW}%"></div></div>
+                <span class="rag-snum">${(c.faiss_score||0).toFixed(3)}</span>
+                <span class="rag-slabel" style="margin-left:5px">Rerank</span>
+                <span class="rag-rerank ${rrClass}">${(c.rerank_score||0).toFixed(2)}</span>
+              </div>
+            </div>
+            <div class="rag-chunk-txt">${esc(c.text_preview || '')}…</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const hasDetails = toolsSec || srcsSec || trajSec || chunksSec;
 
   const d = document.createElement('div');
   d.className = 'msg';
@@ -1519,11 +1604,15 @@ function addAICard(data) {
         ${hasDetails
           ? `<button class="details-btn" id="${detailsBtnId}"><i data-lucide="sliders-horizontal" style="width:12px;height:12px"></i> Detalles del análisis <span class="arrow">▼</span></button>`
           : ''}
+        <div class="feedback-group" id="${feedbackId}">
+          <button class="feedback-btn" id="${feedbackId}_up" title="Útil"><i data-lucide="thumbs-up" style="width:13px;height:13px;stroke-width:2"></i></button>
+          <button class="feedback-btn" id="${feedbackId}_dn" title="No útil"><i data-lucide="thumbs-down" style="width:13px;height:13px;stroke-width:2"></i></button>
+        </div>
       </div>
 
       ${hasDetails
         ? `<div class="details-panel" id="${panelId}">
-            ${toolsSec}${srcsSec}${modeSec}${trajSec}
+            ${chunksSec}${toolsSec}${srcsSec}${modeSec}${trajSec}
            </div>`
         : ''}
 
@@ -1535,6 +1624,8 @@ function addAICard(data) {
   document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
   document.getElementById(copyBtnId)?.addEventListener('click', function() { copyResponse(data, this); });
   document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
+  document.getElementById(feedbackId + '_up')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, 1));
+  document.getElementById(feedbackId + '_dn')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, -1));
   saveToHistory(data.query, data.condicion_principal);
   addFollowupChips(data);
   scrollDown();
@@ -1707,6 +1798,28 @@ function toggleSidebar() {
 function closeSidebar() {
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebarBackdrop').classList.remove('show');
+}
+
+// ── Feedback 👍👎 ─────────────────────────────────────────────────────────────
+async function sendFeedback(groupId, condicion, rating) {
+  const group = document.getElementById(groupId);
+  if (!group || group.dataset.voted) return;
+  try {
+    const r = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, condicion }),
+    });
+    if (!r.ok) throw new Error();
+    group.dataset.voted = '1';
+    const upBtn = document.getElementById(groupId + '_up');
+    const dnBtn = document.getElementById(groupId + '_dn');
+    if (upBtn) { upBtn.disabled = true; if (rating === 1)  upBtn.classList.add('positive'); }
+    if (dnBtn) { dnBtn.disabled = true; if (rating === -1) dnBtn.classList.add('negative'); }
+    showToast(rating === 1 ? '¡Gracias por tu valoración!' : 'Gracias, usaremos esto para mejorar.', 'success');
+  } catch {
+    showToast('No se pudo registrar la valoración.');
+  }
 }
 
 // ── Copiar respuesta ─────────────────────────────────────────────────────────
