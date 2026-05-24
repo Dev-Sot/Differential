@@ -232,10 +232,9 @@ class TestExportPdfEndpoint:
         assert "attachment" in r.headers.get("Content-Disposition", "")
         assert ".pdf" in r.headers.get("Content-Disposition", "")
 
-    def test_weasyprint_not_available_returns_500(self, client):
+    def test_fpdf_error_returns_500(self, client):
         payload = {"respuesta": "Diagnostico.", "gravedad": "leve"}
-        # None como valor en sys.modules hace que el import falle con ImportError
-        with patch.dict("sys.modules", {"weasyprint": None}):
+        with patch("app._build_pdf_bytes", side_effect=Exception("fpdf error")):
             r = client.post("/api/export/pdf", json=payload)
         assert r.status_code == 500
         assert "error" in r.get_json()
