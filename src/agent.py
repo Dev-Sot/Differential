@@ -104,7 +104,7 @@ def _run_rag_fallback(sintomas: str) -> dict:
 def _extract_condition(text: str) -> str:
     import re
     match = re.search(r"Condicion principal sugerida[:\*]*\s*\*?\*?([^\n\*]+)", text, re.IGNORECASE)
-    return match.group(1).strip() if match else "Ver respuesta completa"
+    return match.group(1).strip() if match else ""
 
 
 def _extract_recommendation(text: str) -> str:
