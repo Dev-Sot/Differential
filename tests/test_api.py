@@ -26,6 +26,7 @@ def client(tmp_path, monkeypatch):
 
     flask_app.config["TESTING"] = True
     flask_app.config["SECRET_KEY"] = "test-secret-key"
+    flask_app.config["RATELIMIT_ENABLED"] = False
     with flask_app.test_client() as c:
         yield c
 
@@ -238,3 +239,55 @@ class TestExportPdfEndpoint:
             r = client.post("/api/export/pdf", json=payload)
         assert r.status_code == 500
         assert "error" in r.get_json()
+
+
+# ─── /evaluate endpoints ───────────────────────────────────────────────────────
+
+class TestEvaluateEndpoints:
+
+    def test_evaluate_page_renders(self, client):
+        with patch("src.evaluation.load_snapshot", return_value=None):
+            r = client.get("/evaluate")
+        assert r.status_code == 200
+        assert b"evaluate" in r.data.lower()
+
+    def test_evaluate_page_has_snapshot_true(self, client):
+        fake = {"timestamp": "2026-05-24T10:00:00", "stats": {}, "queries": []}
+        with patch("src.evaluation.load_snapshot", return_value=fake):
+            r = client.get("/evaluate")
+        assert r.status_code == 200
+
+    def test_snapshot_returns_404_when_missing(self, client):
+        with patch("src.evaluation.load_snapshot", return_value=None):
+            r = client.get("/api/evaluate/snapshot")
+        assert r.status_code == 404
+
+    def test_snapshot_returns_data(self, client):
+        fake = {"timestamp": "2026-05-24T10:00:00", "stats": {"total_queries": 6}, "queries": []}
+        with patch("src.evaluation.load_snapshot", return_value=fake):
+            r = client.get("/api/evaluate/snapshot")
+        assert r.status_code == 200
+        assert r.get_json()["stats"]["total_queries"] == 6
+
+    def test_run_evaluation_success(self, client):
+        fake = {
+            "timestamp": "2026-05-24T10:00:00",
+            "duration_s": 1.2,
+            "stats": {"total_queries": 6, "top1_changed": 4, "avg_position_changes": 2.1},
+            "queries": [],
+        }
+        with patch("src.evaluation.run_benchmark", return_value=fake), \
+             patch("src.evaluation.save_snapshot"):
+            r = client.post("/api/evaluate/run")
+        assert r.status_code == 200
+        assert r.get_json()["stats"]["top1_changed"] == 4
+
+    def test_run_evaluation_no_index(self, client):
+        with patch("src.evaluation.run_benchmark", side_effect=FileNotFoundError("no index")):
+            r = client.post("/api/evaluate/run")
+        assert r.status_code == 503
+
+    def test_run_evaluation_generic_error(self, client):
+        with patch("src.evaluation.run_benchmark", side_effect=RuntimeError("fallo")):
+            r = client.post("/api/evaluate/run", environ_base={"REMOTE_ADDR": "10.0.0.2"})
+        assert r.status_code == 500

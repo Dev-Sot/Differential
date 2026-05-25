@@ -136,7 +136,7 @@ class TestExecuteTool:
         result = execute_tool("get_section", "harrison|||infarto miocardio")
         assert isinstance(result, str)
         assert len(result) > 0
-        mock_retrieve.assert_called_once_with("infarto miocardio", top_k=10)
+        mock_retrieve.assert_called_once_with("infarto miocardio", top_k=15)
 
     @patch("src.tools.retrieve")
     @patch("src.tools.rerank")
@@ -147,7 +147,7 @@ class TestExecuteTool:
 
         execute_tool("get_section", "harrison infarto")
         # Sin ||| el input completo va como topic
-        mock_retrieve.assert_called_once_with("harrison infarto", top_k=10)
+        mock_retrieve.assert_called_once_with("harrison infarto", top_k=15)
 
     @patch("src.tools.retrieve")
     @patch("src.tools.rerank")

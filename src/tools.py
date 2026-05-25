@@ -24,8 +24,8 @@ def search_symptoms(query: str) -> str:
     Busca en los libros medicos fragmentos relevantes para los sintomas dados.
     Usa FAISS + reranker para maxima precision.
     """
-    candidates = retrieve(query, top_k=10)
-    ranked = rerank(query, candidates, top_k=4)
+    candidates = retrieve(query, top_k=20)
+    ranked = rerank(query, candidates, top_k=5)
     enriched = enrich_chunks(ranked)
     _tl.last_chunks = enriched  # capturar para trazabilidad
 
@@ -98,7 +98,7 @@ def get_section(book_keyword: str, topic: str) -> str:
     book_key = book_keyword.lower()
     matched_book = next((v for k, v in BOOK_MAP.items() if k in book_key), None)
 
-    candidates = retrieve(topic, top_k=10)
+    candidates = retrieve(topic, top_k=15)
     if matched_book:
         filtered = [c for c in candidates if matched_book in c.get("book", "")]
         if filtered:

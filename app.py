@@ -228,6 +228,11 @@ def reload_index():
         retriever._index = None
         retriever._metadata = None
         retriever._load()
+        try:
+            from src.rag import bm25_retriever
+            bm25_retriever.reset()
+        except Exception:
+            pass
         return jsonify({"status": "ok", "message": "Indice recargado."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -506,6 +511,22 @@ def _build_pdf_bytes(data: dict) -> bytes:
     return bytes(pdf.output())
 
 
+@app.route("/api/evaluate/full", methods=["GET"])
+@require_auth
+def get_full_eval():
+    """Retorna los resultados de la ultima evaluacion completa del pipeline RAG."""
+    results_path = os.path.join(os.path.dirname(__file__), "data", "eval_full_results.json")
+    if not os.path.exists(results_path):
+        return jsonify({"error": "Sin resultados. Ejecuta: make eval-full"}), 404
+    try:
+        with open(results_path, encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        log.error("rid=%s eval_full_error=%s", g.rid, e)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/export/conversation", methods=["GET"])
 @require_auth
 @limiter.limit("5 per minute")
@@ -704,6 +725,41 @@ def get_metrics():
         "feedback_positive":     fb["positive"],
         "feedback_negative":     fb["negative"],
     })
+
+
+@app.route("/evaluate", methods=["GET"])
+@require_auth
+def evaluate_page():
+    from src.evaluation import load_snapshot
+    has_snapshot = load_snapshot() is not None
+    return render_template("evaluate.html", has_snapshot=has_snapshot)
+
+
+@app.route("/api/evaluate/snapshot", methods=["GET"])
+@require_auth
+def get_eval_snapshot():
+    from src.evaluation import load_snapshot
+    data = load_snapshot()
+    if data is None:
+        return jsonify({"error": "No hay snapshot. Ejecuta el benchmark primero."}), 404
+    return jsonify(data)
+
+
+@app.route("/api/evaluate/run", methods=["POST"])
+@require_auth
+@limiter.limit("2 per minute")
+def run_evaluation():
+    from src.evaluation import run_benchmark, save_snapshot
+    try:
+        data = run_benchmark()
+        save_snapshot(data)
+        log.info("rid=%s benchmark_done duration_s=%.1f", g.rid, data["duration_s"])
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Indice FAISS no encontrado. Ejecuta make ingest primero."}), 503
+    except Exception as e:
+        log.error("rid=%s benchmark_error=%s", g.rid, e)
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

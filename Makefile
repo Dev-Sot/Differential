@@ -1,7 +1,7 @@
 PYTHON = venv/Scripts/python.exe
 PIP    = venv/Scripts/pip.exe
 
-.PHONY: run ingest test install reload health docker-build docker-run docker-stop docker-ingest sessions cleanup
+.PHONY: run ingest test install reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup
 
 ## Iniciar servidor Flask
 run:
@@ -18,6 +18,10 @@ test:
 ## Instalar dependencias
 install:
 	$(PIP) install -r requirements.txt
+
+## Evaluacion completa del pipeline RAG (40 queries, metricas Recall/MRR/Precision)
+eval-full:
+	$(PYTHON) -m src.evaluation_full
 
 ## Recargar indice sin reiniciar servidor (requiere servidor activo)
 reload:

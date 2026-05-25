@@ -217,8 +217,9 @@ del archivo, hay que actualizar `section_mapping.py` Y el BOOK_MAP en `tools.py`
    Chunks relevantes suelen marcar > 0; < -3 indica baja relevancia. Ajustar con
    queries reales: bajar hacia -6 si hay demasiados fallbacks, subir hacia 0 si hay falsos positivos.
 
-4. **Chunk size = 400 chars / overlap = 80** en ingest.py. Si cambias esto, debes re-ingestar
-   todos los PDFs — el indice existente se invalida.
+4. **Chunk size = 600 chars / overlap = 120** en ingest.py. Si cambias esto, debes re-ingestar
+   todos los PDFs — el indice existente se invalida. Chunking por oraciones respeta `.`, `?`, `\n`.
+   Prefijos e5-base: `"query: "` en queries (embeddings.py), `"passage: {libro}: {texto}"` en chunks (ingest.py).
 
 5. **MAX_ITERATIONS = 6** en agent_loop.py. Si el LLM no produce "Final Answer:" en 6 ciclos,
    se hace un ultimo call forzado con todo el contexto acumulado.

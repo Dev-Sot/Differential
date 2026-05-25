@@ -348,6 +348,12 @@
     justify-content: center;
     font-size: 36px;
     box-shadow: var(--shadow-md);
+    animation: welcome-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes welcome-pulse {
+    0%, 100% { box-shadow: var(--shadow-md), 0 0 0 0 rgba(16,185,129,0); }
+    50% { box-shadow: var(--shadow-md), 0 0 0 14px rgba(16,185,129,0.07), 0 0 32px rgba(16,185,129,0.06); }
   }
 
   .welcome h2 {
@@ -1215,6 +1221,9 @@
     <button class="sidebar-btn" onclick="window.location.href='/metrics'">
       <i data-lucide="bar-chart-2" style="width:15px;height:15px;stroke-width:2"></i> Métricas
     </button>
+    <button class="sidebar-btn" onclick="window.location.href='/evaluate'">
+      <i data-lucide="flask-conical" style="width:15px;height:15px;stroke-width:2"></i> Evaluación RAG
+    </button>
   </div>
 
   <div class="sidebar-section" id="historySec" style="display:none">
@@ -1296,6 +1305,7 @@
       <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
       <h2>¿Cómo te sientes hoy?</h2>
       <p>Describe tus síntomas con el mayor detalle posible. El agente analizará tu consulta con la base de conocimiento médico y te entregará un diagnóstico diferencial.</p>
+      <div id="welcomeStats" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:26px;"></div>
       <div class="chips-grid">
         <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
         <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
@@ -1507,6 +1517,7 @@ function appendToken(id, token) {
 
 function addAICard(data) {
   const sev   = data.gravedad || 'moderada';
+  const SEV_ICONS = { leve:'check-circle', moderada:'alert-circle', grave:'alert-triangle', emergencia:'alert-octagon' };
   const conf  = Math.max(5, Math.min(100, data.confianza || 0));
   const traj  = data.trajectory || [];
   const tools = data.tools_used || [];
@@ -1603,7 +1614,7 @@ function addAICard(data) {
     <div class="ai-card${sev === 'emergencia' ? ' card-emergency' : ''}">
 
       <div class="card-header">
-        <span class="sev-pill ${sev}">${esc(data.gravedad_label)}</span>
+        <span class="sev-pill ${sev}"><i data-lucide="${SEV_ICONS[sev]||'activity'}" style="width:11px;height:11px;stroke-width:2.5;flex-shrink:0;pointer-events:none"></i>${esc(data.gravedad_label)}</span>
         <span class="card-condition">${esc(data.condicion_principal)}</span>
         <div class="confidence">
           <div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div>
@@ -2109,6 +2120,18 @@ async function loadHealthStatus() {
       warn.style.cssText = 'margin:0 14px 10px;padding:9px 12px;background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;font-size:11px;color:#92400e;line-height:1.4;';
       warn.innerHTML = '⚠️ Índice FAISS no encontrado.<br>Ejecuta <code style="background:rgba(0,0,0,.08);padding:1px 4px;border-radius:3px">make ingest</code> para activar el análisis médico.';
       document.querySelector('.sidebar-footer')?.before(warn);
+    }
+
+    const ws = document.getElementById('welcomeStats');
+    if (ws) {
+      const modeLabel = h.hf_activo ? 'ReAct + LLM' : 'RAG Template';
+      const chunksLabel = h.chunks_indexados ? h.chunks_indexados.toLocaleString() + ' fragmentos' : '—';
+      const librosLabel = h.libros?.length ? h.libros.length + ' libros' : '—';
+      ws.innerHTML = `
+        <span class="meta-chip"><i data-lucide="database" style="width:11px;height:11px"></i> ${chunksLabel}</span>
+        <span class="meta-chip"><i data-lucide="${h.hf_activo ? 'cpu' : 'layers'}" style="width:11px;height:11px"></i> ${modeLabel}</span>
+        <span class="meta-chip"><i data-lucide="book-open" style="width:11px;height:11px"></i> ${librosLabel}</span>`;
+      lucide.createIcons({ nodes: [ws] });
     }
   } catch {
     // Si el server no responde, dejamos los valores por defecto

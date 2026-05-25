@@ -5,6 +5,7 @@ Ejecutar: python ingest.py
 """
 
 import os
+import re
 import json
 import sys
 import fitz  # PyMuPDF
@@ -17,9 +18,12 @@ INDEX_DIR = os.path.join(os.path.dirname(__file__), "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "books.index")
 META_PATH = os.path.join(INDEX_DIR, "metadata.json")
 
-MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"  # ~400MB, español + inglés
-CHUNK_SIZE = 400   # caracteres por chunk (aprox 80-100 tokens)
-CHUNK_OVERLAP = 80 # solapamiento entre chunks
+import os as _os
+MODEL_NAME = _os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
+CHUNK_SIZE = 600    # subido de 400 — más contexto clínico por chunk
+CHUNK_OVERLAP = 120  # subido de 80
+
+_SENT_RE = re.compile(r'(?<=[.?!])\s+|\n{2,}')
 
 
 def extract_text_from_pdf(pdf_path: str) -> list[dict]:
@@ -38,17 +42,70 @@ def extract_text_from_pdf(pdf_path: str) -> list[dict]:
     return pages
 
 
+def _split_sentences(text: str) -> list[str]:
+    """Divide texto en oraciones respetando puntuación y saltos de línea."""
+    parts = _SENT_RE.split(text)
+    return [p.strip() for p in parts if p.strip()]
+
+
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Divide texto en chunks con solapamiento."""
+    """Divide texto en chunks respetando límites de oración con solapamiento."""
+    sentences = _split_sentences(text)
+    if not sentences:
+        return []
+
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end].strip()
+    window: list[str] = []
+    window_len = 0
+
+    for sent in sentences:
+        slen = len(sent)
+        gap = 1 if window else 0
+
+        if window_len + gap + slen > chunk_size and window:
+            chunk = " ".join(window)
+            if len(chunk) > 50:
+                chunks.append(chunk)
+
+            # Retener cola del window para solapamiento
+            tail: list[str] = []
+            tail_len = 0
+            for s in reversed(window):
+                if tail_len + len(s) + 1 > overlap:
+                    break
+                tail.insert(0, s)
+                tail_len += len(s) + 1
+            window = tail
+            window_len = tail_len
+
+        if slen > chunk_size:
+            # Oración mayor que chunk_size — vaciar window y agregar truncada
+            if window:
+                chunk = " ".join(window)
+                if len(chunk) > 50:
+                    chunks.append(chunk)
+                window = []
+                window_len = 0
+            chunks.append(sent[:chunk_size])
+            continue
+
+        window.append(sent)
+        window_len += slen + (1 if len(window) > 1 else 0)
+
+    if window:
+        chunk = " ".join(window)
         if len(chunk) > 50:
             chunks.append(chunk)
-        start += chunk_size - overlap
+
     return chunks
+
+
+def is_junk_chunk(text: str) -> bool:
+    """Filtra chunks con >50% dígitos (tablas, índices, bibliografías)."""
+    if not text:
+        return True
+    digit_count = sum(1 for c in text if c.isdigit())
+    return digit_count / len(text) > 0.5
 
 
 def ingest_all_books():
@@ -62,8 +119,10 @@ def ingest_all_books():
     print(f"[MEDI-IA] Cargando modelo de embeddings: {MODEL_NAME}")
     model = SentenceTransformer(MODEL_NAME)
 
-    all_chunks = []    # textos
-    all_metadata = []  # info de origen
+    all_passages = []  # textos con prefijo "passage: ..." para embedding
+    all_metadata = []  # info de origen (texto limpio sin prefijo)
+
+    total_filtered = 0
 
     for pdf_file in pdf_files:
         pdf_path = os.path.join(LIBROS_DIR, pdf_file)
@@ -74,29 +133,36 @@ def ingest_all_books():
         print(f"    Páginas con texto: {len(pages)}")
 
         book_chunks = 0
+        book_filtered = 0
         for page_data in pages:
             chunks = chunk_text(page_data["text"])
             for chunk in chunks:
-                all_chunks.append(chunk)
+                if is_junk_chunk(chunk):
+                    book_filtered += 1
+                    total_filtered += 1
+                    continue
+                # Prefijo "passage: " requerido por e5-base + contexto del libro
+                passage = f"passage: {book_name}: {chunk}"
+                all_passages.append(passage)
                 all_metadata.append({
                     "book": book_name,
                     "page": page_data["page"],
-                    "text": chunk
+                    "text": chunk  # texto limpio para mostrar en UI
                 })
                 book_chunks += 1
 
-        print(f"    Chunks generados: {book_chunks}")
+        print(f"    Chunks válidos: {book_chunks}  |  Filtrados (basura): {book_filtered}")
 
-    print(f"\n[MEDI-IA] Total chunks: {len(all_chunks)}")
+    print(f"\n[MEDI-IA] Total chunks: {len(all_passages)}  |  Filtrados: {total_filtered}")
     print(f"[MEDI-IA] Generando embeddings... (puede tomar varios minutos)")
 
-    batch_size = 64
+    batch_size = 256
     all_embeddings = []
-    for i in range(0, len(all_chunks), batch_size):
-        batch = all_chunks[i:i + batch_size]
+    for i in range(0, len(all_passages), batch_size):
+        batch = all_passages[i:i + batch_size]
         embeddings = model.encode(batch, show_progress_bar=False, normalize_embeddings=True)
         all_embeddings.append(embeddings)
-        pct = min(100, int((i + batch_size) / len(all_chunks) * 100))
+        pct = min(100, int((i + batch_size) / len(all_passages) * 100))
         print(f"    Progreso: {pct}%", end="\r")
 
     print()

@@ -110,6 +110,29 @@
 
   .refresh-hint { font-size:11px; color:var(--text-3); display:flex; align-items:center; gap:5px; }
 
+  /* Dark mode */
+  [data-theme="dark"] {
+    --bg: #0c1221; --surface: #151f30; --surface-2: #111827;
+    --border: #1e2d42; --border-strong: #2d4060;
+    --text: #f1f5f9; --text-2: #94a3b8; --text-3: #506070; --text-4: #2d4060;
+    --emerald-light: rgba(16,185,129,0.12); --blue-light: rgba(59,130,246,0.12);
+    --amber-light: rgba(245,158,11,0.12); --red-light: rgba(239,68,68,0.12);
+    --purple-light: rgba(139,92,246,0.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+  }
+  [data-theme="dark"] .uptime-chip {
+    background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3);
+  }
+  body, .topbar, .stat-card, .chart-card, .feedback-card {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+  }
+  .theme-btn {
+    display:flex; align-items:center; padding:6px 8px;
+    border:1px solid var(--border-strong); border-radius:8px;
+    background:transparent; color:var(--text-3); cursor:pointer; transition:all 0.15s;
+  }
+  .theme-btn:hover { background:var(--surface-2); color:var(--text-2); }
+
   @media(max-width:640px) {
     .stat-grid { grid-template-columns:repeat(2,1fr); }
     .feedback-grid { grid-template-columns:1fr; }
@@ -126,12 +149,18 @@
     <span class="sep">/</span>
     <span>Métricas del sistema</span>
   </div>
-  <div style="display:flex;align-items:center;gap:12px">
+  <div style="display:flex;align-items:center;gap:10px">
     <span class="refresh-hint" id="refreshHint">
       <i data-lucide="refresh-cw" style="width:12px;height:12px"></i> Auto-refresh 30s
     </span>
+    <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">
+      <i data-lucide="moon" id="themeIcon" style="width:15px;height:15px;stroke-width:2"></i>
+    </button>
+    <a class="back-btn" href="/evaluate">
+      <i data-lucide="flask-conical" style="width:13px;height:13px"></i> Evaluación
+    </a>
     <a class="back-btn" href="/">
-      <i data-lucide="arrow-left" style="width:13px;height:13px"></i> Volver al chat
+      <i data-lucide="arrow-left" style="width:13px;height:13px"></i> Chat
     </a>
   </div>
 </div>
@@ -300,7 +329,27 @@ async function loadMetrics() {
   }
 }
 
+(function(){
+  const saved = localStorage.getItem('medi-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('medi-theme', next);
+  _syncThemeIcon(next);
+}
+function _syncThemeIcon(t) {
+  const icon = document.getElementById('themeIcon');
+  if (!icon) return;
+  icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
+  lucide.createIcons({ nodes: [icon] });
+}
+
 lucide.createIcons();
+_syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
 loadMetrics();
 setInterval(loadMetrics, 30_000);
 </script>

@@ -50,7 +50,7 @@ def _run_rag_fallback(sintomas: str) -> dict:
     from src.rag.section_mapping import enrich_chunks
     from src.rag.semantic_fallback import needs_fallback, fallback_response
 
-    candidates = retrieve(sintomas, top_k=10)
+    candidates = retrieve(sintomas, top_k=20)
     ranked = rerank(sintomas, candidates, top_k=5)
     enriched = enrich_chunks(ranked)
 
