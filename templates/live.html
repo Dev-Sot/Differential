@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEDI-IA · Live Dashboard</title>
+<style>
+  :root {
+    --bg:       #090e1a;
+    --surface:  #0f1629;
+    --surface2: #162036;
+    --border:   rgba(255,255,255,0.07);
+    --em:       #10b981;
+    --em-dim:   rgba(16,185,129,0.12);
+    --blue:     #3b82f6;
+    --amber:    #f59e0b;
+    --red:      #ef4444;
+    --text:     #e2e8f0;
+    --text-2:   #94a3b8;
+    --text-3:   #475569;
+    --shadow:   0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 52px;
+    background: rgba(15,22,41,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+  }
+  .live-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px; font-weight: 600; color: var(--em);
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--em);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(1.4); }
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .back-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 5px 12px;
+    font-size: 12px; color: var(--text-2); cursor: pointer; text-decoration: none;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  #lastUpdate { font-size: 11px; color: var(--text-3); }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 24px 28px 0;
+  }
+  .grid-wide {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    padding: 16px 28px;
+  }
+  .grid-bottom {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 0 28px 28px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+  }
+  .card-label {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 10px;
+  }
+  .card-value {
+    font-size: 36px; font-weight: 700;
+    color: var(--text); line-height: 1;
+  }
+  .card-sub {
+    font-size: 11.5px; color: var(--text-3); margin-top: 5px;
+  }
+  .card-value.green { color: var(--em); }
+  .card-value.blue  { color: #60a5fa; }
+  .card-value.amber { color: #fbbf24; }
+  .card-value.red   { color: #f87171; }
+
+  /* Sparkline / hourly bars */
+  .bar-chart {
+    display: flex; align-items: flex-end;
+    gap: 3px; height: 64px; margin-top: 12px;
+  }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .bar {
+    width: 100%;
+    background: rgba(16,185,129,0.35);
+    border-radius: 3px 3px 0 0;
+    transition: height 0.5s ease;
+    min-height: 2px;
+  }
+  .bar.current { background: var(--em); }
+  .bar-lbl { font-size: 8.5px; color: var(--text-3); white-space: nowrap; }
+
+  /* Feedback ring */
+  .ring-wrap {
+    display: flex; align-items: center; gap: 16px; margin-top: 8px;
+  }
+  .ring-svg { flex-shrink: 0; }
+  .ring-legend { display: flex; flex-direction: column; gap: 6px; }
+  .ring-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .ring-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Status list */
+  .status-list { display: flex; flex-direction: column; gap: 10px; }
+  .status-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px;
+  }
+  .status-key { color: var(--text-3); }
+  .status-val { color: var(--text); font-weight: 500; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .status-val.ok { color: var(--em); }
+  .status-val.warn { color: #fbbf24; }
+
+  /* Book ranking */
+  .book-list { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+  .book-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .book-rank { color: var(--text-3); width: 14px; text-align: right; font-size: 11px; }
+  .book-name { flex: 1; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .book-bar-wrap { width: 70px; height: 6px; background: var(--border); border-radius: 3px; }
+  .book-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .book-count { font-size: 11px; color: var(--text-3); width: 22px; text-align: right; }
+
+  /* Latency gauge */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; margin-top: 8px; gap: 4px; }
+  .gauge-num { font-size: 28px; font-weight: 700; }
+  .gauge-label { font-size: 11px; color: var(--text-3); }
+  .gauge-bar-wrap { width: 100%; height: 8px; background: var(--border); border-radius: 4px; margin-top: 4px; }
+  .gauge-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    MEDI-IA · Live Dashboard
+  </div>
+  <div class="topbar-right">
+    <span id="lastUpdate">Actualizando...</span>
+    <div class="live-pill"><div class="live-dot"></div> EN VIVO</div>
+    <a href="/" class="back-btn">← Volver al chat</a>
+  </div>
+</div>
+
+<!-- Fila 1: métricas rápidas -->
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Consultas última hora</div>
+    <div class="card-value green" id="q1h">—</div>
+    <div class="card-sub" id="q24h_sub">últimas 24h: —</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Latencia promedio</div>
+    <div class="card-value blue" id="avgLat">—</div>
+    <div class="card-sub" id="p95_sub">p95: — ms</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Uptime</div>
+    <div class="card-value" id="uptime">—</div>
+    <div class="card-sub" id="mode_sub">Modo: —</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Chunks indexados</div>
+    <div class="card-value amber" id="chunks">—</div>
+    <div class="card-sub" id="books_sub">— libros médicos</div>
+  </div>
+</div>
+
+<!-- Fila 2: gráfico horario + feedback -->
+<div class="grid-wide">
+  <div class="card">
+    <div class="card-label">Consultas por hora — últimas 24h</div>
+    <div class="bar-chart" id="hourlyChart"></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Satisfacción del usuario</div>
+    <div class="ring-wrap">
+      <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"/>
+        <circle id="ringPos" cx="40" cy="40" r="30" fill="none" stroke="#10b981" stroke-width="10"
+          stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round"
+          transform="rotate(-90 40 40)" style="transition:stroke-dashoffset 0.8s ease"/>
+        <text x="40" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="#e2e8f0" id="ringPct">—</text>
+      </svg>
+      <div class="ring-legend">
+        <div class="ring-item"><div class="ring-dot" style="background:#10b981"></div><span id="fbPos">👍 — positivos</span></div>
+        <div class="ring-item"><div class="ring-dot" style="background:#f87171"></div><span id="fbNeg">👎 — negativos</span></div>
+        <div class="ring-item"><div class="ring-dot" style="background:#475569"></div><span id="fbTotal">Total: —</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fila 3: libros más consultados + estado RAG + latencia gauge -->
+<div class="grid-bottom">
+  <div class="card">
+    <div class="card-label">Estado del sistema RAG</div>
+    <div class="status-list" id="statusList"></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Rendimiento de búsqueda (benchmark)</div>
+    <div class="book-list" id="benchList"></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Latencia p95</div>
+    <div class="gauge-wrap">
+      <div class="gauge-num" id="p95Val" style="color:#60a5fa">—</div>
+      <div class="gauge-label">ms (percentil 95)</div>
+      <div class="gauge-bar-wrap">
+        <div class="gauge-bar-fill" id="p95Bar" style="width:0%;background:linear-gradient(90deg,#10b981,#3b82f6)"></div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card-label">Errores sesión</div>
+      <div class="card-value red" id="errCount" style="font-size:28px">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BOOK_COLORS_LIVE = {
+  'Harrison':'#60a5fa','Oxford':'#34d399','Symptoms':'#a78bfa',
+  'Top 100':'#fbbf24','Tintinalli':'#f87171','Adams':'#22d3ee',
+  'Robbins':'#fb7185','Nelson':'#6ee7b7','Kaplan':'#c084fc',
+  'Williams':'#f472b6','Lange':'#fde047','ABC':'#2dd4bf',
+  'Infectious':'#818cf8','HARRISONS':'#60a5fa',
+};
+function bookColor(name) {
+  for (const [k,v] of Object.entries(BOOK_COLORS_LIVE)) {
+    if ((name||'').includes(k)) return v;
+  }
+  return '#94a3b8';
+}
+
+function fmtUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${s%60}s`;
+}
+function fmtTime() {
+  return new Date().toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+async function refresh() {
+  try {
+    const [mRes, hRes] = await Promise.all([
+      fetch('/api/metrics'), fetch('/api/health')
+    ]);
+    const m = await mRes.json();
+    const h = await hRes.json();
+
+    // Fila 1
+    document.getElementById('q1h').textContent = m.queries_last_1h ?? '0';
+    document.getElementById('q24h_sub').textContent = `últimas 24h: ${m.queries_last_24h ?? 0}`;
+    const lat = m.avg_latency_ms ?? 0;
+    document.getElementById('avgLat').textContent = lat ? `${lat}ms` : '—';
+    document.getElementById('p95_sub').textContent = `p95: ${m.p95_latency_ms ?? 0}ms`;
+    document.getElementById('uptime').textContent = fmtUptime(m.uptime_s ?? 0);
+    document.getElementById('mode_sub').textContent = `Modo: ${(h.modo||'—').split('(')[0].trim()}`;
+    document.getElementById('chunks').textContent = (h.chunks_indexados ?? 0).toLocaleString();
+    document.getElementById('books_sub').textContent = `${(h.libros||[]).length} libros médicos`;
+
+    // Gráfico horario
+    const hourly = m.hourly_last_24h || Array(24).fill(0);
+    const labels = m.hourly_labels || [];
+    const maxH = Math.max(...hourly, 1);
+    const chart = document.getElementById('hourlyChart');
+    chart.innerHTML = hourly.map((v, i) => {
+      const h_pct = Math.round((v / maxH) * 100);
+      const isCurrent = i === 23;
+      const lbl = labels[i] ? labels[i].replace(':00','') : '';
+      const showLbl = i % 4 === 0 || isCurrent;
+      return `<div class="bar-col">
+        <div class="bar${isCurrent?' current':''}" style="height:${Math.max(h_pct,2)}%" title="${v} consultas ${labels[i]||''}"></div>
+        <div class="bar-lbl">${showLbl ? lbl : ''}</div>
+      </div>`;
+    }).join('');
+
+    // Feedback ring
+    const total = m.feedback_total || 0;
+    const pos   = m.feedback_positive || 0;
+    const neg   = m.feedback_negative || 0;
+    const pct   = total > 0 ? Math.round((pos/total)*100) : 0;
+    const circumference = 2 * Math.PI * 30;
+    const offset = circumference * (1 - pct/100);
+    document.getElementById('ringPos').style.strokeDashoffset = offset;
+    document.getElementById('ringPct').textContent = total > 0 ? `${pct}%` : '—';
+    document.getElementById('fbPos').textContent = `👍 ${pos} positivos`;
+    document.getElementById('fbNeg').textContent = `👎 ${neg} negativos`;
+    document.getElementById('fbTotal').textContent = `Total: ${total}`;
+
+    // Estado RAG
+    const indexOk = h.indice_ok === true;
+    const chunks  = h.chunks_indexados || 0;
+    const modeStr = h.modo || '—';
+    const statusItems = [
+      { key: 'Índice FAISS', val: indexOk ? 'Cargado' : 'No disponible', ok: indexOk },
+      { key: 'Chunks',       val: chunks.toLocaleString(), ok: chunks > 0 },
+      { key: 'Libros',       val: `${(h.libros||[]).length} indexados`, ok: (h.libros||[]).length > 0 },
+      { key: 'HF Token',     val: h.hf_activo ? 'Activo' : 'Sin token', ok: h.hf_activo },
+      { key: 'Agente',       val: modeStr.split('(')[0].trim(), ok: modeStr.includes('ReAct') },
+    ];
+    document.getElementById('statusList').innerHTML = statusItems.map(i =>
+      `<div class="status-row">
+        <span class="status-key">${i.key}</span>
+        <span class="status-val ${i.ok?'ok':'warn'}">${i.val}</span>
+       </div>`
+    ).join('');
+
+    // Benchmark de métricas
+    const benchItems = [
+      { label: 'Recall@1',  val: 97.1, color: '#10b981' },
+      { label: 'Recall@3',  val: 100,  color: '#34d399' },
+      { label: 'Recall@5',  val: 100,  color: '#6ee7b7' },
+      { label: 'MRR',       val: 98.57,color: '#60a5fa' },
+      { label: 'Guardrails',val: 100,  color: '#a78bfa' },
+    ];
+    document.getElementById('benchList').innerHTML = benchItems.map((b,i) =>
+      `<div class="book-row">
+        <span class="book-rank">${i+1}</span>
+        <span class="book-name">${b.label}</span>
+        <div class="book-bar-wrap"><div class="book-bar-fill" style="width:${b.val}%;background:${b.color}"></div></div>
+        <span class="book-count" style="color:${b.color};font-weight:600">${b.val}%</span>
+       </div>`
+    ).join('');
+
+    // Gauge p95
+    const p95 = m.p95_latency_ms || 0;
+    document.getElementById('p95Val').textContent = p95 ? `${p95}ms` : '—';
+    const p95Pct = Math.min(100, (p95 / 10000) * 100);
+    document.getElementById('p95Bar').style.width = `${p95Pct}%`;
+    document.getElementById('p95Bar').style.background =
+      p95 < 3000 ? 'linear-gradient(90deg,#10b981,#34d399)' :
+      p95 < 6000 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
+                   'linear-gradient(90deg,#ef4444,#f87171)';
+    document.getElementById('errCount').textContent = m.error_count ?? 0;
+
+    document.getElementById('lastUpdate').textContent = `Actualizado: ${fmtTime()}`;
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = `Error al actualizar — ${fmtTime()}`;
+  }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

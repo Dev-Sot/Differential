@@ -657,6 +657,29 @@ def metrics_page():
     return render_template("metrics.html")
 
 
+@app.route("/live", methods=["GET"])
+@require_auth
+def live_page():
+    return render_template("live.html")
+
+
+@app.route("/manifest.json", methods=["GET"])
+def pwa_manifest():
+    return jsonify({
+        "name": "MEDI-IA",
+        "short_name": "MEDI-IA",
+        "description": "Asistente médico con diagnóstico diferencial — 14 libros médicos, RAG + ReAct",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#090e1a",
+        "theme_color": "#10b981",
+        "orientation": "portrait-primary",
+        "icons": [
+            {"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23090e1a'/><text y='72' x='50' text-anchor='middle' font-size='60'>🩺</text></svg>", "sizes": "any", "type": "image/svg+xml"}
+        ]
+    })
+
+
 @app.route("/api/feedback", methods=["POST"])
 @require_auth
 @limiter.limit("30 per minute")

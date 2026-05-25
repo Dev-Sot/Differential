@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10b981">
+<meta name="description" content="Asistente médico con diagnóstico diferencial basado en 14 libros médicos">
 <title>MEDI-IA — Asistente Médico Inteligente</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -339,6 +342,42 @@
     flex-shrink: 0;
   }
 
+  /* U2 — Query counter chip */
+  #queryCounterChip {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--em);
+    font-weight: 600;
+    animation: slideIn 0.2s ease;
+  }
+
+  /* U4 — Scroll to bottom button */
+  #scrollBottomBtn {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    transition: all 0.2s;
+    color: var(--text-2);
+  }
+  #scrollBottomBtn:hover { background: var(--em-dim); border-color: var(--border-em); color: var(--em); transform: translateY(-2px); }
+  #scrollBottomBtn.visible { display: flex; animation: slideIn 0.2s ease; }
+
   /* Chat zone */
   .chat-zone {
     flex: 1;
@@ -387,8 +426,17 @@
   .welcome h2 {
     font-size: 22px;
     font-weight: 700;
-    color: var(--text);
     letter-spacing: -0.4px;
+    background: linear-gradient(135deg, var(--em) 0%, #60a5fa 50%, var(--em) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: text-shimmer 4s linear infinite;
+  }
+  @keyframes text-shimmer {
+    0%   { background-position: 0%   center; }
+    100% { background-position: 200% center; }
   }
 
   .welcome p {
@@ -454,14 +502,123 @@
 
   .ex-chip .chip-icon { font-size: 14px; flex-shrink: 0; }
 
+  .demo-chip {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    min-height: 64px;
+    gap: 6px !important;
+  }
+  .demo-chip-top {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 500;
+    color: var(--text);
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .demo-chip .demo-badge { align-self: flex-end; }
+
+  .demo-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .demo-badge.emergencia { background: rgba(239,68,68,0.15); color: #f87171; }
+  .demo-badge.grave      { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .demo-badge.moderada   { background: rgba(250,204,21,0.15); color: #fbbf24; }
+  .demo-badge.farmacologia { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .demo-badge.leve       { background: rgba(52,211,153,0.15); color: #34d399; }
+
+  .chips-section-label {
+    grid-column: 1 / -1;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: -2px;
+    margin-top: 4px;
+  }
+
+  /* E3 — Onboarding overlay */
+  #onboardingOverlay {
+    position: fixed; inset: 0; z-index: 2000;
+    pointer-events: none;
+  }
+  #onboardingOverlay.active { pointer-events: all; }
+  .ob-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(2px);
+  }
+  .ob-spotlight {
+    position: absolute;
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
+    border: 2px solid var(--em);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+    animation: ob-glow 2s ease-in-out infinite;
+  }
+  @keyframes ob-glow {
+    0%,100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.65), 0 0 16px rgba(16,185,129,0.4); }
+    50%     { box-shadow: 0 0 0 9999px rgba(0,0,0,0.65), 0 0 28px rgba(16,185,129,0.7); }
+  }
+  .ob-tooltip {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border-em);
+    border-radius: 14px;
+    padding: 16px 18px;
+    width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease;
+  }
+  .ob-step   { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--em); margin-bottom: 6px; }
+  .ob-title  { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .ob-desc   { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin-bottom: 14px; }
+  .ob-actions { display: flex; align-items: center; justify-content: space-between; }
+  .ob-dots   { display: flex; gap: 5px; }
+  .ob-dot    { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); transition: background 0.2s; }
+  .ob-dot.active { background: var(--em); }
+  .ob-next   { background: var(--em); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter',sans-serif; transition: all 0.15s; }
+  .ob-next:hover { background: var(--emerald-dark); }
+  .ob-skip   { font-size: 11px; color: var(--text-3); cursor: pointer; background: none; border: none; font-family: 'Inter',sans-serif; }
+  .ob-skip:hover { color: var(--text-2); }
+
   /* Messages */
-  .msg { display: flex; gap: 12px; animation: slideIn 0.25s ease; }
+  .msg { display: flex; gap: 12px; animation: slideIn 0.3s cubic-bezier(0.16,1,0.3,1) both; }
   .msg.user { flex-direction: row-reverse; }
 
   @keyframes slideIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* V3 — Card reveal animation */
+  .msg:not(.user) .ai-card {
+    animation: cardReveal 0.35s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes cardReveal {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);     }
+  }
+
+  /* V4 — Response time badge */
+  .resp-time {
+    margin-left: auto;
+    font-size: 10.5px;
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .resp-time svg { opacity: 0.6; }
 
   .av {
     width: 34px;
@@ -829,6 +986,41 @@
   @keyframes bounce {
     0%,60%,100% { transform: translateY(0); opacity: 0.4; }
     30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* V1 — Typing cursor */
+  .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 0.85em;
+    background: var(--emerald);
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    border-radius: 1px;
+    animation: cursor-blink 0.75s step-end infinite;
+  }
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  /* V2 — Progress bar */
+  #progressBar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--emerald), #60a5fa, var(--emerald));
+    background-size: 200% 100%;
+    z-index: 9999;
+    opacity: 0;
+    border-radius: 0 2px 2px 0;
+    animation: progress-shimmer 1.5s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes progress-shimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
   }
 
   /* Emergency bar */
@@ -1725,6 +1917,26 @@
 </style>
 </head>
 <body>
+<div id="progressBar"></div>
+<div id="onboardingOverlay">
+  <div class="ob-backdrop" id="obBackdrop" onclick="skipOnboarding()"></div>
+  <div class="ob-spotlight" id="obSpotlight"></div>
+  <div class="ob-tooltip" id="obTooltip">
+    <div class="ob-step" id="obStep">Paso 1 de 3</div>
+    <div class="ob-title" id="obTitle"></div>
+    <div class="ob-desc" id="obDesc"></div>
+    <div class="ob-actions">
+      <div class="ob-dots" id="obDots"></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="ob-skip" onclick="skipOnboarding()">Saltar</button>
+        <button class="ob-next" id="obNext" onclick="nextOnboardingStep()">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="scrollBottomBtn" onclick="chatZone.scrollTo({top:chatZone.scrollHeight,behavior:'smooth'})" title="Ir al final">
+  <i data-lucide="arrow-down" style="width:16px;height:16px;stroke-width:2.5"></i>
+</button>
 
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar">
@@ -1746,6 +1958,9 @@
     </button>
     <button class="sidebar-btn" onclick="window.location.href='/metrics'">
       <i data-lucide="bar-chart-2" style="width:15px;height:15px;stroke-width:2"></i> Métricas
+    </button>
+    <button class="sidebar-btn" onclick="window.location.href='/live'">
+      <i data-lucide="radio" style="width:15px;height:15px;stroke-width:2"></i> Live Dashboard
     </button>
     <button class="sidebar-btn" onclick="window.location.href='/evaluate'">
       <i data-lucide="flask-conical" style="width:15px;height:15px;stroke-width:2"></i> Evaluación RAG
@@ -1815,6 +2030,10 @@
         <span class="topbar-live"></span>
         RAG · <span id="topbarLibros">14</span> libros
       </div>
+      <div id="queryCounterChip">
+        <i data-lucide="hash" style="width:11px;height:11px;stroke-width:2.5"></i>
+        Consulta <span id="queryNum">1</span>
+      </div>
       <button class="tts-global-btn" id="ttsGlobalBtn" onclick="toggleTTSGlobal()" title="Modo manos libres — leer respuestas automáticamente">
         <i data-lucide="volume-2" id="ttsGlobalIcon" style="width:15px;height:15px;stroke-width:2"></i>
       </button>
@@ -1838,12 +2057,31 @@
         <span id="welcomeBadgeText">136K chunks · e5-base · BM25+RRF · Recall@1 97.1%</span>
       </div>
       <div class="chips-grid">
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="brain" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor de cabeza intenso con náuseas</button>
-        <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="eye" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Picazón en los ojos y estornudos</button>
+        <div class="chips-section-label">Casos reales del benchmark — click para ejecutar</div>
+        <button class="ex-chip demo-chip" data-query="dolor en el pecho que se irradia al brazo izquierdo con sudoracion fria y nauseas" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor torácico al brazo</div>
+          <span class="demo-badge emergencia">emergencia</span>
+        </button>
+        <button class="ex-chip demo-chip" data-query="fiebre alta con rigidez de nuca y fotofobia en adulto joven" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="brain" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre + rigidez de nuca</div>
+          <span class="demo-badge emergencia">emergencia</span>
+        </button>
+        <button class="ex-chip demo-chip" data-query="dolor abdominal en fosa iliaca derecha con fiebre nauseas y vomito de 12 horas de evolucion" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="activity" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Abdomen agudo FID 12h</div>
+          <span class="demo-badge grave">grave</span>
+        </button>
+        <button class="ex-chip demo-chip" data-query="artralgia poliarticular con exantema malar en alas de mariposa fiebre y alopecia en mujer joven" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="scan" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Exantema malar + artralgia</div>
+          <span class="demo-badge moderada">moderada</span>
+        </button>
+        <button class="ex-chip demo-chip" data-query="antibiotico de eleccion para neumonia adquirida en la comunidad en paciente ambulatorio" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="pill" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Antibiótico para NAC</div>
+          <span class="demo-badge farmacologia">farmacología</span>
+        </button>
+        <button class="ex-chip demo-chip" data-query="cual es la fisiopatologia de la insuficiencia cardiaca y el papel del sistema renina angiotensina" onclick="runDemo(this)">
+          <div class="demo-chip-top"><i data-lucide="book-open" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fisiopatología ICC + RAAS</div>
+          <span class="demo-badge leve">fisiopatología</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1990,13 +2228,63 @@
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
 <script>
-const chatZone = document.getElementById('chatZone');
-const userInput = document.getElementById('userInput');
-const sendBtn   = document.getElementById('sendBtn');
+const chatZone     = document.getElementById('chatZone');
+const userInput    = document.getElementById('userInput');
+const sendBtn      = document.getElementById('sendBtn');
 const emergencyBar = document.getElementById('emergencyBar');
+const progressBar  = document.getElementById('progressBar');
 let isFirstMsg = true;
 let loading = false;
 let currentFollowupId = null;
+let _progressTimer = null;
+let _queryStartTime = null;
+let _queryCount = 0;
+
+// V2 — Progress bar
+function startProgress() {
+  clearTimeout(_progressTimer);
+  progressBar.style.transition = 'none';
+  progressBar.style.width = '0';
+  progressBar.style.opacity = '1';
+  requestAnimationFrame(() => {
+    progressBar.style.transition = 'width 8s cubic-bezier(0.05,0.8,0.4,1)';
+    progressBar.style.width = '82%';
+  });
+}
+function finishProgress() {
+  clearTimeout(_progressTimer);
+  progressBar.style.transition = 'width 0.25s ease';
+  progressBar.style.width = '100%';
+  _progressTimer = setTimeout(() => {
+    progressBar.style.transition = 'opacity 0.4s ease';
+    progressBar.style.opacity = '0';
+    setTimeout(() => { progressBar.style.transition = 'none'; progressBar.style.width = '0'; }, 450);
+  }, 280);
+}
+
+// V5 — Book colors
+const BOOK_COLORS = {
+  'Harrison':   { bg:'rgba(59,130,246,0.18)',  color:'#60a5fa',  border:'rgba(59,130,246,0.35)'  },
+  'Oxford':     { bg:'rgba(16,185,129,0.18)',  color:'#34d399',  border:'rgba(16,185,129,0.35)'  },
+  'Symptoms':   { bg:'rgba(139,92,246,0.18)',  color:'#a78bfa',  border:'rgba(139,92,246,0.35)'  },
+  'Top 100':    { bg:'rgba(245,158,11,0.18)',  color:'#fbbf24',  border:'rgba(245,158,11,0.35)'  },
+  'Tintinalli': { bg:'rgba(239,68,68,0.18)',   color:'#f87171',  border:'rgba(239,68,68,0.35)'   },
+  'Adams':      { bg:'rgba(6,182,212,0.18)',   color:'#22d3ee',  border:'rgba(6,182,212,0.35)'   },
+  'Robbins':    { bg:'rgba(251,113,133,0.18)', color:'#fb7185',  border:'rgba(251,113,133,0.35)' },
+  'Nelson':     { bg:'rgba(52,211,153,0.18)',  color:'#6ee7b7',  border:'rgba(52,211,153,0.35)'  },
+  'Kaplan':     { bg:'rgba(168,85,247,0.18)',  color:'#c084fc',  border:'rgba(168,85,247,0.35)'  },
+  'Williams':   { bg:'rgba(236,72,153,0.18)',  color:'#f472b6',  border:'rgba(236,72,153,0.35)'  },
+  'Lange':      { bg:'rgba(234,179,8,0.18)',   color:'#fde047',  border:'rgba(234,179,8,0.35)'   },
+  'ABC':        { bg:'rgba(20,184,166,0.18)',  color:'#2dd4bf',  border:'rgba(20,184,166,0.35)'  },
+  'Infectious': { bg:'rgba(99,102,241,0.18)',  color:'#818cf8',  border:'rgba(99,102,241,0.35)'  },
+  'HARRISONS':  { bg:'rgba(59,130,246,0.18)',  color:'#60a5fa',  border:'rgba(59,130,246,0.35)'  },
+};
+function getBookColor(name) {
+  for (const [k, v] of Object.entries(BOOK_COLORS)) {
+    if ((name || '').includes(k)) return v;
+  }
+  return { bg:'rgba(100,116,139,0.15)', color:'#94a3b8', border:'rgba(100,116,139,0.3)' };
+}
 
 // Auto-resize textarea
 userInput.addEventListener('input', () => {
@@ -2008,12 +2296,36 @@ userInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
+// U3 — Escape key handler
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const drawer = document.getElementById('bodyDrawer');
+  if (drawer?.classList.contains('open')) { closeBodyDrawer(); return; }
+  const modal = document.getElementById('profileModal');
+  if (modal?.style.display && modal.style.display !== 'none') { closeProfileModal(); return; }
+  if (document.getElementById('onboardingOverlay')?.classList.contains('active')) { skipOnboarding(); return; }
+  userInput.blur();
+});
+
+// U4 — Scroll-to-bottom visibility
+const scrollBtn = document.getElementById('scrollBottomBtn');
+chatZone.addEventListener('scroll', () => {
+  const distFromBottom = chatZone.scrollHeight - chatZone.scrollTop - chatZone.clientHeight;
+  scrollBtn?.classList.toggle('visible', distFromBottom > 200);
+});
+lucide.createIcons({ nodes: [scrollBtn] });
+
 function fillEx(btn) {
-  // Obtener solo el texto, ignorando el elemento icon
   const clone = btn.cloneNode(true);
-  clone.querySelectorAll('.chip-icon, i, svg').forEach(el => el.remove());
+  clone.querySelectorAll('.chip-icon, i, svg, .demo-badge').forEach(el => el.remove());
   userInput.value = clone.textContent.trim();
   userInput.focus();
+}
+
+function runDemo(btn) {
+  const query = btn.dataset.query || btn.textContent.trim();
+  userInput.value = query;
+  sendMessage();
 }
 
 async function sendMessage() {
@@ -2027,10 +2339,23 @@ async function sendMessage() {
     isFirstMsg = false;
   }
 
+  // E4 — Auto TTS demo mode
+  if (msg.toLowerCase().includes('demo')) {
+    _ttsEnabled = true;
+    _syncTTSGlobalBtn();
+  }
+
+  _queryStartTime = Date.now();
+  _queryCount++;
+  const qChip = document.getElementById('queryCounterChip');
+  const qNum  = document.getElementById('queryNum');
+  if (qChip && qNum) { qNum.textContent = _queryCount; qChip.style.display = 'flex'; lucide.createIcons({ nodes: [qChip] }); }
+
   addUserMsg(msg);
   userInput.value = '';
   userInput.style.height = 'auto';
   setLoading(true);
+  startProgress();
   stopSpeaking();
   emergencyBar.classList.remove('show');
 
@@ -2129,6 +2454,7 @@ async function sendMessage() {
     addError('Error de conexión. Intenta de nuevo.');
   } finally {
     setLoading(false);
+    finishProgress();
   }
 }
 
@@ -2175,6 +2501,11 @@ function addStreamCard() {
     </div>`;
   chatZone.appendChild(d);
   lucide.createIcons();
+  const body = document.getElementById(id + '_body');
+  const cur = document.createElement('span');
+  cur.className = 'typing-cursor';
+  cur.id = id + '_cursor';
+  body.appendChild(cur);
   scrollDown();
   return id;
 }
@@ -2182,7 +2513,8 @@ function addStreamCard() {
 function appendToken(id, token) {
   const body = document.getElementById(id + '_body');
   if (!body) return;
-  body.textContent += token;
+  const cur = document.getElementById(id + '_cursor');
+  body.insertBefore(document.createTextNode(token), cur || null);
   if (chatZone.scrollHeight - chatZone.scrollTop - chatZone.clientHeight < 120) {
     chatZone.scrollTop = chatZone.scrollHeight;
   }
@@ -2220,7 +2552,11 @@ function addAICard(data) {
     ? `<div class="details-section">
         <div class="details-label">Fuentes bibliográficas</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          ${srcs.map(f => `<span class="src-chip">${esc(f.split(' ').slice(0,3).join(' '))}</span>`).join('')}
+          ${srcs.map(f => {
+            const bc = getBookColor(f);
+            const label = f.split(' ').slice(0,3).join(' ');
+            return `<span class="src-chip" style="background:${bc.bg};color:${bc.color};border-color:${bc.border};">${esc(label)}</span>`;
+          }).join('')}
         </div>
        </div>`
     : '';
@@ -2266,7 +2602,7 @@ function addAICard(data) {
           return `<div class="rag-chunk">
             <div class="rag-chunk-hdr">
               <span class="rag-rank">#${c.rank}</span>
-              <span class="rag-book">${esc(bookShort)}</span>
+              <span class="rag-book" style="color:${getBookColor(c.book||'').color}">${esc(bookShort)}</span>
               <span class="rag-page">p.${c.page}</span>
               <div class="rag-scores">
                 <span class="rag-slabel">FAISS</span>
@@ -2312,6 +2648,7 @@ function addAICard(data) {
       <div class="card-foot">
         <button class="export-btn" id="${exportBtnId}"><i data-lucide="download" style="width:12px;height:12px"></i> PDF</button>
         <button class="copy-btn" id="${copyBtnId}"><i data-lucide="copy" style="width:12px;height:12px"></i> Copiar</button>
+        ${_queryStartTime ? `<span class="resp-time"><i data-lucide="zap" style="width:10px;height:10px;stroke-width:2.5"></i>${((Date.now()-_queryStartTime)/1000).toFixed(1)}s</span>` : ''}
         <button class="tts-card-btn" id="${ttsBtnId}" title="Escuchar respuesta"><i data-lucide="volume-2" style="width:12px;height:12px"></i> Escuchar</button>
         ${chunks.length ? `<button class="pipeline-btn" id="${pipelineBtnId}"><i data-lucide="git-branch" style="width:12px;height:12px"></i> Ver pipeline <span class="arrow">▼</span></button>` : ''}
         ${hasDetails
@@ -2421,10 +2758,31 @@ function resetSession() {
     <h2>Nueva consulta</h2>
     <p>Sesión reiniciada. Describe tus síntomas para comenzar.</p>
     <div class="chips-grid">
-      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
-      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
-      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="wind" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Tos con flema y dificultad respiratoria</button>
-      <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="droplets" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Ardor al orinar y micción frecuente</button>
+      <div class="chips-section-label">Casos reales del benchmark — click para ejecutar</div>
+      <button class="ex-chip demo-chip" data-query="dolor en el pecho que se irradia al brazo izquierdo con sudoracion fria y nauseas" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor torácico al brazo</div>
+        <span class="demo-badge emergencia">emergencia</span>
+      </button>
+      <button class="ex-chip demo-chip" data-query="fiebre alta con rigidez de nuca y fotofobia en adulto joven" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="brain" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre + rigidez de nuca</div>
+        <span class="demo-badge emergencia">emergencia</span>
+      </button>
+      <button class="ex-chip demo-chip" data-query="dolor abdominal en fosa iliaca derecha con fiebre nauseas y vomito de 12 horas de evolucion" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="activity" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Abdomen agudo FID 12h</div>
+        <span class="demo-badge grave">grave</span>
+      </button>
+      <button class="ex-chip demo-chip" data-query="artralgia poliarticular con exantema malar en alas de mariposa fiebre y alopecia en mujer joven" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="scan" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Exantema malar + artralgia</div>
+        <span class="demo-badge moderada">moderada</span>
+      </button>
+      <button class="ex-chip demo-chip" data-query="antibiotico de eleccion para neumonia adquirida en la comunidad en paciente ambulatorio" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="pill" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Antibiótico para NAC</div>
+        <span class="demo-badge farmacologia">farmacología</span>
+      </button>
+      <button class="ex-chip demo-chip" data-query="cual es la fisiopatologia de la insuficiencia cardiaca y el papel del sistema renina angiotensina" onclick="runDemo(this)">
+        <div class="demo-chip-top"><i data-lucide="book-open" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fisiopatología ICC + RAAS</div>
+        <span class="demo-badge leve">fisiopatología</span>
+      </button>
     </div>`;
   lucide.createIcons();
   chatZone.appendChild(w);
@@ -2483,32 +2841,38 @@ function fmt(text) {
     .split('\n\n').map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
 
-// ── Follow-up chips ──────────────────────────────────────────────────────────
-const FOLLOWUP_POOL = {
-  leve:       ['¿Puedo tratarme en casa?', '¿Cuánto tiempo suele durar?', '¿Qué medicamentos de venta libre ayudan?', '¿Debo hacer reposo?'],
-  moderada:   ['¿Qué exámenes pueden solicitarme?', '¿Cuándo debo ir al médico?', '¿Empeora si no lo trato?', '¿Puede haber complicaciones?'],
-  grave:      ['¿Cuáles son las señales de alarma?', '¿Debo ir a urgencias hoy?', '¿Qué tratamiento suelen dar?', '¿Puede empeorar rápido?'],
-  emergencia: ['¿Qué hacer mientras llega la ayuda?', '¿Qué información dar al médico?', '¿Qué NO debo hacer?'],
-};
+// ── Follow-up chips contextuales ─────────────────────────────────────────────
+function _followupQuestions(data) {
+  const c = data.condicion_principal || 'esta condición';
+  const sev = data.gravedad || 'moderada';
+  const base = [
+    `¿Cuál es el tratamiento de primera línea para ${c}?`,
+    `¿Qué exámenes diagnósticos se solicitan en ${c}?`,
+  ];
+  const byGravedad = {
+    leve:       `¿Puedo manejar ${c} en casa o necesito consulta?`,
+    moderada:   `¿Cuáles son las complicaciones posibles de ${c}?`,
+    grave:      `¿Cuáles son los criterios de hospitalización para ${c}?`,
+    emergencia: `¿Qué hacer mientras llega ayuda médica en ${c}?`,
+  };
+  return [...base, byGravedad[sev] || byGravedad.moderada];
+}
 
 function addFollowupChips(data) {
   if (currentFollowupId) removeEl(currentFollowupId);
-  const pool = FOLLOWUP_POOL[data.gravedad] || FOLLOWUP_POOL.moderada;
-  const picks = pool.slice(0, 3);
+  const picks = _followupQuestions(data);
   const id = 'followup_' + Date.now();
   const d = document.createElement('div');
   d.id = id;
   d.className = 'followup-row';
   d.innerHTML = picks.map(q =>
-    `<button class="followup-chip">${esc(q)}</button>`
+    `<button class="followup-chip" data-query="${esc(q)}">${esc(q)}</button>`
   ).join('');
   chatZone.appendChild(d);
   d.querySelectorAll('.followup-chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      userInput.value = btn.textContent;
-      userInput.style.height = 'auto';
-      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
-      userInput.focus();
+      userInput.value = btn.dataset.query || btn.textContent;
+      sendMessage();
     });
   });
   currentFollowupId = id;
@@ -3328,6 +3692,82 @@ initProfileModal();
 renderHistory();
 loadHealthStatus();
 checkProfileOnLoad();
+
+// ── E3 — Onboarding de 3 pasos ────────────────────────────────────────────────
+const OB_STEPS = [
+  {
+    targetId: 'userInput',
+    title: 'Describe tus síntomas',
+    desc: 'Escribe con detalle lo que sientes. Cuanto más información des, más preciso será el diagnóstico diferencial.',
+  },
+  {
+    targetId: 'zoneBtn',
+    title: 'Marca la zona de dolor',
+    desc: 'Usa el mapa corporal SVG para indicar exactamente dónde sientes el dolor. El agente lo tendrá en cuenta.',
+  },
+  {
+    targetId: 'ttsGlobalBtn',
+    title: 'Modo manos libres',
+    desc: 'Activa el TTS neural para que MEDI-IA te lea las respuestas como un médico. Ideal para la consulta.',
+  },
+];
+let _obStep = 0;
+
+function _positionOBTooltip(targetRect) {
+  const tip  = document.getElementById('obTooltip');
+  const spot = document.getElementById('obSpotlight');
+  const pad  = 10;
+  spot.style.left   = (targetRect.left   - pad) + 'px';
+  spot.style.top    = (targetRect.top    - pad) + 'px';
+  spot.style.width  = (targetRect.width  + pad*2) + 'px';
+  spot.style.height = (targetRect.height + pad*2) + 'px';
+
+  const tipW = 270, tipH = 160;
+  let tx = targetRect.left;
+  let ty = targetRect.bottom + 16;
+  if (ty + tipH > window.innerHeight) ty = targetRect.top - tipH - 16;
+  if (tx + tipW > window.innerWidth)  tx = window.innerWidth - tipW - 12;
+  tip.style.left = Math.max(8, tx) + 'px';
+  tip.style.top  = ty + 'px';
+}
+
+function _showOBStep(idx) {
+  const step = OB_STEPS[idx];
+  const el   = document.getElementById(step.targetId);
+  if (!el) { nextOnboardingStep(); return; }
+  const rect = el.getBoundingClientRect();
+  document.getElementById('obStep').textContent  = `Paso ${idx+1} de ${OB_STEPS.length}`;
+  document.getElementById('obTitle').textContent = step.title;
+  document.getElementById('obDesc').textContent  = step.desc;
+  document.getElementById('obNext').textContent  = idx < OB_STEPS.length-1 ? 'Siguiente →' : 'Empezar';
+  const dots = document.getElementById('obDots');
+  dots.innerHTML = OB_STEPS.map((_,i) => `<div class="ob-dot${i===idx?' active':''}"></div>`).join('');
+  _positionOBTooltip(rect);
+}
+
+function nextOnboardingStep() {
+  if (_obStep >= OB_STEPS.length - 1) { skipOnboarding(); return; }
+  _obStep++;
+  _showOBStep(_obStep);
+}
+
+function skipOnboarding() {
+  const ov = document.getElementById('onboardingOverlay');
+  ov.classList.remove('active');
+  ov.style.display = 'none';
+  localStorage.setItem('medi-onboarding-done', '1');
+}
+
+function initOnboarding() {
+  if (localStorage.getItem('medi-onboarding-done')) return;
+  const ov = document.getElementById('onboardingOverlay');
+  ov.style.display = 'block';
+  ov.classList.add('active');
+  _obStep = 0;
+  _showOBStep(0);
+}
+
+setTimeout(initOnboarding, 800);
 </script>
 </body>
 </html>
