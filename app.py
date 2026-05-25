@@ -72,6 +72,7 @@ def _start_cleanup_cron() -> None:
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 
 @app.before_request
