@@ -241,6 +241,27 @@
   .export-conv-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
   .export-conv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .profile-sidebar-btn {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 8px;
+    color: var(--em);
+    font-size: 12.5px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+  .profile-sidebar-btn:hover {
+    background: rgba(16,185,129,0.18);
+    border-color: rgba(16,185,129,0.35);
+  }
+
   /* ========= MAIN ========= */
   .main {
     flex: 1;
@@ -1164,10 +1185,10 @@
   }
   .profile-chip-wrap:focus-within { border-color: var(--border-em); }
   .profile-chip {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px 2px 10px;
+    gap: 5px;
+    padding: 3px 6px 3px 10px;
     background: var(--em-dim);
     border: 1px solid var(--border-em);
     border-radius: 12px;
@@ -1176,8 +1197,11 @@
     white-space: nowrap;
   }
   .profile-chip button {
-    background: none; border: none; cursor: pointer;
-    color: var(--em); font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; flex-shrink: 0;
+    background: rgba(16,185,129,0.15); border: none; cursor: pointer;
+    color: var(--em); font-size: 11px; line-height: 1;
+    padding: 0; border-radius: 50%; opacity: 0.75; transition: opacity 0.15s;
   }
   .profile-chip button:hover { opacity: 1; }
   .profile-chip-input {
@@ -1191,6 +1215,8 @@
     outline: none;
   }
   .profile-chip-hint { font-size: 10.5px; color: var(--text-4); margin-top: 4px; }
+  /* Los div de chips deben ser transparentes al layout flex del wrap */
+  #profileAlergiaChips, #profileMedChips, #profileCondChips { display: contents; }
   .profile-toggle-row {
     display: flex;
     align-items: center;
@@ -1252,6 +1278,15 @@
     transition: opacity 0.15s;
   }
   .profile-btn-save:hover { opacity: 0.88; }
+  .profile-modal { position: relative; }
+  .profile-close-x {
+    position: absolute; top: 14px; right: 14px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); padding: 4px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .profile-close-x:hover { background: var(--surface-2); color: var(--text-2); }
 
   /* ===== PIPELINE RAG VIZ ===== */
   .pipeline-btn {
@@ -1407,14 +1442,17 @@
   }
   .body-marked-chips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; }
   .body-zone-chip {
-    display: flex; align-items: center; gap: 4px;
-    padding: 2px 8px 2px 10px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 6px 3px 10px;
     background: rgba(6,182,212,0.10); border: 1px solid rgba(6,182,212,0.25);
-    border-radius: 12px; font-size: 11px; color: #22d3ee;
+    border-radius: 12px; font-size: 11.5px; color: #22d3ee;
   }
   .body-zone-chip button {
-    background: none; border: none; cursor: pointer;
-    color: #22d3ee; font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; flex-shrink: 0;
+    background: rgba(6,182,212,0.15); border: none; cursor: pointer;
+    color: #22d3ee; font-size: 11px; line-height: 1;
+    padding: 0; border-radius: 50%; opacity: 0.75; transition: opacity 0.15s;
   }
   .body-zone-chip button:hover { opacity: 1; }
   .body-no-zones { font-size: 11.5px; color: var(--text-4); font-style: italic; }
@@ -1429,14 +1467,17 @@
   .zone-chips-bar { display: none; gap: 6px; flex-wrap: wrap; padding: 0 14px 8px; }
   .zone-chips-bar.visible { display: flex; }
   .zone-chip-tag {
-    display: flex; align-items: center; gap: 4px;
-    padding: 3px 8px 3px 10px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 6px 3px 10px;
     background: rgba(6,182,212,0.10); border: 1px solid rgba(6,182,212,0.25);
     border-radius: 12px; font-size: 11.5px; color: #22d3ee;
   }
   .zone-chip-tag button {
-    background: none; border: none; cursor: pointer;
-    color: #22d3ee; font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; flex-shrink: 0;
+    background: rgba(6,182,212,0.15); border: none; cursor: pointer;
+    color: #22d3ee; font-size: 11px; line-height: 1;
+    padding: 0; border-radius: 50%; opacity: 0.75; transition: opacity 0.15s;
   }
   .zone-chip-tag button:hover { opacity: 1; }
 
@@ -1586,15 +1627,19 @@
   .hist-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; margin-bottom: 6px; }
   .hist-clear { font-size: 11px; background: transparent; border: none; color: var(--text-3); cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
   .hist-clear:hover { color: var(--red); }
-  .hist-item-wrap { display: flex; align-items: center; gap: 2px; }
-  .hist-item-wrap .hist-item { flex: 1; }
+  .hist-item-wrap { display: flex; align-items: center; padding-right: 4px; }
+  .hist-item-wrap .hist-item { flex: 1; min-width: 0; }
   .hist-del {
-    flex-shrink: 0; background: none; border: none; cursor: pointer;
-    color: var(--text-4); font-size: 13px; padding: 4px 5px;
-    border-radius: 4px; line-height: 1; transition: color 0.15s; opacity: 0;
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-4); font-size: 12px;
+    border-radius: 5px; transition: color 0.15s, background 0.15s;
+    opacity: 0; margin-left: 4px;
   }
   .hist-item-wrap:hover .hist-del { opacity: 1; }
-  .hist-del:hover { color: var(--red); }
+  .hist-del:hover { color: var(--red); background: rgba(239,68,68,0.10); }
 
   /* Follow-up suggestion chips */
   .followup-row {
@@ -1739,8 +1784,9 @@
     <button class="export-conv-btn" id="exportConvBtn" onclick="exportConversation(this)">
       <i data-lucide="file-text" style="width:13px;height:13px"></i> Exportar sesión
     </button>
-    <button class="sidebar-btn" onclick="openProfileModal()" style="justify-content:flex-start;gap:8px;">
-      <i data-lucide="user-circle" style="width:14px;height:14px;stroke-width:2"></i> Mi perfil clínico
+    <button class="profile-sidebar-btn" onclick="openProfileModal()">
+      <i data-lucide="user-circle" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i>
+      <span>Mi perfil clínico</span>
     </button>
     <button class="reset-btn" onclick="resetSession()">
       <i data-lucide="rotate-ccw" style="width:13px;height:13px"></i> Nueva consulta
@@ -1833,6 +1879,9 @@
 <!-- ===== MODAL PERFIL CLÍNICO ===== -->
 <div class="profile-overlay" id="profileOverlay">
   <div class="profile-modal">
+    <button class="profile-close-x" onclick="closeProfileModal()" title="Cerrar">
+      <i data-lucide="x" style="width:16px;height:16px;stroke-width:2"></i>
+    </button>
     <h3><i data-lucide="user-circle" style="width:16px;height:16px;display:inline;vertical-align:-2px;margin-right:6px;color:var(--em)"></i>Perfil clínico</h3>
     <p class="profile-subtitle">Información opcional que mejora la precisión del diagnóstico diferencial.</p>
     <div style="display:flex;gap:12px;margin-bottom:16px;">
