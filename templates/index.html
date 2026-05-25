@@ -1586,6 +1586,15 @@
   .hist-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; margin-bottom: 6px; }
   .hist-clear { font-size: 11px; background: transparent; border: none; color: var(--text-3); cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; line-height: 1; }
   .hist-clear:hover { color: var(--red); }
+  .hist-item-wrap { display: flex; align-items: center; gap: 2px; }
+  .hist-item-wrap .hist-item { flex: 1; }
+  .hist-del {
+    flex-shrink: 0; background: none; border: none; cursor: pointer;
+    color: var(--text-4); font-size: 13px; padding: 4px 5px;
+    border-radius: 4px; line-height: 1; transition: color 0.15s; opacity: 0;
+  }
+  .hist-item-wrap:hover .hist-del { opacity: 1; }
+  .hist-del:hover { color: var(--red); }
 
   /* Follow-up suggestion chips */
   .followup-row {
@@ -2036,13 +2045,24 @@ async function sendMessage() {
           if (streamCardId) removeEl(streamCardId);
           else removeEl(typId);
           const cardData = { ...event, query: msg };
+          // Iniciar fetch TTS ANTES de renderizar la card para ganar ~300ms
+          let ttsFetchPromise = null;
+          if (_ttsEnabled) {
+            const ttsText = _buildDoctorScript(cardData);
+            if (ttsText) {
+              ttsFetchPromise = fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: ttsText, voice: 'es-ES-AlvaroNeural' })
+              });
+            }
+          }
           addAICard(cardData);
           if (event.gravedad === 'emergencia') emergencyBar.classList.add('show');
-          if (_ttsEnabled) {
-            setTimeout(() => {
-              const lastTtsBtn = [...document.querySelectorAll('.tts-card-btn')].at(-1);
-              speakResponse(cardData, lastTtsBtn?.id || null);
-            }, 300);
+          if (ttsFetchPromise) {
+            stopSpeaking();
+            const lastTtsBtn = [...document.querySelectorAll('.tts-card-btn')].at(-1);
+            _playFromFetch(ttsFetchPromise, lastTtsBtn || null);
           }
         } else if (event.type === 'error') {
           removeEl(typId);
@@ -2282,7 +2302,7 @@ function addAICard(data) {
   document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
   document.getElementById(feedbackId + '_up')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, 1));
   document.getElementById(feedbackId + '_dn')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, -1));
-  saveToHistory(data.query, data.condicion_principal);
+  saveToHistory(data.query, data);
   addFollowupChips(data);
   scrollDown();
 }
@@ -2539,10 +2559,21 @@ function copyResponse(data, btn) {
 const HISTORY_KEY = 'medi-history';
 const MAX_HISTORY = 15;
 
-function saveToHistory(query, condition) {
+function saveToHistory(query, data) {
   if (!query) return;
+  const compact = {
+    id: Date.now(), ts: Date.now(),
+    query,
+    condition:      data.condicion_principal || '',
+    respuesta:      data.respuesta            || '',
+    recomendacion:  data.recomendacion        || '',
+    gravedad:       data.gravedad             || 'moderada',
+    gravedad_label: data.gravedad_label       || '',
+    confianza:      data.confianza            || 0,
+    modo:           data.modo                || '',
+  };
   const hist = getHistory();
-  hist.unshift({ id: Date.now(), query, condition: condition || '', ts: Date.now() });
+  hist.unshift(compact);
   if (hist.length > MAX_HISTORY) hist.length = MAX_HISTORY;
   localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
   renderHistory();
@@ -2557,6 +2588,12 @@ function clearHistory() {
   renderHistory();
 }
 
+function deleteHistoryItem(id) {
+  const hist = getHistory().filter(h => h.id !== id);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
+  renderHistory();
+}
+
 function renderHistory() {
   const hist = getHistory();
   const sec  = document.getElementById('historySec');
@@ -2565,13 +2602,16 @@ function renderHistory() {
   if (!hist.length) { sec.style.display = 'none'; return; }
   sec.style.display = '';
   list.innerHTML = hist.map(h => `
-    <button class="hist-item" data-hid="${h.id}">
-      <i data-lucide="clock" style="width:11px;height:11px;opacity:0.45;flex-shrink:0;margin-top:3px"></i>
-      <div class="hist-meta">
-        <span class="hist-query">${esc(h.query.substring(0, 42))}</span>
-        ${h.condition ? `<span class="hist-condition">${esc(h.condition.substring(0, 32))}</span>` : ''}
-      </div>
-    </button>`).join('');
+    <div class="hist-item-wrap">
+      <button class="hist-item" data-hid="${h.id}">
+        <i data-lucide="clock" style="width:11px;height:11px;opacity:0.45;flex-shrink:0;margin-top:3px"></i>
+        <div class="hist-meta">
+          <span class="hist-query">${esc(h.query.substring(0, 42))}</span>
+          ${h.condition ? `<span class="hist-condition">${esc(h.condition.substring(0, 32))}</span>` : ''}
+        </div>
+      </button>
+      <button class="hist-del" onclick="deleteHistoryItem(${h.id})" title="Eliminar">×</button>
+    </div>`).join('');
   lucide.createIcons({ nodes: [list] });
   list.querySelectorAll('.hist-item').forEach(btn => {
     btn.addEventListener('click', () => fillHistory(Number(btn.dataset.hid)));
@@ -2581,10 +2621,14 @@ function renderHistory() {
 function fillHistory(id) {
   const entry = getHistory().find(h => h.id === id);
   if (!entry) return;
-  userInput.value = entry.query;
-  userInput.style.height = 'auto';
-  userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
-  userInput.focus();
+  if (isFirstMsg) {
+    document.getElementById('welcomeState')?.remove();
+    isFirstMsg = false;
+  }
+  addUserMsg(entry.query);
+  addAICard(entry);
+  closeSidebar();
+  scrollDown();
 }
 
 // ── Input de voz ─────────────────────────────────────────────────────────────
@@ -2764,21 +2808,16 @@ async function loadHealthStatus() {
 // ===== TTS (edge-tts neural via /api/tts) =====
 let _ttsEnabled = localStorage.getItem('medi-tts-enabled') === 'true';
 let _currentAudio = null;
-const _ttsAvailable = true; // siempre disponible — usa backend
+const _ttsAvailable = true;
 
-function initTTS() {
-  _syncTTSGlobalBtn();
-}
+function initTTS() { _syncTTSGlobalBtn(); }
 
 function _syncTTSGlobalBtn() {
   const btn = document.getElementById('ttsGlobalBtn');
   if (!btn) return;
   btn.classList.toggle('active', _ttsEnabled);
   const icon = btn.querySelector('i');
-  if (icon) {
-    icon.setAttribute('data-lucide', _ttsEnabled ? 'volume-2' : 'volume-x');
-    lucide.createIcons({ nodes: [icon] });
-  }
+  if (icon) { icon.setAttribute('data-lucide', _ttsEnabled ? 'volume-2' : 'volume-x'); lucide.createIcons({ nodes: [icon] }); }
 }
 
 function toggleTTSGlobal() {
@@ -2789,29 +2828,12 @@ function toggleTTSGlobal() {
 }
 
 function stopSpeaking() {
-  if (_currentAudio) {
-    _currentAudio.pause();
-    _currentAudio.src = '';
-    _currentAudio = null;
-  }
+  if (_currentAudio) { _currentAudio.pause(); _currentAudio.src = ''; _currentAudio = null; }
   document.querySelectorAll('.tts-card-btn.speaking').forEach(btn => {
     btn.classList.remove('speaking');
     const icon = btn.querySelector('i');
     if (icon) { icon.setAttribute('data-lucide', 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
   });
-}
-
-function _extractCleanText(data) {
-  let text = (data.respuesta || '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '');
-  const words = text.split(/\s+/);
-  if (words.length > 500) {
-    const firstPara = text.split('\n\n')[0] || text.substring(0, 600);
-    const recomIdx = text.search(/recomendaci[oó]n|conclusi[oó]n/i);
-    const recomText = recomIdx > -1 ? text.substring(recomIdx, recomIdx + 400) : '';
-    text = firstPara + (recomText ? '. ' + recomText : '');
-  }
-  if (data.recomendacion) text += '. Recomendación: ' + data.recomendacion;
-  return text.trim();
 }
 
 function _setBtnSpeaking(btn, speaking) {
@@ -2821,43 +2843,106 @@ function _setBtnSpeaking(btn, speaking) {
   if (icon) { icon.setAttribute('data-lucide', speaking ? 'volume-x' : 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
 }
 
-async function speakResponse(data, cardBtnId) {
-  stopSpeaking();
-  const btn = cardBtnId ? document.getElementById(cardBtnId) : null;
-  const text = _extractCleanText(data);
-  if (!text) return;
+function _buildDoctorScript(data) {
+  const condition = (data.condicion_principal || '').trim();
+  const conf      = data.confianza || 0;
+  const gravedad  = data.gravedad  || 'moderada';
+  const rec       = (data.recomendacion || '').replace(/\*\*/g,'').replace(/\*/g,'').trim();
 
+  // Primer párrafo de la respuesta, limpio de markdown
+  const rawResp = (data.respuesta || '').replace(/\*\*/g,'').replace(/\*/g,'').replace(/#+\s*/g,'');
+  const firstPara = rawResp.split(/\n{2,}/)[0]?.trim() || '';
+  const explanation = firstPara.length > 350 ? firstPara.substring(0, 350) + '.' : firstPara;
+
+  const sevLine = {
+    leve:       'Parece ser una situación leve, pero observa cómo evolucionan los síntomas.',
+    moderada:   'Te recomiendo consultar con tu médico en los próximos días para confirmar el diagnóstico.',
+    grave:      'La situación requiere atención médica pronto. No lo dejes pasar.',
+    emergencia: 'Esto puede ser una emergencia. Busca atención médica inmediata o llama al servicio de emergencias.'
+  }[gravedad] || '';
+
+  let script = '';
+  if (condition) {
+    script += `Basándome en los síntomas que describes, lo más probable es que estés presentando ${condition}`;
+    if (conf >= 75) script += ', con una probabilidad alta';
+    script += '. ';
+  }
+  if (explanation) script += explanation + ' ';
+  if (sevLine)    script += sevLine + ' ';
+  if (rec)        script += `En cuanto al tratamiento, ${rec}`;
+  return script.trim();
+}
+
+// Reproducción con MediaSource (streaming progresivo) o fallback a blob
+async function _playFromFetch(fetchPromise, btn) {
   _setBtnSpeaking(btn, true);
-
   try {
-    const resp = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice: 'es-ES-AlvaroNeural' })
-    });
-    if (!resp.ok) throw new Error('tts_error');
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    _currentAudio = audio;
-    audio.onended = audio.onerror = () => {
-      URL.revokeObjectURL(url);
-      _currentAudio = null;
-      _setBtnSpeaking(btn, false);
-    };
-    await audio.play();
+    const resp = await fetchPromise;
+    if (!resp.ok) throw new Error('tts');
+
+    if (window.MediaSource && MediaSource.isTypeSupported('audio/mpeg') && resp.body) {
+      // Streaming: empieza a sonar en cuanto llegan los primeros chunks
+      const ms  = new MediaSource();
+      const url = URL.createObjectURL(ms);
+      const audio = new Audio(url);
+      _currentAudio = audio;
+
+      let sb, pendingChunks = [], done = false;
+
+      const tryAppend = () => {
+        if (!sb || sb.updating || pendingChunks.length === 0) return;
+        try { sb.appendBuffer(pendingChunks.shift()); } catch {}
+      };
+
+      ms.addEventListener('sourceopen', () => {
+        sb = ms.addSourceBuffer('audio/mpeg');
+        sb.addEventListener('updateend', () => { tryAppend(); if (done && pendingChunks.length === 0) { try { ms.endOfStream(); } catch {} } });
+        tryAppend();
+        audio.play().catch(() => {});
+      });
+
+      const reader = resp.body.getReader();
+      (async () => {
+        while (true) {
+          const { done: d, value } = await reader.read();
+          if (d) { done = true; tryAppend(); break; }
+          pendingChunks.push(value);
+          tryAppend();
+        }
+      })();
+
+      audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; _setBtnSpeaking(btn, false); };
+    } else {
+      // Fallback: esperar blob completo
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      _currentAudio = audio;
+      audio.onended = audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; _setBtnSpeaking(btn, false); };
+      await audio.play();
+    }
   } catch {
     _setBtnSpeaking(btn, false);
   }
 }
 
+async function speakResponse(data, cardBtnId) {
+  stopSpeaking();
+  const btn  = cardBtnId ? document.getElementById(cardBtnId) : null;
+  const text = _buildDoctorScript(data);
+  if (!text) return;
+  const fetchPromise = fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice: 'es-ES-AlvaroNeural' })
+  });
+  await _playFromFetch(fetchPromise, btn);
+}
+
 async function toggleCardTTS(data, cardBtnId) {
   const btn = document.getElementById(cardBtnId);
-  if (btn?.classList.contains('speaking')) {
-    stopSpeaking();
-  } else {
-    await speakResponse(data, cardBtnId);
-  }
+  if (btn?.classList.contains('speaking')) { stopSpeaking(); }
+  else { await speakResponse(data, cardBtnId); }
 }
 
 // ===== PERFIL CLÍNICO =====

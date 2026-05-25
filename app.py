@@ -766,8 +766,9 @@ def run_evaluation():
 @require_auth
 @limiter.limit("30 per minute")
 def tts_endpoint():
-    import asyncio
     import edge_tts
+    from threading import Thread
+    from queue import Queue
 
     data = request.json or {}
     text = (data.get("text") or "").strip()
@@ -777,23 +778,34 @@ def tts_endpoint():
         text = text[:3000]
 
     voice = data.get("voice", "es-ES-AlvaroNeural")
+    q: Queue = Queue()
 
-    async def _generate():
-        communicate = edge_tts.Communicate(text, voice)
-        buf = b""
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                buf += chunk["data"]
-        return buf
+    async def _gen():
+        import asyncio
+        try:
+            communicate = edge_tts.Communicate(text, voice)
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    q.put(chunk["data"])
+        except Exception as exc:
+            log.error("rid=%s tts_error=%s", g.rid, exc)
+        finally:
+            q.put(None)
 
-    try:
-        audio = asyncio.run(_generate())
-    except Exception as e:
-        log.error("rid=%s tts_error=%s", g.rid, e)
-        return jsonify({"error": "TTS no disponible"}), 503
+    Thread(target=lambda: __import__("asyncio").run(_gen()), daemon=True).start()
 
-    return Response(audio, mimetype="audio/mpeg",
-                    headers={"Cache-Control": "no-store"})
+    def _stream():
+        while True:
+            chunk = q.get()
+            if chunk is None:
+                break
+            yield chunk
+
+    return Response(
+        stream_with_context(_stream()),
+        mimetype="audio/mpeg",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
 
 
 if __name__ == "__main__":
