@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDI-IA — Fase 2: Construcción y Mejoras</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:#060b14; --bg2:#0a1525; --card:#0e1e33;
+    --teal:#00d4b8; --blue:#3b82f6; --cyan:#06b6d4;
+    --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+    --text:#e8f4f8; --muted:#7ca6c0; --border:#1a3550;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;user-select:none;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.18;pointer-events:none;z-index:0;}
+
+  .deck{width:100vw;height:100vh;position:relative;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 80px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:1;}
+  .slide.active{opacity:1;transform:translateX(0);pointer-events:all;}
+  .slide.exit{opacity:0;transform:translateX(-60px);}
+
+  .progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .4s;z-index:200;}
+  .nav{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(10,21,37,.92);border:1px solid var(--border);border-radius:40px;padding:8px 20px;z-index:100;backdrop-filter:blur(12px);}
+  .nav button{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 16px;border-radius:20px;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;transition:all .2s;}
+  .nav button:hover{border-color:var(--teal);color:var(--teal);}
+  .slide-counter{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:55px;text-align:center;}
+  .key-hint{position:fixed;top:16px;right:20px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);z-index:100;}
+  .key-hint kbd{background:var(--card);border:1px solid var(--border);padding:2px 6px;border-radius:4px;}
+
+  /* TITLE */
+  .title-slide{text-align:center;gap:16px;}
+  .logo{width:74px;height:74px;background:linear-gradient(135deg,var(--teal),var(--blue));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 40px rgba(0,212,184,.3);margin:0 auto 6px;}
+  .title-slide h1{font-size:54px;font-weight:800;background:linear-gradient(135deg,var(--text) 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;}
+  .subtitle{font-size:17px;color:var(--muted);font-weight:300;}
+  .fase-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-family:'DM Mono',monospace;font-size:12px;background:rgba(0,212,184,.1);border:1px solid rgba(0,212,184,.3);color:var(--teal);margin-bottom:4px;}
+  .badges{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+  .badge{padding:4px 13px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;border:1px solid;}
+  .badge.teal{background:rgba(0,212,184,.1);border-color:rgba(0,212,184,.3);color:var(--teal);}
+  .badge.blue{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--blue);}
+  .badge.purple{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);color:var(--purple);}
+  .badge.green{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green);}
+  .badge.red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red);}
+  .badge.yellow{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:var(--yellow);}
+
+  /* CONTENT */
+  .content-slide{align-items:flex-start;gap:18px;width:100%;max-width:1100px;}
+  .slide-tag{font-family:'DM Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;margin-bottom:-10px;}
+  .slide-title{font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+  .cards{display:grid;gap:12px;width:100%;}
+  .cols-2{grid-template-columns:1fr 1fr;}
+  .cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .card.teal{border-color:rgba(0,212,184,.25);}
+  .card.blue{border-color:rgba(59,130,246,.25);}
+  .card.purple{border-color:rgba(139,92,246,.25);}
+  .card.red{border-color:rgba(239,68,68,.25);}
+  .card.green{border-color:rgba(34,197,94,.25);}
+  .card.yellow{border-color:rgba(245,158,11,.25);}
+  .card-icon{font-size:22px;margin-bottom:7px;}
+  .card h3{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:5px;}
+  .card p,.card li{font-size:12px;color:var(--muted);line-height:1.6;}
+  .card ul{list-style:none;}
+  .card ul li::before{content:'→ ';color:var(--teal);}
+
+  /* COMPARE */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;}
+  .compare-col{border-radius:12px;padding:18px;}
+  .phase1-col{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);}
+  .phase2-col{background:rgba(0,212,184,.05);border:1px solid rgba(0,212,184,.2);}
+  .compare-col h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .phase1-col h3{color:var(--red);}
+  .phase2-col h3{color:var(--teal);}
+  .compare-col ul{list-style:none;display:flex;flex-direction:column;gap:7px;}
+  .compare-col li{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;}
+  .dot{flex-shrink:0;margin-top:5px;width:6px;height:6px;border-radius:50%;}
+  .phase1-col .dot{background:var(--red);}
+  .phase2-col .dot{background:var(--teal);}
+
+  /* PIPELINE */
+  .pipeline{display:flex;align-items:center;gap:5px;width:100%;overflow-x:auto;}
+  .pipe-step{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;text-align:center;flex-shrink:0;min-width:100px;}
+  .pipe-step .icon{font-size:18px;margin-bottom:4px;}
+  .pipe-step .label{font-size:11px;font-weight:600;color:var(--text);}
+  .pipe-step .sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+  .pipe-arrow{color:var(--teal);font-size:16px;flex-shrink:0;}
+  .pipe-step.hl{border-color:var(--teal);background:rgba(0,212,184,.07);}
+  .pipe-step.hl2{border-color:var(--purple);background:rgba(139,92,246,.07);}
+  .pipe-step.hl3{border-color:var(--blue);background:rgba(59,130,246,.07);}
+
+  /* STATS */
+  .stats{display:flex;gap:14px;width:100%;}
+  .stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;}
+  .stat .num{font-size:36px;font-weight:800;font-family:'DM Mono',monospace;background:linear-gradient(135deg,var(--teal),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .stat .label{font-size:11px;color:var(--muted);margin-top:4px;}
+  .stat.green-stat .num{background:linear-gradient(135deg,var(--green),var(--teal));-webkit-background-clip:text;background-clip:text;}
+
+  /* TABLE */
+  .fw-table{width:100%;border-collapse:collapse;}
+  .fw-table th{text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--teal);letter-spacing:1px;padding:7px 10px;border-bottom:1px solid var(--border);}
+  .fw-table td{padding:7px 10px;font-size:11.5px;color:var(--muted);border-bottom:1px solid rgba(26,53,80,.5);vertical-align:middle;}
+  .fw-table td:first-child{color:var(--text);font-weight:500;}
+  .fw-table .ok{color:var(--green);font-weight:600;}
+  .fw-table .warn{color:var(--yellow);}
+  .fw-table .highlight-row td{background:rgba(0,212,184,.04);}
+  .fw-table .up{color:var(--teal);font-family:'DM Mono',monospace;font-size:11px;}
+
+  /* KEY POINTS */
+  .kp-list{display:flex;flex-direction:column;gap:8px;width:100%;}
+  .kp{display:flex;gap:11px;align-items:flex-start;padding:10px 13px;background:var(--card);border-radius:9px;border:1px solid var(--border);}
+  .kp-icon{font-size:17px;flex-shrink:0;margin-top:1px;}
+  .kp-title{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .kp-text{font-size:11.5px;color:var(--muted);line-height:1.5;}
+
+  /* REACT */
+  .react-loop{display:flex;flex-direction:column;gap:7px;width:100%;}
+  .react-step{display:flex;align-items:flex-start;gap:11px;padding:9px 13px;border-radius:10px;font-size:12px;}
+  .step-type{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:9px;flex-shrink:0;font-weight:500;white-space:nowrap;}
+  .react-thought{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);}
+  .react-thought .step-type{background:rgba(59,130,246,.15);color:var(--blue);}
+  .react-action{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);}
+  .react-action .step-type{background:rgba(139,92,246,.15);color:var(--purple);}
+  .react-obs{background:rgba(0,212,184,.06);border:1px solid rgba(0,212,184,.15);}
+  .react-obs .step-type{background:rgba(0,212,184,.12);color:var(--teal);}
+  .react-final{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);}
+  .react-final .step-type{background:rgba(34,197,94,.15);color:var(--green);}
+  .react-step p{color:var(--muted);line-height:1.5;}
+  .react-step code{color:var(--cyan);background:rgba(6,182,212,.1);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10.5px;}
+
+  /* TOOLS */
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+  .tool-card{background:var(--card);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:13px;}
+  .tool-card h4{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--purple);margin-bottom:4px;}
+  .tool-card p{font-size:11px;color:var(--muted);line-height:1.5;}
+
+  /* FINAL */
+  .final-slide{text-align:center;gap:18px;}
+  .final-slide h2{font-size:42px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .quote{font-size:13.5px;color:var(--muted);border-left:3px solid var(--teal);padding:10px 16px;text-align:left;background:rgba(0,212,184,.04);border-radius:0 8px 8px 0;max-width:620px;}
+
+  /* ALERT */
+  .alert{border-radius:10px;padding:12px 16px;width:100%;font-size:12.5px;}
+  .alert.teal{background:rgba(0,212,184,.05);border:1px solid rgba(0,212,184,.2);color:var(--muted);}
+  .alert.blue{background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.2);color:var(--muted);}
+  .alert-title{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--teal);margin-bottom:5px;}
+
+  /* METRIC DELTA */
+  .delta{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:6px;margin-left:6px;}
+  .delta.up{background:rgba(34,197,94,.12);color:var(--green);}
+  .delta.new{background:rgba(0,212,184,.12);color:var(--teal);}
+
+  /* TWO COL */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;}
+
+  /* FEATURE CARDS */
+  .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+  .feat-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);}
+  .feat-card.teal{border-color:rgba(0,212,184,.3);background:rgba(0,212,184,.04);}
+  .feat-card.purple{border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.04);}
+  .feat-card.blue{border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04);}
+  .feat-card.green{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.04);}
+  .feat-num{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;margin-bottom:6px;}
+  .feat-card.teal .feat-num{color:var(--teal);}
+  .feat-card.purple .feat-num{color:var(--purple);}
+  .feat-card.blue .feat-num{color:var(--blue);}
+  .feat-card.green .feat-num{color:var(--green);}
+  .feat-card h3{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:5px;}
+  .feat-card p{font-size:11.5px;color:var(--muted);line-height:1.6;}
+  .feat-card ul{list-style:none;margin-top:5px;}
+  .feat-card ul li{font-size:11px;color:var(--muted);padding:2px 0;}
+  .feat-card.teal ul li::before{content:'◆ ';color:var(--teal);font-size:8px;}
+  .feat-card.purple ul li::before{content:'◆ ';color:var(--purple);font-size:8px;}
+  .feat-card.blue ul li::before{content:'◆ ';color:var(--blue);font-size:8px;}
+  .feat-card.green ul li::before{content:'◆ ';color:var(--green);font-size:8px;}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="prog"></div>
+<div class="key-hint"><kbd>←</kbd> <kbd>→</kbd> navegar</div>
+
+<div class="deck" id="deck">
+
+<!-- ═══════════════════════════════ SLIDE 1: PORTADA ══════════════════════════════ -->
+<div class="slide title-slide active" id="s1">
+  <div class="logo">🩺</div>
+  <div class="fase-badge">FASE 2 — CONSTRUCCIÓN COMPLETA</div>
+  <h1>MEDI-IA</h1>
+  <p class="subtitle">Asistente Médico con RAG + Agente ReAct</p>
+  <div class="badges">
+    <span class="badge teal">14 Libros Médicos</span>
+    <span class="badge blue">136,228 Chunks</span>
+    <span class="badge purple">Qwen 2.5-7B</span>
+    <span class="badge green">Recall@1 97.1%</span>
+    <span class="badge yellow">4 Features IA</span>
+    <span class="badge red">100 Tests</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 2: QUÉ ES ══════════════════════════════ -->
+<div class="slide content-slide" id="s2">
+  <p class="slide-tag">01 — VISIÓN GENERAL</p>
+  <h2 class="slide-title">¿Qué construimos?</h2>
+  <div class="pipeline">
+    <div class="pipe-step hl3">
+      <div class="icon">💬</div>
+      <div class="label">Consulta</div>
+      <div class="sub">Usuario</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">
+      <div class="icon">🛡️</div>
+      <div class="label">Guardrails</div>
+      <div class="sub">Filtro médico</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl">
+      <div class="icon">🔍</div>
+      <div class="label">FAISS + BM25</div>
+      <div class="sub">Top-10 chunks</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl">
+      <div class="icon">⚖️</div>
+      <div class="label">Reranker</div>
+      <div class="sub">mMARCO cross-enc</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl2">
+      <div class="icon">🤖</div>
+      <div class="label">Agente ReAct</div>
+      <div class="sub">Qwen 2.5-7B</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl3">
+      <div class="icon">📋</div>
+      <div class="label">Diagnóstico</div>
+      <div class="sub">Diferencial</div>
+    </div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card teal">
+      <div class="card-icon">🔀</div>
+      <h3>Modo ReAct (con HF_TOKEN)</h3>
+      <ul>
+        <li>Qwen2.5-7B vía HuggingFace Inference API</li>
+        <li>Bucle Thought → Action → Observation (máx 6 iter)</li>
+        <li>4 tools: search_symptoms, assess_urgency, get_drug_info, get_section</li>
+        <li>Memoria multi-turn en SQLite por sesión</li>
+        <li>Streaming SSE en tiempo real</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📚</div>
+      <h3>Modo RAG Template (sin token)</h3>
+      <ul>
+        <li>FAISS + BM25 → RRF → Reranker multilingüe</li>
+        <li>Funciona sin LLM — respuesta basada en chunks</li>
+        <li>Threshold configurable: RERANK_THRESHOLD=-3.0</li>
+        <li>Fallback semántico si score bajo</li>
+        <li>Ideal para demo sin costos de API</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 3: FASE 1 → 2 ══════════════════════════════ -->
+<div class="slide content-slide" id="s3">
+  <p class="slide-tag">02 — EVOLUCIÓN</p>
+  <h2 class="slide-title">Fase 1 → Fase 2: El Salto</h2>
+  <div class="compare">
+    <div class="compare-col phase1-col">
+      <h3>❌ Fase 1 — Punto de partida</h3>
+      <ul>
+        <li><span class="dot"></span>4 libros médicos (Harrison, Oxford, Symptoms, Top100)</li>
+        <li><span class="dot"></span>MiniLM-L12-v2 — 384 dimensiones, embeddings genéricos</li>
+        <li><span class="dot"></span>Búsqueda FAISS simple, sin reranker</li>
+        <li><span class="dot"></span>Chunks de 400 chars / overlap 80</li>
+        <li><span class="dot"></span>Sin evaluación cuantitativa</li>
+        <li><span class="dot"></span>UI básica, sin autenticación ni rate limiting</li>
+        <li><span class="dot"></span>Sin deploy, sin Docker, sin CI/CD</li>
+        <li><span class="dot"></span>Recall@1 estimado: ~74%</li>
+      </ul>
+    </div>
+    <div class="compare-col phase2-col">
+      <h3>✅ Fase 2 — Estado actual</h3>
+      <ul>
+        <li><span class="dot"></span>14 libros médicos especializados — 136,228 chunks</li>
+        <li><span class="dot"></span>e5-base multilingual — 768 dims, retrieval-optimized</li>
+        <li><span class="dot"></span>FAISS + BM25 + Reciprocal Rank Fusion híbrido</li>
+        <li><span class="dot"></span>Chunks 600/120, sentence-aware + junk filter</li>
+        <li><span class="dot"></span>Dataset eval v1.3: 40 queries anotadas, métricas formales</li>
+        <li><span class="dot"></span>UI Dark Glassmorphism + auth + rate limiting + PDF export</li>
+        <li><span class="dot"></span>Docker + nginx + GitHub Actions CI + 100 tests</li>
+        <li><span class="dot"></span>Recall@1: 97.1% · MRR: 0.986</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 4: BASE DE CONOCIMIENTO ══════════════════ -->
+<div class="slide content-slide" id="s4">
+  <p class="slide-tag">03 — BASE DE CONOCIMIENTO</p>
+  <h2 class="slide-title">14 Libros Médicos Especializados</h2>
+  <div class="stats">
+    <div class="stat"><div class="num">14</div><div class="label">Libros indexados</div></div>
+    <div class="stat"><div class="num">136K</div><div class="label">Chunks totales</div></div>
+    <div class="stat green-stat"><div class="num">768</div><div class="label">Dimensiones e5-base</div></div>
+    <div class="stat"><div class="num">600</div><div class="label">Chars por chunk</div></div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card teal">
+      <h3>📚 Cobertura clínica completa</h3>
+      <ul>
+        <li>Harrison · Oxford Clinical Medicine · Tintinalli Emergency</li>
+        <li>Adams & Victor Neurology · Harrison Infectious Disease</li>
+        <li>Robbins Pathology · Nelson Pediatrics · Williams Obstetrics</li>
+        <li>Kaplan Psychiatry · ABC Dermatology · Lange Cases</li>
+        <li>Symptoms to Diagnosis · Top 100 Drugs · Infectious Diseases</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <h3>⚙️ Ingesta optimizada</h3>
+      <ul>
+        <li>Chunking por oraciones (_SENT_RE regex) — respeta contexto clínico</li>
+        <li>Prefijos e5-base: <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10.5px">"passage: {libro}: {texto}"</code></li>
+        <li>is_junk_chunk() elimina chunks con &gt;50% dígitos</li>
+        <li>Section mapping: mapeo página→capítulo por libro</li>
+        <li>Re-ingesta completa: ~45 min en CPU, resultado permanente</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 5: PIPELINE RAG ══════════════════════════ -->
+<div class="slide content-slide" id="s5">
+  <p class="slide-tag">04 — PIPELINE RAG</p>
+  <h2 class="slide-title">Retrieval Mejorado: e5-base + BM25 + RRF</h2>
+  <div class="two-col">
+    <div class="kp-list">
+      <div class="kp">
+        <div class="kp-icon">🧠</div>
+        <div>
+          <div class="kp-title">intfloat/multilingual-e5-base</div>
+          <div class="kp-text">Reemplazó paraphrase-MiniLM-L12-v2. 768 dims vs 384. Optimizado para retrieval (no clasificación). Soporta 100+ idiomas con prefijo <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10px">"query: "</code> en búsquedas.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">📊</div>
+        <div>
+          <div class="kp-title">BM25 + Reciprocal Rank Fusion</div>
+          <div class="kp-text">rank-bm25 lazy-loaded desde metadata.json. RRF(k=60) fusiona rankings FAISS + BM25. Resuelve el problema de términos médicos exactos que los embeddings difuminan (ej: "metformina", "warfarina").</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">⚖️</div>
+        <div>
+          <div class="kp-title">Cross-Encoder Reranker (mMARCO)</div>
+          <div class="kp-text">mmarco-mMiniLMv2-L12-H384-v1 — 26 idiomas. Top-10 FAISS+BM25 → rerank → Top-5. Score relevante &gt; 0, irrelevante &lt; -3.0 (RERANK_THRESHOLD configurable).</div>
+        </div>
+      </div>
+    </div>
+    <div class="kp-list">
+      <div class="kp">
+        <div class="kp-icon">🔢</div>
+        <div>
+          <div class="kp-title">Chunk Size: 400 → 600 / Overlap: 80 → 120</div>
+          <div class="kp-text">Chunks más grandes capturan más contexto clínico por fragmento. El overlap mayor evita cortes en medio de diagnósticos. Sentence-aware respeta límites de oración.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">🗑️</div>
+        <div>
+          <div class="kp-title">Junk Filter en ingesta</div>
+          <div class="kp-text">is_junk_chunk() elimina chunks con &gt;50% dígitos (páginas de referencias, índices numéricos). Evita "ruido" que contamina el índice FAISS y reduce la precisión.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">🗺️</div>
+        <div>
+          <div class="kp-title">Section Enrichment</div>
+          <div class="kp-text">enrich_chunks() añade nombre de capítulo/sección a cada resultado antes de mostrar al usuario. Mapeo estático página→capítulo por libro en section_mapping.py.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 6: MÉTRICAS ══════════════════════════════ -->
+<div class="slide content-slide" id="s6">
+  <p class="slide-tag">05 — EVALUACIÓN CUANTITATIVA</p>
+  <h2 class="slide-title">Resultados: Dataset v1.3 — 40 Queries Anotadas</h2>
+  <table class="fw-table">
+    <tr>
+      <th>MÉTRICA</th>
+      <th>MiniLM · 4 libros</th>
+      <th>e5-base · 4 libros</th>
+      <th>e5-base · 14 libros (ACTUAL)</th>
+      <th>MEJORA</th>
+    </tr>
+    <tr>
+      <td>Recall@1</td>
+      <td class="warn">74.3%</td>
+      <td>91.4%</td>
+      <td class="ok">97.1%</td>
+      <td><span class="delta up">+30.6%</span></td>
+    </tr>
+    <tr>
+      <td>Recall@3</td>
+      <td class="warn">94.3%</td>
+      <td>100%</td>
+      <td class="ok">100%</td>
+      <td><span class="delta up">+6.0%</span></td>
+    </tr>
+    <tr>
+      <td>Recall@5</td>
+      <td>97.1%</td>
+      <td>100%</td>
+      <td class="ok">100%</td>
+      <td><span class="delta up">+2.9%</span></td>
+    </tr>
+    <tr class="highlight-row">
+      <td>MRR</td>
+      <td class="warn">0.8405</td>
+      <td>0.9571</td>
+      <td class="ok">0.9857</td>
+      <td><span class="delta up">+17.3%</span></td>
+    </tr>
+    <tr>
+      <td>Precision@5</td>
+      <td>74.3%</td>
+      <td>94.3%</td>
+      <td class="ok">80.6%</td>
+      <td><span class="delta new">más libros, más diversidad</span></td>
+    </tr>
+    <tr>
+      <td>Guardrails</td>
+      <td class="ok">100%</td>
+      <td class="ok">100%</td>
+      <td class="ok">100%</td>
+      <td><span class="delta up">estable</span></td>
+    </tr>
+  </table>
+  <div class="alert teal">
+    <div class="alert-title">FALLO ÚNICO RESTANTE</div>
+    Q022 (metformina DM2): Robbins aparece en #1 (patología DM, no tratamiento). Queda en Top-3. MRR = 0.5 para esa query. El resto del dataset: perfecto.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 7: AGENTE REACT ══════════════════════════ -->
+<div class="slide content-slide" id="s7">
+  <p class="slide-tag">06 — AGENTE REACT</p>
+  <h2 class="slide-title">Qwen2.5-7B + 4 Tools + Memoria Multi-Turn</h2>
+  <div class="two-col">
+    <div class="react-loop">
+      <div class="react-step react-thought">
+        <span class="step-type">THOUGHT</span>
+        <p>El paciente describe fiebre 39°C + tos productiva + dolor pleurítico. Necesito buscar en los libros los diagnósticos diferenciales de neumonía.</p>
+      </div>
+      <div class="react-step react-action">
+        <span class="step-type">ACTION</span>
+        <p><code>search_symptoms</code>: "fiebre tos productiva dolor pleurítico adulto"</p>
+      </div>
+      <div class="react-step react-obs">
+        <span class="step-type">OBSERVATION</span>
+        <p>Harrison p.1023: "Neumonía bacteriana: fiebre &gt;38.5°C, expectoración purulenta..." [score: 0.87]</p>
+      </div>
+      <div class="react-step react-action">
+        <span class="step-type">ACTION</span>
+        <p><code>assess_urgency</code>: "fiebre alta tos|||neumonía probable"</p>
+      </div>
+      <div class="react-step react-final">
+        <span class="step-type">FINAL ANSWER</span>
+        <p>Diagnóstico diferencial: Neumonía adquirida en comunidad (alta probabilidad)...</p>
+      </div>
+    </div>
+    <div class="kp-list">
+      <div class="kp">
+        <div class="kp-icon">🔧</div>
+        <div>
+          <div class="kp-title">search_symptoms</div>
+          <div class="kp-text">Búsqueda RAG completa — FAISS+BM25+RRF+Reranker. Devuelve top-5 con libro, página y score.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">🚨</div>
+        <div>
+          <div class="kp-title">assess_urgency</div>
+          <div class="kp-text">Clasifica síntomas en: EMERGENCIA / URGENTE / CONSULTA / RUTINA. Incluye signos de alarma específicos.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">💊</div>
+        <div>
+          <div class="kp-title">get_drug_info</div>
+          <div class="kp-text">Búsqueda específica en "The Top 100 Drugs" — mecanismo, dosis, interacciones, efectos adversos.</div>
+        </div>
+      </div>
+      <div class="kp">
+        <div class="kp-icon">📖</div>
+        <div>
+          <div class="kp-title">get_section</div>
+          <div class="kp-text">Acceso directo a capítulo de libro por keyword (harrison/oxford/tintinalli + tema). Recupera contexto completo del capítulo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 8: UI REDESIGN ══════════════════════════ -->
+<div class="slide content-slide" id="s8">
+  <p class="slide-tag">07 — INTERFAZ DE USUARIO</p>
+  <h2 class="slide-title">UI Redesign v2.0 — Dark Glassmorphism</h2>
+  <div class="cards cols-3">
+    <div class="card teal">
+      <div class="card-icon">🎨</div>
+      <h3>Sistema de diseño</h3>
+      <ul>
+        <li>Dark-first: <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10px">#090e1a</code> base, <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10px">#0f1629</code> surface</li>
+        <li>Acento Emerald <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10px">#10b981</code> — hover states</li>
+        <li>Toggle luna/sol persistente en localStorage</li>
+        <li>Glass cards con backdrop-filter blur</li>
+        <li>Lucide icons — inline style consistente</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">📱</div>
+      <h3>Componentes UI</h3>
+      <ul>
+        <li>Topbar 52px + chip RAG live con dot animado</li>
+        <li>Sidebar 200px con datos reales de /api/health</li>
+        <li>Welcome screen: stats en vivo, chips de symptom</li>
+        <li>Severity pills con íconos (check/alert/octagon)</li>
+        <li>Sidebar móvil responsive con backdrop</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">⚡</div>
+      <h3>Features de UX</h3>
+      <ul>
+        <li>Historial de sesión con borrado individual</li>
+        <li>Chips de seguimiento contextuales</li>
+        <li>Copiar respuesta (clipboard API)</li>
+        <li>Input de voz (Web Speech API — Chrome)</li>
+        <li>Toasts de notificación con auto-dismiss</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cards cols-2">
+    <div class="card green">
+      <div class="card-icon">📄</div>
+      <h3>Export PDF</h3>
+      <p>Endpoint <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10.5px">/api/export/pdf</code> — fpdf2 (pure Python, sin deps nativas). Diagnóstico completo con chunks fuente, severidad y recomendaciones. Rate limit: 5/min.</p>
+    </div>
+    <div class="card yellow">
+      <div class="card-icon">🔄</div>
+      <h3>SSE Streaming</h3>
+      <p>Endpoint <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10.5px">/api/stream</code> — Server-Sent Events con tipos: <code style="color:var(--cyan);font-family:'DM Mono',monospace;font-size:10.5px">thought/action/observation/final/error</code>. El usuario ve el agente "pensar" en tiempo real.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 9: 4 FEATURES ══════════════════════════ -->
+<div class="slide content-slide" id="s9">
+  <p class="slide-tag">08 — FEATURES INNOVADORES</p>
+  <h2 class="slide-title">4 Capacidades que Diferencian MEDI-IA</h2>
+  <div class="feat-grid">
+    <div class="feat-card teal">
+      <div class="feat-num">FEATURE 01</div>
+      <h3>🔊 TTS Neural — Voz Médica Real</h3>
+      <p>edge-tts con <code style="color:var(--teal);font-family:'DM Mono',monospace;font-size:10px">es-ES-AlvaroNeural</code> — voz humana sintética de alta calidad.</p>
+      <ul>
+        <li>Streaming progresivo vía MediaSource API (Chrome/Edge)</li>
+        <li>_buildDoctorScript() genera monólogo médico estructurado</li>
+        <li>TTS fetch inicia ANTES de renderizar la tarjeta (baja latencia)</li>
+        <li>Toggle global "manos libres" + botón por respuesta</li>
+      </ul>
+    </div>
+    <div class="feat-card purple">
+      <div class="feat-num">FEATURE 02</div>
+      <h3>👤 Perfil Clínico del Paciente</h3>
+      <p>Contexto persistente de sesión: alergias, medicamentos, condiciones crónicas.</p>
+      <ul>
+        <li>sessionStorage — persiste pestaña, no entre sesiones</li>
+        <li>Inyección silenciosa en cada query: [Paciente: alergias=...]</li>
+        <li>Modal con chips para cada campo + botón X para cerrar</li>
+        <li>checkProfileOnLoad() propone configurar al iniciar</li>
+      </ul>
+    </div>
+    <div class="feat-card blue">
+      <div class="feat-num">FEATURE 03</div>
+      <h3>🗺️ Mapa Corporal SVG Interactivo</h3>
+      <p>Drawer lateral con 24 zonas anatómicas (15 frontales + 9 dorsales) clicables.</p>
+      <ul>
+        <li>SVG inline con data-zone/data-label en cada región</li>
+        <li>Zonas seleccionadas aparecen como card en el chat</li>
+        <li>Inyección en query: [Zonas afectadas: pecho, abdomen...]</li>
+        <li>Chips con × individual + "Limpiar todo"</li>
+      </ul>
+    </div>
+    <div class="feat-card green">
+      <div class="feat-num">FEATURE 04</div>
+      <h3>📊 Visualización Pipeline RAG</h3>
+      <p>Panel colapsable por respuesta que muestra exactamente qué recuperó el sistema.</p>
+      <ul>
+        <li>3 pasos animados: FAISS → Reranker → Síntesis LLM</li>
+        <li>Score FAISS y score reranker por chunk, con barras visuales</li>
+        <li>Libro, página y preview del texto recuperado</li>
+        <li>Transparencia total del proceso de RAG</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 10: STACK + PRODUCCIÓN ══════════════════ -->
+<div class="slide content-slide" id="s10">
+  <p class="slide-tag">09 — STACK TÉCNICO</p>
+  <h2 class="slide-title">Arquitectura de Producción</h2>
+  <div class="two-col">
+    <div class="cards">
+      <div class="card teal">
+        <h3>🐍 Backend Python</h3>
+        <ul>
+          <li>Flask + Gunicorn (WSGI producción)</li>
+          <li>flask-limiter: 10/min query, 5/min PDF/login</li>
+          <li>Pydantic schemas — validación de entrada</li>
+          <li>SQLite memoria multi-turn (max 10 turns/sesión)</li>
+          <li>HuggingFace InferenceClient — LLM remoto</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3>🔍 ML / Retrieval</h3>
+        <ul>
+          <li>FAISS IndexFlatIP — cosine similarity (768d)</li>
+          <li>sentence-transformers e5-base (singletons lazy)</li>
+          <li>rank-bm25 — BM25Okapi sobre metadata.json</li>
+          <li>CrossEncoder mMARCO multilingüe (26 idiomas)</li>
+          <li>edge-tts — síntesis de voz neural Azure</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card purple">
+        <h3>🐳 Deploy</h3>
+        <ul>
+          <li>Docker + docker-compose (imagen Python 3.11)</li>
+          <li>nginx reverse proxy — proxy_buffering off para SSE</li>
+          <li>GitHub Actions CI: lint + tests en cada push</li>
+          <li>Makefile: install / ingest / run / test / health</li>
+          <li>manage.py: sessions / cleanup / clear</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>🧪 Testing</h3>
+        <ul>
+          <li>100 tests en 8 archivos pytest</li>
+          <li>test_guardrails.py — 26 tests (lógica pura)</li>
+          <li>test_tools.py — 31 tests (mocks FAISS)</li>
+          <li>test_memory.py — 26 tests (SQLite tmp_path)</li>
+          <li>test_api.py — 19 tests (endpoints Flask)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 11: MÉTRICAS SISTEMA ════════════════════ -->
+<div class="slide content-slide" id="s11">
+  <p class="slide-tag">10 — CALIDAD Y MONITOREO</p>
+  <h2 class="slide-title">Observabilidad y Métricas en Producción</h2>
+  <div class="stats">
+    <div class="stat"><div class="num">100</div><div class="label">Tests automatizados</div></div>
+    <div class="stat"><div class="num">40</div><div class="label">Queries evaluación</div></div>
+    <div class="stat green-stat"><div class="num">8</div><div class="label">Endpoints API</div></div>
+    <div class="stat"><div class="num">6</div><div class="label">Iters máx ReAct</div></div>
+  </div>
+  <div class="cards cols-3">
+    <div class="card teal">
+      <div class="card-icon">📈</div>
+      <h3>Dashboard /metrics</h3>
+      <ul>
+        <li>Queries por hora (últimas 24h)</li>
+        <li>Latencia promedio por endpoint</li>
+        <li>Uptime del servidor</li>
+        <li>Feedback 👍/👎 guardado en SQLite</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔬</div>
+      <h3>Dashboard /evaluate</h3>
+      <ul>
+        <li>Benchmark 6 queries (FAISS vs Reranker)</li>
+        <li>Barras min-max normalizadas por query</li>
+        <li>Recall@1/3/5, MRR, Precision@5</li>
+        <li>Desglose por categoría clínica</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">📝</div>
+      <h3>Logging estructurado</h3>
+      <ul>
+        <li>Request ID (rid) 8 chars por cada request</li>
+        <li>Formato Docker-friendly: timestamp + level + rid</li>
+        <li>stream_ms, inference_ms, iters por sesión</li>
+        <li>auth_fail con IP para seguridad</li>
+      </ul>
+    </div>
+  </div>
+  <div class="alert blue">
+    <div class="alert-title">CATEGORÍAS DE EVALUACIÓN — RESULTADOS POR TIPO</div>
+    Síntomas→Diagnóstico: R@1=100% · Urgencias y Triaje: R@1=100% · Farmacología: R@1=90% (metformina edge case) · Fisiopatología: R@1=100%
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 12: CONCLUSIONES ════════════════════════ -->
+<div class="slide final-slide" id="s12">
+  <div class="logo">✅</div>
+  <h2>Sistema listo para evaluación</h2>
+  <p class="subtitle" style="font-size:15px;max-width:620px">MEDI-IA Fase 2 es un sistema de diagnóstico médico asistido por IA con pipeline RAG de nivel académico, agente con razonamiento multi-paso y UI de producción.</p>
+  <div class="quote">
+    <strong style="color:var(--text)">Lo que construimos:</strong><br>
+    Pipeline RAG híbrido (FAISS+BM25+RRF) · e5-base 768d · 14 libros · 136K chunks · Agente ReAct Qwen2.5-7B · 4 features IA · UI glassmorphism · Docker+nginx · 100 tests · Recall@1=97.1%
+  </div>
+  <div class="badges" style="margin-top:4px">
+    <span class="badge teal">Recall@1 97.1%</span>
+    <span class="badge blue">MRR 0.986</span>
+    <span class="badge green">Recall@3 100%</span>
+    <span class="badge purple">TTS Neural</span>
+    <span class="badge yellow">Mapa Corporal SVG</span>
+    <span class="badge red">100 Tests</span>
+  </div>
+  <p style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">← → para navegar · F11 para pantalla completa</p>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button onclick="go(-1)">← Anterior</button>
+  <span class="slide-counter" id="counter">1 / 12</span>
+  <button onclick="go(1)">Siguiente →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+function go(dir) {
+  const next = cur + dir;
+  if (next < 0 || next >= total) return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('exit');
+  setTimeout(() => slides[cur].classList.remove('exit'), 400);
+  cur = next;
+  slides[cur].classList.add('active');
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+  document.getElementById('prog').style.width = ((cur + 1) / total * 100) + '%';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+});
+
+document.getElementById('prog').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>

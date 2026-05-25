@@ -10,4 +10,5 @@ libros/*.pdf
 memory.db
 data/
 .claude/
-=4.0.0
+node_modules/
+package-lock.json
