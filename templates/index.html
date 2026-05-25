@@ -1439,6 +1439,39 @@
     color: #22d3ee; font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
   }
   .zone-chip-tag button:hover { opacity: 1; }
+
+  /* Zone context card in chat */
+  .zone-context-msg { align-items: flex-start; }
+  .zone-av {
+    width: 28px; height: 28px; flex-shrink: 0;
+    background: rgba(6,182,212,0.10);
+    border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .zone-context-card {
+    background: rgba(6,182,212,0.05);
+    border: 1px solid rgba(6,182,212,0.18);
+    border-radius: 12px;
+    padding: 10px 14px;
+    max-width: 440px;
+  }
+  .zone-context-hdr {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+  }
+  .zone-context-title {
+    font-size: 11px; font-weight: 600; color: #22d3ee;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .zone-context-clear-all {
+    font-size: 10.5px; background: none; border: none; cursor: pointer;
+    color: var(--text-4); transition: color 0.15s; padding: 0;
+  }
+  .zone-context-clear-all:hover { color: var(--red); }
+  .zone-context-hint {
+    font-size: 10.5px; color: var(--text-4); margin-top: 8px; font-style: italic;
+  }
+
   @media (max-width: 600px) { .body-drawer { width: 100%; } }
 
   /* ========= EMERGENCY CARD ========= */
@@ -1780,7 +1813,6 @@
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
-    <div class="zone-chips-bar" id="zoneChipsBar"></div>
     <div class="input-hint">
       <span>No reemplaza la consulta médica profesional</span>
       <span>Enter para enviar · Shift+Enter para nueva línea</span>
@@ -1949,6 +1981,14 @@ async function sendMessage() {
     const zonePrefix = buildZonePrefix();
     const contextPrefix = [profilePrefix, zonePrefix].filter(Boolean).join(' ');
     const fullMsg = contextPrefix ? `${contextPrefix} ${msg}` : msg;
+    // Limpiar card de zonas del chat — ya está incluida en el mensaje
+    if (zonePrefix) {
+      document.getElementById('zoneContextCard')?.remove();
+      _selectedZones.clear();
+      document.querySelectorAll('.body-zone.selected').forEach(el => el.classList.remove('selected'));
+      _renderBodyChips();
+      document.getElementById('zoneBtn')?.classList.remove('has-zones');
+    }
     const resp = await fetch('/api/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2721,34 +2761,18 @@ async function loadHealthStatus() {
   }
 }
 
-// ===== TTS =====
+// ===== TTS (edge-tts neural via /api/tts) =====
 let _ttsEnabled = localStorage.getItem('medi-tts-enabled') === 'true';
-let _currentUtterance = null;
-let _ttsAvailable = false;
+let _currentAudio = null;
+const _ttsAvailable = true; // siempre disponible — usa backend
 
 function initTTS() {
-  if (!window.speechSynthesis) return;
-  const checkVoices = () => {
-    const voices = speechSynthesis.getVoices();
-    const esVoice = voices.find(v => v.lang.startsWith('es'));
-    if (esVoice || voices.length > 0) {
-      _ttsAvailable = true;
-      _syncTTSGlobalBtn();
-    }
-  };
-  speechSynthesis.onvoiceschanged = checkVoices;
-  checkVoices();
-}
-
-function _getSpanishVoice() {
-  const voices = speechSynthesis.getVoices();
-  return voices.find(v => v.lang.startsWith('es')) || voices[0] || null;
+  _syncTTSGlobalBtn();
 }
 
 function _syncTTSGlobalBtn() {
   const btn = document.getElementById('ttsGlobalBtn');
   if (!btn) return;
-  if (!_ttsAvailable) { btn.style.display = 'none'; return; }
   btn.classList.toggle('active', _ttsEnabled);
   const icon = btn.querySelector('i');
   if (icon) {
@@ -2758,7 +2782,6 @@ function _syncTTSGlobalBtn() {
 }
 
 function toggleTTSGlobal() {
-  if (!_ttsAvailable) return;
   _ttsEnabled = !_ttsEnabled;
   localStorage.setItem('medi-tts-enabled', _ttsEnabled);
   _syncTTSGlobalBtn();
@@ -2766,8 +2789,11 @@ function toggleTTSGlobal() {
 }
 
 function stopSpeaking() {
-  if (window.speechSynthesis) speechSynthesis.cancel();
-  _currentUtterance = null;
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio.src = '';
+    _currentAudio = null;
+  }
   document.querySelectorAll('.tts-card-btn.speaking').forEach(btn => {
     btn.classList.remove('speaking');
     const icon = btn.querySelector('i');
@@ -2788,41 +2814,49 @@ function _extractCleanText(data) {
   return text.trim();
 }
 
-function speakResponse(data, cardBtnId) {
-  if (!_ttsAvailable) return;
+function _setBtnSpeaking(btn, speaking) {
+  if (!btn) return;
+  btn.classList.toggle('speaking', speaking);
+  const icon = btn.querySelector('i');
+  if (icon) { icon.setAttribute('data-lucide', speaking ? 'volume-x' : 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
+}
+
+async function speakResponse(data, cardBtnId) {
   stopSpeaking();
   const btn = cardBtnId ? document.getElementById(cardBtnId) : null;
   const text = _extractCleanText(data);
   if (!text) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = _getSpanishVoice();
-  if (voice) utterance.voice = voice;
-  utterance.lang = voice?.lang || 'es-ES';
-  utterance.rate = 0.95;
-  _currentUtterance = utterance;
-  if (btn) {
-    btn.classList.add('speaking');
-    const icon = btn.querySelector('i');
-    if (icon) { icon.setAttribute('data-lucide', 'volume-x'); lucide.createIcons({ nodes: [icon] }); }
+
+  _setBtnSpeaking(btn, true);
+
+  try {
+    const resp = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice: 'es-ES-AlvaroNeural' })
+    });
+    if (!resp.ok) throw new Error('tts_error');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _currentAudio = audio;
+    audio.onended = audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      _currentAudio = null;
+      _setBtnSpeaking(btn, false);
+    };
+    await audio.play();
+  } catch {
+    _setBtnSpeaking(btn, false);
   }
-  utterance.onend = utterance.onerror = () => {
-    _currentUtterance = null;
-    if (btn) {
-      btn.classList.remove('speaking');
-      const icon = btn.querySelector('i');
-      if (icon) { icon.setAttribute('data-lucide', 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
-    }
-  };
-  speechSynthesis.speak(utterance);
 }
 
-function toggleCardTTS(data, cardBtnId) {
-  if (!_ttsAvailable) return;
+async function toggleCardTTS(data, cardBtnId) {
   const btn = document.getElementById(cardBtnId);
   if (btn?.classList.contains('speaking')) {
     stopSpeaking();
   } else {
-    speakResponse(data, cardBtnId);
+    await speakResponse(data, cardBtnId);
   }
 }
 
@@ -3073,14 +3107,14 @@ function toggleBodyZone(el) {
     el.classList.add('selected');
   }
   _renderBodyChips();
-  _renderZoneChipsBar();
+  _updateZoneChatCard();
 }
 
 function _removeZone(zone) {
   _selectedZones.delete(zone);
   document.querySelector(`[data-zone="${zone}"]`)?.classList.remove('selected');
   _renderBodyChips();
-  _renderZoneChipsBar();
+  _updateZoneChatCard();
 }
 
 function _renderBodyChips() {
@@ -3095,21 +3129,52 @@ function _renderBodyChips() {
   ).join('');
 }
 
-function _renderZoneChipsBar() {
-  const bar = document.getElementById('zoneChipsBar');
+function _updateZoneChatCard() {
   const zoneBtn = document.getElementById('zoneBtn');
-  if (!bar) return;
+  const existing = document.getElementById('zoneContextCard');
+
   if (_selectedZones.size === 0) {
-    bar.classList.remove('visible');
-    bar.innerHTML = '';
+    existing?.remove();
     zoneBtn?.classList.remove('has-zones');
     return;
   }
-  bar.classList.add('visible');
+
   zoneBtn?.classList.add('has-zones');
-  bar.innerHTML = [..._selectedZones.entries()].map(([zone, label]) =>
+
+  const chipsHtml = [..._selectedZones.entries()].map(([zone, label]) =>
     `<span class="zone-chip-tag">${esc(label)}<button onclick="_removeZone('${zone}')" title="Quitar">×</button></span>`
   ).join('');
+
+  let card = existing;
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'zoneContextCard';
+    card.className = 'msg zone-context-msg';
+    chatZone.appendChild(card);
+  }
+
+  card.innerHTML = `
+    <div class="av zone-av"><i data-lucide="map-pin" style="width:14px;height:14px;stroke-width:2;color:#22d3ee"></i></div>
+    <div class="zone-context-card">
+      <div class="zone-context-hdr">
+        <span class="zone-context-title">Zonas marcadas</span>
+        <button class="zone-context-clear-all" onclick="clearAllZones()">Limpiar todo ×</button>
+      </div>
+      <div class="zone-context-chips">${chipsHtml}</div>
+      <div class="zone-context-hint">Se incluirán en tu próxima consulta</div>
+    </div>`;
+
+  lucide.createIcons({ nodes: [card] });
+  scrollDown();
+}
+
+function clearAllZones() {
+  _selectedZones.forEach((_, zone) => {
+    document.querySelector(`[data-zone="${zone}"]`)?.classList.remove('selected');
+  });
+  _selectedZones.clear();
+  _renderBodyChips();
+  _updateZoneChatCard();
 }
 
 function buildZonePrefix() {

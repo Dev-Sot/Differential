@@ -762,6 +762,40 @@ def run_evaluation():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/tts", methods=["POST"])
+@require_auth
+@limiter.limit("30 per minute")
+def tts_endpoint():
+    import asyncio
+    import edge_tts
+
+    data = request.json or {}
+    text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify({"error": "text requerido"}), 400
+    if len(text) > 3000:
+        text = text[:3000]
+
+    voice = data.get("voice", "es-ES-AlvaroNeural")
+
+    async def _generate():
+        communicate = edge_tts.Communicate(text, voice)
+        buf = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                buf += chunk["data"]
+        return buf
+
+    try:
+        audio = asyncio.run(_generate())
+    except Exception as e:
+        log.error("rid=%s tts_error=%s", g.rid, e)
+        return jsonify({"error": "TTS no disponible"}), 503
+
+    return Response(audio, mimetype="audio/mpeg",
+                    headers={"Cache-Control": "no-store"})
+
+
 if __name__ == "__main__":
     print("[MEDI-IA] Iniciando servidor...")
     _start_cleanup_cron()
