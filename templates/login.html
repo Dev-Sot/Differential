@@ -7,20 +7,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f0f4f8;
-    --surface: #ffffff;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --emerald: #10b981;
+    --bg:        #090e1a;
+    --surface:   #0f1629;
+    --border:    rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.12);
+    --border-em: rgba(16,185,129,0.20);
+    --emerald:   #10b981;
+    --em:        #10b981;
     --emerald-dark: #059669;
-    --emerald-light: #d1fae5;
-    --red: #ef4444;
-    --red-light: #fee2e2;
-    --text: #0f172a;
-    --text-2: #475569;
-    --text-3: #94a3b8;
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
+    --em-dim:    rgba(16,185,129,0.12);
+    --em-glow:   rgba(16,185,129,0.18);
+    --emerald-light: rgba(16,185,129,0.12);
+    --red:       #ef4444;
+    --red-light: rgba(239,68,68,0.12);
+    --text:      #f1f5f9;
+    --text-2:    #94a3b8;
+    --text-3:    #475569;
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -51,13 +55,14 @@
   .logo-icon {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, var(--emerald), #3b82f6);
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    box-shadow: 0 0 14px var(--em-glow);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 22px;
-    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
   }
   .logo-text strong { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; }
   .logo-text span { font-size: 11px; color: var(--text-3); display: block; }
@@ -83,7 +88,7 @@
     font-size: 14px;
     font-family: 'JetBrains Mono', monospace;
     color: var(--text);
-    background: #f8fafc;
+    background: rgba(255,255,255,0.04);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
   }

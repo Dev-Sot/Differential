@@ -9,31 +9,37 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   :root {
-    --bg: #f0f4f8;
-    --surface: #ffffff;
-    --surface-2: #f8fafc;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --emerald: #10b981;
+    --bg:        #090e1a;
+    --surface:   #0f1629;
+    --surface-2: #111d35;
+    --surface-3: #162140;
+    --border:    rgba(255,255,255,0.06);
+    --border-md: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.12);
+    --border-em: rgba(16,185,129,0.20);
+    --emerald:   #10b981;
+    --em:        #10b981;
     --emerald-dark: #059669;
-    --emerald-light: #d1fae5;
-    --emerald-glow: rgba(16, 185, 129, 0.12);
-    --blue: #3b82f6;
-    --blue-light: #dbeafe;
-    --amber: #f59e0b;
-    --amber-light: #fef3c7;
-    --red: #ef4444;
-    --red-light: #fee2e2;
-    --purple: #8b5cf6;
-    --purple-light: #ede9fe;
-    --text: #0f172a;
-    --text-2: #475569;
-    --text-3: #94a3b8;
-    --text-4: #cbd5e1;
-    --sidebar-w: 260px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
+    --em-dim:    rgba(16,185,129,0.12);
+    --em-glow:   rgba(16,185,129,0.18);
+    --emerald-light: rgba(16,185,129,0.12);
+    --emerald-glow: rgba(16,185,129,0.18);
+    --blue:      #3b82f6;
+    --blue-light: rgba(59,130,246,0.12);
+    --amber:     #f59e0b;
+    --amber-light: rgba(245,158,11,0.12);
+    --red:       #ef4444;
+    --red-light: rgba(239,68,68,0.12);
+    --purple:    #8b5cf6;
+    --purple-light: rgba(139,92,246,0.12);
+    --text:      #f1f5f9;
+    --text-2:    #94a3b8;
+    --text-3:    #475569;
+    --text-4:    #2d4060;
+    --sidebar-w: 200px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,17 +79,16 @@
   }
 
   .logo-icon {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, var(--emerald), var(--blue));
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 18px;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+    box-shadow: 0 0 14px var(--em-glow);
   }
 
   .logo-text {
@@ -137,12 +142,12 @@
   }
 
   .sidebar-btn:hover { background: var(--surface-2); color: var(--text); }
-  .sidebar-btn.active { background: var(--emerald-light); color: var(--emerald-dark); font-weight: 500; }
+  .sidebar-btn.active { background: var(--em-dim); border: 1px solid var(--border-em); color: var(--em); font-weight: 500; }
   .sidebar-btn svg.lucide { opacity: 0.75; }
 
   .status-panel {
     margin: 0 14px;
-    background: var(--surface-2);
+    background: rgba(255,255,255,0.02);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 14px;
@@ -189,26 +194,7 @@
     50% { opacity: 0.4; }
   }
 
-  .tool-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 0 14px;
-  }
-
-  .tool-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    background: var(--surface-2);
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    font-size: 11.5px;
-    color: var(--text-2);
-  }
-
-  .tool-item svg.lucide { opacity: 0.6; }
+  /* tool-list eliminado — aparece en panel de detalles de la card */
 
   .sidebar-footer {
     margin-top: auto;
@@ -268,8 +254,8 @@
   .topbar {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    height: 56px;
+    padding: 0 20px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -310,6 +296,26 @@
 
   .meta-chip .icon { font-size: 12px; }
 
+  .topbar-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-md);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .topbar-live {
+    width: 5px; height: 5px;
+    background: var(--em);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--em);
+    flex-shrink: 0;
+  }
+
   /* Chat zone */
   .chat-zone {
     flex: 1;
@@ -338,16 +344,15 @@
   }
 
   .welcome-logo {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--emerald-light), var(--blue-light));
-    border: 2px solid var(--emerald);
-    border-radius: 20px;
+    width: 64px;
+    height: 64px;
+    background: var(--em-dim);
+    border: 1.5px solid var(--border-em);
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 0 32px var(--em-glow), 0 0 0 8px rgba(16,185,129,0.04);
     animation: welcome-pulse 3s ease-in-out infinite;
   }
 
@@ -368,6 +373,26 @@
     color: var(--text-2);
     max-width: 460px;
     line-height: 1.65;
+  }
+
+  .tech-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-md);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 10.5px;
+    color: var(--text-3);
+  }
+
+  .tech-badge .live-dot {
+    width: 5px; height: 5px;
+    background: var(--em);
+    border-radius: 50%;
+    box-shadow: 0 0 4px var(--em);
+    flex-shrink: 0;
   }
 
   .chips-grid {
@@ -397,9 +422,9 @@
   }
 
   .ex-chip:hover {
-    background: var(--emerald-light);
-    border-color: var(--emerald);
-    color: var(--emerald-dark);
+    background: var(--em-dim);
+    border-color: var(--border-em);
+    color: var(--em);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
@@ -445,10 +470,10 @@
   .ai-card {
     flex: 1;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-md);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   .card-header {
@@ -458,7 +483,7 @@
     gap: 10px;
     flex-wrap: wrap;
     border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
+    background: rgba(255,255,255,0.02);
   }
 
   .sev-pill {
@@ -473,13 +498,13 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  .sev-pill.leve { background: var(--emerald-light); color: var(--emerald-dark); border: 1px solid rgba(16,185,129,0.3); }
-  .sev-pill.moderada { background: var(--amber-light); color: #92400e; border: 1px solid rgba(245,158,11,0.3); }
-  .sev-pill.grave { background: var(--red-light); color: #991b1b; border: 1px solid rgba(239,68,68,0.3); }
+  .sev-pill.leve     { background: var(--em-dim);                    color: var(--em);   border: 1px solid rgba(16,185,129,0.25); }
+  .sev-pill.moderada { background: rgba(245,158,11,0.10);            color: #f59e0b;     border: 1px solid rgba(245,158,11,0.25); }
+  .sev-pill.grave    { background: rgba(239,68,68,0.10);             color: #ef4444;     border: 1px solid rgba(239,68,68,0.25); }
   .sev-pill.emergencia {
-    background: var(--purple-light);
-    color: #5b21b6;
-    border: 1px solid rgba(139,92,246,0.4);
+    background: rgba(139,92,246,0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(139,92,246,0.35);
     animation: pulse-sev 1.5s infinite;
   }
 
@@ -516,7 +541,7 @@
 
   .conf-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--emerald), var(--blue));
+    background: var(--emerald);
     border-radius: 3px;
     transition: width 1s ease;
   }
@@ -535,7 +560,7 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    background: #fafcff;
+    background: rgba(255,255,255,0.02);
   }
 
   .tool-badge {
@@ -597,13 +622,13 @@
   }
 
   .traj-thought {
-    background: #eff6ff;
+    background: rgba(59,130,246,0.08);
     border-left: 3px solid var(--blue);
     color: var(--text-2);
   }
 
   .traj-obs {
-    background: #f0fdf4;
+    background: rgba(16,185,129,0.08);
     border-left: 3px solid var(--emerald);
     color: var(--text-2);
   }
@@ -634,7 +659,7 @@
   /* Recommendation */
   .rec-box {
     padding: 14px 18px;
-    background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+    background: rgba(16,185,129,0.04);
     border-bottom: 1px solid var(--border);
     display: flex;
     gap: 10px;
@@ -684,9 +709,9 @@
   .src-chip {
     font-size: 10.5px;
     padding: 3px 8px;
-    background: #fef9ec;
-    color: #92400e;
-    border: 1px solid rgba(245,158,11,0.25);
+    background: rgba(245,158,11,0.08);
+    color: #fbbf24;
+    border: 1px solid rgba(245,158,11,0.2);
     border-radius: 10px;
   }
 
@@ -696,7 +721,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--surface-2);
+    background: rgba(255,255,255,0.01);
     border-top: 1px solid var(--border);
   }
 
@@ -926,64 +951,74 @@
   .export-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
   .export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* ========= DARK MODE ========= */
-  [data-theme="dark"] {
-    --bg: #0c1221;
-    --surface: #151f30;
-    --surface-2: #111827;
-    --border: #1e2d42;
-    --border-strong: #2d4060;
-    --text: #f1f5f9;
-    --text-2: #94a3b8;
-    --text-3: #506070;
-    --text-4: #2d4060;
-    --emerald-light: rgba(16,185,129,0.12);
-    --blue-light: rgba(59,130,246,0.12);
-    --amber-light: rgba(245,158,11,0.12);
-    --red-light: rgba(239,68,68,0.12);
-    --purple-light: rgba(139,92,246,0.12);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  /* ========= LIGHT MODE OVERRIDE ========= */
+  [data-theme="light"] {
+    --bg:        #f0f4f8;
+    --surface:   #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #f1f5f9;
+    --border:    #e2e8f0;
+    --border-md: #cbd5e1;
+    --border-strong: #cbd5e1;
+    --border-em: rgba(16,185,129,0.3);
+    --em-dim:    #d1fae5;
+    --em-glow:   rgba(16,185,129,0.12);
+    --emerald-light: #d1fae5;
+    --blue-light: #dbeafe;
+    --amber-light: #fef3c7;
+    --red-light:  #fee2e2;
+    --purple-light: #ede9fe;
+    --text:      #0f172a;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
+    --text-4:    #cbd5e1;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
   }
 
-  [data-theme="dark"] .rec-box {
-    background: linear-gradient(135deg, rgba(16,185,129,0.07), rgba(59,130,246,0.07));
+  [data-theme="light"] .rec-box {
+    background: linear-gradient(135deg, #f0fdf4, #eff6ff);
   }
-  [data-theme="dark"] .traj-thought { background: rgba(59,130,246,0.08); }
-  [data-theme="dark"] .traj-obs     { background: rgba(16,185,129,0.08); }
-  [data-theme="dark"] .card-body strong { color: var(--text); }
-  [data-theme="dark"] .export-btn:hover { background: rgba(59,130,246,0.15); }
-  [data-theme="dark"] .emergency-bar {
-    background: rgba(139,92,246,0.12);
-    border-color: rgba(139,92,246,0.35);
+  [data-theme="light"] .traj-thought { background: #eff6ff; }
+  [data-theme="light"] .traj-obs     { background: #f0fdf4; }
+  [data-theme="light"] .tools-strip  { background: #fafcff; }
+  [data-theme="light"] .src-chip {
+    background: #fef9ec;
+    color: #92400e;
+    border-color: rgba(245,158,11,0.25);
   }
-  [data-theme="dark"] .src-chip {
-    background: rgba(245,158,11,0.1);
-    color: #fbbf24;
-    border-color: rgba(245,158,11,0.2);
-  }
-  [data-theme="dark"] .tool-badge {
-    background: rgba(59,130,246,0.12);
-    color: #60a5fa;
+  [data-theme="light"] .tool-badge {
+    background: #dbeafe;
+    color: #3b82f6;
     border-color: rgba(59,130,246,0.2);
   }
-  [data-theme="dark"] .mini-badge {
-    background: rgba(139,92,246,0.15);
-    color: #a78bfa;
+  [data-theme="light"] .mini-badge {
+    background: #ede9fe;
+    color: #8b5cf6;
   }
-  [data-theme="dark"] .input-wrap {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
+  [data-theme="light"] .emergency-bar {
+    background: #ede9fe;
+    border-color: #8b5cf6;
   }
-  [data-theme="dark"] .input-wrap:focus-within {
-    background: var(--surface);
-    border-color: var(--emerald);
+  [data-theme="light"] .card-emergency {
+    box-shadow: 0 4px 24px rgba(139,92,246,0.14), var(--shadow-md) !important;
   }
-  [data-theme="dark"] .copy-btn:hover { background: rgba(16,185,129,0.12); }
-  [data-theme="dark"] .hist-item:hover { background: rgba(255,255,255,0.04); }
-  [data-theme="dark"] .followup-chip { background: var(--surface-2); border-color: var(--border-strong); }
-  [data-theme="dark"] .followup-chip:hover { background: rgba(16,185,129,0.12); }
+  [data-theme="light"] .card-emergency .card-header {
+    background: linear-gradient(135deg, rgba(139,92,246,0.07), rgba(239,68,68,0.04));
+  }
+  [data-theme="light"] .export-btn:hover {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+  [data-theme="light"] .hist-item:hover { background: #f8fafc; }
+  [data-theme="light"] .followup-chip { background: #ffffff; border-color: #cbd5e1; }
+  [data-theme="light"] .followup-chip:hover { background: #d1fae5; }
+  [data-theme="light"] .copy-btn:hover { background: #d1fae5; border-color: #10b981; color: #059669; }
+  [data-theme="light"] .rag-chunk { background: #ffffff; }
+  [data-theme="light"] .card-foot { background: #f8fafc; }
+  [data-theme="light"] .card-header { background: #f8fafc; }
 
   /* Transicion suave al cambiar tema */
   body, .sidebar, .topbar, .ai-card, .card-header, .card-foot,
@@ -1005,6 +1040,406 @@
     transition: all 0.15s;
   }
   .theme-btn:hover { background: var(--surface-2); color: var(--text-2); }
+
+  /* ===== TTS ===== */
+  .tts-global-btn {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-3);
+    transition: all 0.15s;
+  }
+  .tts-global-btn:hover { background: var(--surface-2); color: var(--text-2); }
+  .tts-global-btn.active {
+    color: var(--em);
+    border-color: var(--border-em);
+    background: var(--em-dim);
+    animation: tts-pulse 2s ease-in-out infinite;
+  }
+  @keyframes tts-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    50%      { box-shadow: 0 0 0 4px rgba(16,185,129,0.12); }
+  }
+  .tts-card-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    padding: 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-md);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tts-card-btn:hover { background: var(--em-dim); border-color: var(--border-em); color: var(--em); }
+  .tts-card-btn.speaking { color: var(--em); border-color: var(--border-em); background: var(--em-dim); }
+
+  /* ===== PERFIL CLÍNICO ===== */
+  .profile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .profile-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .profile-modal {
+    background: var(--surface);
+    border: 1px solid var(--border-em);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+    transform: translateY(8px);
+    transition: transform 0.2s;
+  }
+  .profile-overlay.show .profile-modal { transform: translateY(0); }
+  .profile-modal h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .profile-modal .profile-subtitle {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 20px;
+  }
+  .profile-field { margin-bottom: 16px; }
+  .profile-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .profile-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .profile-input:focus { border-color: var(--border-em); }
+  .profile-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    min-height: 38px;
+    cursor: text;
+    transition: border-color 0.15s;
+  }
+  .profile-chip-wrap:focus-within { border-color: var(--border-em); }
+  .profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 2px 10px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--em);
+    white-space: nowrap;
+  }
+  .profile-chip button {
+    background: none; border: none; cursor: pointer;
+    color: var(--em); font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+  }
+  .profile-chip button:hover { opacity: 1; }
+  .profile-chip-input {
+    flex: 1;
+    min-width: 80px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+  }
+  .profile-chip-hint { font-size: 10.5px; color: var(--text-4); margin-top: 4px; }
+  .profile-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .profile-toggle-label { font-size: 13px; color: var(--text-2); }
+  .profile-toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border-strong);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    flex-shrink: 0;
+  }
+  .profile-toggle.on { background: var(--em); }
+  .profile-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .profile-toggle.on::after { left: 18px; }
+  .profile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+  .profile-btn-skip {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    color: var(--text-3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .profile-btn-skip:hover { border-color: var(--border-strong); color: var(--text-2); }
+  .profile-btn-save {
+    padding: 8px 20px;
+    background: var(--em);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .profile-btn-save:hover { opacity: 0.88; }
+
+  /* ===== PIPELINE RAG VIZ ===== */
+  .pipeline-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    padding: 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-md);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pipeline-btn:hover { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); color: #60a5fa; }
+  .pipeline-btn.open { color: #60a5fa; border-color: rgba(59,130,246,0.2); background: rgba(59,130,246,0.08); }
+  .pipeline-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    border-top: 0px solid var(--border);
+  }
+  .pipeline-panel.open {
+    max-height: 1200px;
+    border-top: 1px solid var(--border);
+  }
+  .pipeline-inner { padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; }
+  .pipeline-step {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .pipeline-step.visible { opacity: 1; transform: translateY(0); }
+  .pipeline-step-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pipeline-step-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    background: rgba(59,130,246,0.10);
+    color: #60a5fa;
+    border-radius: 8px;
+    font-size: 9.5px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .pipeline-chunks-grid { display: flex; flex-direction: column; gap: 6px; }
+  .pipeline-chunk-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: border-color 0.3s, opacity 0.4s;
+  }
+  .pipeline-chunk-card.discarded { opacity: 0.35; }
+  .pipeline-chunk-card.kept { border-color: var(--border-em); }
+  .pipeline-chunk-hdr { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+  .pipeline-rank { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: var(--text-4); min-width: 20px; }
+  .pipeline-book { font-size: 11px; font-weight: 500; color: var(--text-2); flex: 1; }
+  .pipeline-page { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-3); }
+  .pipeline-score-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .pipeline-score-label { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: var(--text-4); min-width: 36px; }
+  .pipeline-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .pipeline-bar-fill { height: 100%; border-radius: 2px; width: 0%; transition: width 0.7s ease; }
+  .pipeline-bar-fill.faiss { background: #3b82f6; }
+  .pipeline-bar-fill.rerank-pos { background: var(--em); }
+  .pipeline-bar-fill.rerank-neg { background: #ef4444; }
+  .pipeline-score-num { font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: var(--text-3); min-width: 40px; text-align: right; }
+  .pipeline-preview {
+    font-size: 11.5px; color: var(--text-3); line-height: 1.5; margin-top: 4px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .pipeline-preview.discarded-text { text-decoration: line-through; color: var(--text-4); }
+  .pipeline-kept-badge {
+    font-size: 9px; padding: 1px 6px; background: var(--em-dim); color: var(--em);
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+  }
+  .pipeline-discarded-badge {
+    font-size: 9px; padding: 1px 6px; background: rgba(239,68,68,0.08); color: #ef4444;
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ===== BODY MAP DRAWER ===== */
+  .body-drawer-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .body-drawer-overlay.show { opacity: 1; pointer-events: all; }
+  .body-drawer {
+    position: fixed; top: 0; right: 0; width: 320px; height: 100%;
+    background: var(--surface); border-left: 1px solid var(--border-md);
+    z-index: 901; display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  }
+  .body-drawer.open { transform: translateX(0); }
+  .body-drawer-header {
+    padding: 16px 16px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .body-drawer-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .body-drawer-close {
+    background: none; border: none; cursor: pointer; color: var(--text-3);
+    padding: 4px; border-radius: 6px; transition: all 0.15s;
+  }
+  .body-drawer-close:hover { background: var(--surface-2); color: var(--text-2); }
+  .body-view-toggle {
+    display: flex; gap: 6px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .body-view-btn {
+    flex: 1; padding: 5px 10px; background: transparent;
+    border: 1px solid var(--border-md); border-radius: 7px;
+    color: var(--text-3); font-size: 11.5px; font-family: 'Inter', sans-serif;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .body-view-btn.active { background: var(--em-dim); border-color: var(--border-em); color: var(--em); font-weight: 500; }
+  .body-svg-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 12px; overflow: hidden;
+  }
+  .body-svg-container { position: relative; width: 100%; max-width: 180px; }
+  .body-svg-container svg { width: 100%; height: auto; display: block; }
+  .body-zone {
+    fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.18); stroke-width: 1;
+    cursor: pointer; transition: fill 0.18s, stroke 0.18s, filter 0.18s;
+  }
+  .body-zone:hover { fill: rgba(16,185,129,0.18); stroke: rgba(16,185,129,0.5); }
+  .body-zone.selected {
+    fill: rgba(16,185,129,0.35); stroke: var(--em); stroke-width: 1.5;
+    filter: drop-shadow(0 0 5px rgba(16,185,129,0.55));
+  }
+  .body-marked-section {
+    padding: 10px 16px; border-top: 1px solid var(--border); flex-shrink: 0; min-height: 60px;
+  }
+  .body-marked-label {
+    font-size: 10.5px; font-weight: 600; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .body-marked-chips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; }
+  .body-zone-chip {
+    display: flex; align-items: center; gap: 4px;
+    padding: 2px 8px 2px 10px;
+    background: rgba(6,182,212,0.10); border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 12px; font-size: 11px; color: #22d3ee;
+  }
+  .body-zone-chip button {
+    background: none; border: none; cursor: pointer;
+    color: #22d3ee; font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+  }
+  .body-zone-chip button:hover { opacity: 1; }
+  .body-no-zones { font-size: 11.5px; color: var(--text-4); font-style: italic; }
+  .zone-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; background: transparent;
+    border: 1px solid transparent; border-radius: 8px;
+    cursor: pointer; color: var(--text-3); flex-shrink: 0; transition: all 0.15s;
+  }
+  .zone-btn:hover { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
+  .zone-btn.has-zones { color: #22d3ee; border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.08); }
+  .zone-chips-bar { display: none; gap: 6px; flex-wrap: wrap; padding: 0 14px 8px; }
+  .zone-chips-bar.visible { display: flex; }
+  .zone-chip-tag {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 8px 3px 10px;
+    background: rgba(6,182,212,0.10); border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 12px; font-size: 11.5px; color: #22d3ee;
+  }
+  .zone-chip-tag button {
+    background: none; border: none; cursor: pointer;
+    color: #22d3ee; font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+  }
+  .zone-chip-tag button:hover { opacity: 1; }
+  @media (max-width: 600px) { .body-drawer { width: 100%; } }
 
   /* ========= EMERGENCY CARD ========= */
   .card-emergency {
@@ -1203,7 +1638,7 @@
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon"><i data-lucide="stethoscope" style="width:20px;height:20px;color:white;stroke-width:1.75"></i></div>
+    <div class="logo-icon"><i data-lucide="stethoscope" style="width:16px;height:16px;color:var(--em);stroke-width:2"></i></div>
     <div class="logo-text">
       <strong>MEDI-IA</strong>
       <span>Asistente médico</span>
@@ -1256,19 +1691,14 @@
     </div>
   </div>
 
-  <div class="sidebar-section" style="margin-top:4px">
-    <div class="sidebar-label">Herramientas activas</div>
-    <div class="tool-list">
-      <div class="tool-item"><i data-lucide="search" style="width:13px;height:13px;stroke-width:2"></i> search_symptoms</div>
-      <div class="tool-item"><i data-lucide="alert-triangle" style="width:13px;height:13px;stroke-width:2"></i> assess_urgency</div>
-      <div class="tool-item"><i data-lucide="pill" style="width:13px;height:13px;stroke-width:2"></i> get_drug_info</div>
-      <div class="tool-item"><i data-lucide="book-open" style="width:13px;height:13px;stroke-width:2"></i> get_section</div>
-    </div>
-  </div>
+  <!-- herramientas visibles en panel de detalles de cada card -->
 
   <div class="sidebar-footer">
     <button class="export-conv-btn" id="exportConvBtn" onclick="exportConversation(this)">
       <i data-lucide="file-text" style="width:13px;height:13px"></i> Exportar sesión
+    </button>
+    <button class="sidebar-btn" onclick="openProfileModal()" style="justify-content:flex-start;gap:8px;">
+      <i data-lucide="user-circle" style="width:14px;height:14px;stroke-width:2"></i> Mi perfil clínico
     </button>
     <button class="reset-btn" onclick="resetSession()">
       <i data-lucide="rotate-ccw" style="width:13px;height:13px"></i> Nueva consulta
@@ -1285,15 +1715,22 @@
       <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menú">
         <i data-lucide="menu" style="width:18px;height:18px;stroke-width:2"></i>
       </button>
-      <i data-lucide="stethoscope" style="width:17px;height:17px;color:var(--emerald);stroke-width:2"></i>
+      <i data-lucide="stethoscope" style="width:15px;height:15px;color:var(--em);stroke-width:2"></i>
       <span>MEDI-IA</span>
       <span class="breadcrumb">&nbsp;/ Evaluación de síntomas</span>
     </div>
     <div class="topbar-meta">
-      <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
-        <i data-lucide="moon" id="themeIcon" style="width:15px;height:15px;stroke-width:2"></i>
+      <div class="topbar-chip">
+        <span class="topbar-live"></span>
+        RAG · <span id="topbarLibros">14</span> libros
+      </div>
+      <button class="tts-global-btn" id="ttsGlobalBtn" onclick="toggleTTSGlobal()" title="Modo manos libres — leer respuestas automáticamente">
+        <i data-lucide="volume-2" id="ttsGlobalIcon" style="width:15px;height:15px;stroke-width:2"></i>
       </button>
-      <button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-strong);border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-strong)'">
+      <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
+        <i data-lucide="sun" id="themeIcon" style="width:15px;height:15px;stroke-width:2"></i>
+      </button>
+      <button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-md);border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-md)'">
         <i data-lucide="log-out" style="width:13px;height:13px"></i> Salir
       </button>
     </div>
@@ -1302,10 +1739,13 @@
   <!-- Chat -->
   <div class="chat-zone" id="chatZone">
     <div class="welcome" id="welcomeState">
-      <div class="welcome-logo"><i data-lucide="stethoscope" style="width:38px;height:38px;stroke-width:1.25;color:var(--emerald)"></i></div>
+      <div class="welcome-logo"><i data-lucide="stethoscope" style="width:30px;height:30px;stroke-width:1.5;color:var(--em)"></i></div>
       <h2>¿Cómo te sientes hoy?</h2>
-      <p>Describe tus síntomas con el mayor detalle posible. El agente analizará tu consulta con la base de conocimiento médico y te entregará un diagnóstico diferencial.</p>
-      <div id="welcomeStats" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:26px;"></div>
+      <p>Describe tus síntomas con detalle. El agente analiza tu consulta contra 14 libros médicos y entrega un diagnóstico diferencial fundamentado.</p>
+      <div class="tech-badge" id="welcomeTechBadge">
+        <span class="live-dot"></span>
+        <span id="welcomeBadgeText">136K chunks · e5-base · BM25+RRF · Recall@1 97.1%</span>
+      </div>
       <div class="chips-grid">
         <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="thermometer" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Fiebre y dolor muscular</button>
         <button class="ex-chip" onclick="fillEx(this)"><i data-lucide="heart" style="width:14px;height:14px;stroke-width:2;flex-shrink:0"></i> Dolor en el pecho y brazo</button>
@@ -1330,6 +1770,9 @@
   <div class="input-bar">
     <div class="input-wrap">
       <textarea id="userInput" rows="1" placeholder="Describe tus síntomas... (ej: tengo fiebre, escalofríos y dolor de garganta)"></textarea>
+      <button class="zone-btn" id="zoneBtn" onclick="openBodyDrawer()" title="Marcar zona de dolor en el cuerpo">
+        <i data-lucide="map-pin" style="width:16px;height:16px;stroke-width:2"></i>
+      </button>
       <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Dictar síntomas por voz">
         <i data-lucide="mic" id="micIcon" style="width:17px;height:17px;stroke-width:2"></i>
       </button>
@@ -1337,6 +1780,7 @@
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
+    <div class="zone-chips-bar" id="zoneChipsBar"></div>
     <div class="input-hint">
       <span>No reemplaza la consulta médica profesional</span>
       <span>Enter para enviar · Shift+Enter para nueva línea</span>
@@ -1344,6 +1788,111 @@
   </div>
 
 </div><!-- /main -->
+
+<!-- ===== MODAL PERFIL CLÍNICO ===== -->
+<div class="profile-overlay" id="profileOverlay">
+  <div class="profile-modal">
+    <h3><i data-lucide="user-circle" style="width:16px;height:16px;display:inline;vertical-align:-2px;margin-right:6px;color:var(--em)"></i>Perfil clínico</h3>
+    <p class="profile-subtitle">Información opcional que mejora la precisión del diagnóstico diferencial.</p>
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <div class="profile-field" style="flex:1">
+        <div class="profile-label">Nombre</div>
+        <input type="text" id="profileNombre" class="profile-input" placeholder="Tu nombre (opcional)">
+      </div>
+      <div class="profile-field" style="width:90px">
+        <div class="profile-label">Edad</div>
+        <input type="number" id="profileEdad" class="profile-input" placeholder="años" min="0" max="120">
+      </div>
+    </div>
+    <div class="profile-field">
+      <div class="profile-label">Alergias conocidas</div>
+      <div class="profile-chip-wrap" id="profileAlergiaWrap" onclick="document.getElementById('profileAlergiaInput').focus()">
+        <div id="profileAlergiaChips"></div>
+        <input type="text" id="profileAlergiaInput" class="profile-chip-input" placeholder="Ej: penicilina">
+      </div>
+      <div class="profile-chip-hint">Escribe y presiona Enter para agregar</div>
+    </div>
+    <div class="profile-field">
+      <div class="profile-label">Medicamentos actuales</div>
+      <div class="profile-chip-wrap" id="profileMedWrap" onclick="document.getElementById('profileMedInput').focus()">
+        <div id="profileMedChips"></div>
+        <input type="text" id="profileMedInput" class="profile-chip-input" placeholder="Ej: atenolol 50mg">
+      </div>
+      <div class="profile-chip-hint">Escribe y presiona Enter para agregar</div>
+    </div>
+    <div class="profile-field">
+      <div class="profile-label">Condiciones previas</div>
+      <div class="profile-chip-wrap" id="profileCondWrap" onclick="document.getElementById('profileCondInput').focus()">
+        <div id="profileCondChips"></div>
+        <input type="text" id="profileCondInput" class="profile-chip-input" placeholder="Ej: hipertensión, diabetes">
+      </div>
+      <div class="profile-chip-hint">Escribe y presiona Enter para agregar</div>
+    </div>
+    <div class="profile-field">
+      <div class="profile-toggle-row">
+        <span class="profile-toggle-label">Embarazo actual o posible</span>
+        <button class="profile-toggle" id="profileEmbarazadaToggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="profile-btn-skip" onclick="closeProfileModal()">Saltar por ahora</button>
+      <button class="profile-btn-save" onclick="saveProfile()">Guardar perfil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BODY MAP DRAWER ===== -->
+<div class="body-drawer-overlay" id="bodyDrawerOverlay" onclick="closeBodyDrawer()"></div>
+<div class="body-drawer" id="bodyDrawer">
+  <div class="body-drawer-header">
+    <span class="body-drawer-title"><i data-lucide="map-pin" style="width:14px;height:14px;display:inline;margin-right:5px;vertical-align:-2px;color:var(--em)"></i>Marcar zona de dolor</span>
+    <button class="body-drawer-close" onclick="closeBodyDrawer()">
+      <i data-lucide="x" style="width:16px;height:16px;stroke-width:2"></i>
+    </button>
+  </div>
+  <div class="body-view-toggle">
+    <button class="body-view-btn active" id="btnViewFront" onclick="setBodyView('front')">Frontal</button>
+    <button class="body-view-btn" id="btnViewBack" onclick="setBodyView('back')">Dorsal</button>
+  </div>
+  <div class="body-svg-wrap">
+    <div class="body-svg-container">
+      <svg id="bodySvgFront" viewBox="0 0 160 320" xmlns="http://www.w3.org/2000/svg">
+        <ellipse data-zone="cabeza" data-label="Cabeza" cx="80" cy="28" rx="22" ry="24" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="cuello" data-label="Cuello" x="68" y="52" width="24" height="16" rx="4" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pecho" data-label="Pecho" x="44" y="68" width="72" height="52" rx="8" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="abdomen" data-label="Abdomen" x="48" y="122" width="64" height="44" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pelvis" data-label="Pelvis" x="48" y="168" width="64" height="32" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <ellipse data-zone="hombro-der" data-label="Hombro derecho" cx="36" cy="76" rx="13" ry="13" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <ellipse data-zone="hombro-izq" data-label="Hombro izquierdo" cx="124" cy="76" rx="13" ry="13" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="brazo-der" data-label="Brazo derecho" x="18" y="89" width="22" height="48" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="brazo-izq" data-label="Brazo izquierdo" x="120" y="89" width="22" height="48" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="antebrazo-der" data-label="Antebrazo derecho" x="16" y="140" width="20" height="44" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="antebrazo-izq" data-label="Antebrazo izquierdo" x="124" y="140" width="20" height="44" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="muslo-der" data-label="Muslo derecho" x="50" y="202" width="28" height="52" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="muslo-izq" data-label="Muslo izquierdo" x="82" y="202" width="28" height="52" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pierna-der" data-label="Pierna derecha" x="50" y="258" width="26" height="50" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pierna-izq" data-label="Pierna izquierda" x="84" y="258" width="26" height="50" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+      </svg>
+      <svg id="bodySvgBack" viewBox="0 0 160 320" xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <ellipse data-zone="cabeza-post" data-label="Cabeza (posterior)" cx="80" cy="28" rx="22" ry="24" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="cuello-post" data-label="Cuello (posterior)" x="68" y="52" width="24" height="16" rx="4" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="espalda-alta" data-label="Espalda alta" x="44" y="68" width="72" height="44" rx="8" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="espalda-baja" data-label="Espalda baja" x="48" y="114" width="64" height="52" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="gluteos" data-label="Glúteos" x="48" y="168" width="64" height="32" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="muslo-post-der" data-label="Muslo post. derecho" x="50" y="202" width="28" height="52" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="muslo-post-izq" data-label="Muslo post. izquierdo" x="82" y="202" width="28" height="52" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pierna-post-der" data-label="Pierna post. derecha" x="50" y="258" width="26" height="50" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+        <rect data-zone="pierna-post-izq" data-label="Pierna post. izquierda" x="84" y="258" width="26" height="50" rx="6" class="body-zone" onclick="toggleBodyZone(this)"/>
+      </svg>
+    </div>
+  </div>
+  <div class="body-marked-section">
+    <div class="body-marked-label">Zonas marcadas</div>
+    <div class="body-marked-chips" id="bodyMarkedChips">
+      <span class="body-no-zones">Ninguna zona seleccionada</span>
+    </div>
+  </div>
+</div>
 
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
@@ -1389,16 +1938,21 @@ async function sendMessage() {
   userInput.value = '';
   userInput.style.height = 'auto';
   setLoading(true);
+  stopSpeaking();
   emergencyBar.classList.remove('show');
 
   const typId = addTyping();
   let streamCardId = null;
 
   try {
+    const profilePrefix = buildProfilePrefix();
+    const zonePrefix = buildZonePrefix();
+    const contextPrefix = [profilePrefix, zonePrefix].filter(Boolean).join(' ');
+    const fullMsg = contextPrefix ? `${contextPrefix} ${msg}` : msg;
     const resp = await fetch('/api/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg })
+      body: JSON.stringify({ message: fullMsg })
     });
 
     if (!resp.ok) {
@@ -1441,8 +1995,15 @@ async function sendMessage() {
         } else if (event.type === 'done') {
           if (streamCardId) removeEl(streamCardId);
           else removeEl(typId);
-          addAICard({ ...event, query: msg });
+          const cardData = { ...event, query: msg };
+          addAICard(cardData);
           if (event.gravedad === 'emergencia') emergencyBar.classList.add('show');
+          if (_ttsEnabled) {
+            setTimeout(() => {
+              const lastTtsBtn = [...document.querySelectorAll('.tts-card-btn')].at(-1);
+              speakResponse(cardData, lastTtsBtn?.id || null);
+            }, 300);
+          }
         } else if (event.type === 'error') {
           removeEl(typId);
           if (streamCardId) removeEl(streamCardId);
@@ -1523,11 +2084,15 @@ function addAICard(data) {
   const tools = data.tools_used || [];
   const srcs  = data.fuentes || [];
   const iters = data.iteraciones || 0;
-  const exportBtnId  = 'expbtn_'   + Date.now();
-  const copyBtnId    = 'copybtn_'  + Date.now();
-  const detailsBtnId = 'detbtn_'   + Date.now();
-  const panelId      = 'detpanel_' + Date.now();
-  const feedbackId   = 'fb_'       + Date.now();
+  const ts             = Date.now();
+  const exportBtnId    = 'expbtn_'      + ts;
+  const copyBtnId      = 'copybtn_'     + ts;
+  const ttsBtnId       = 'ttsbtn_'      + ts;
+  const detailsBtnId   = 'detbtn_'      + ts;
+  const panelId        = 'detpanel_'    + ts;
+  const pipelineBtnId  = 'pipebtn_'     + ts;
+  const pipelinePanelId = 'pipepanel_'  + ts;
+  const feedbackId     = 'fb_'          + ts;
 
   // ── Contenido del panel de detalles ─────────────────────────────────────
   const toolsSec = tools.length
@@ -1635,6 +2200,8 @@ function addAICard(data) {
       <div class="card-foot">
         <button class="export-btn" id="${exportBtnId}"><i data-lucide="download" style="width:12px;height:12px"></i> PDF</button>
         <button class="copy-btn" id="${copyBtnId}"><i data-lucide="copy" style="width:12px;height:12px"></i> Copiar</button>
+        <button class="tts-card-btn" id="${ttsBtnId}" title="Escuchar respuesta"><i data-lucide="volume-2" style="width:12px;height:12px"></i> Escuchar</button>
+        ${chunks.length ? `<button class="pipeline-btn" id="${pipelineBtnId}"><i data-lucide="git-branch" style="width:12px;height:12px"></i> Ver pipeline <span class="arrow">▼</span></button>` : ''}
         ${hasDetails
           ? `<button class="details-btn" id="${detailsBtnId}"><i data-lucide="sliders-horizontal" style="width:12px;height:12px"></i> Detalles del análisis <span class="arrow">▼</span></button>`
           : ''}
@@ -1650,6 +2217,12 @@ function addAICard(data) {
            </div>`
         : ''}
 
+      ${chunks.length
+        ? `<div class="pipeline-panel" id="${pipelinePanelId}">
+            ${buildRagPipelineHtml(chunks, pipelinePanelId)}
+           </div>`
+        : ''}
+
       <div class="card-disclaimer">MEDI-IA no reemplaza la consulta médica profesional. En emergencias llame al 123.</div>
     </div>`;
 
@@ -1657,6 +2230,15 @@ function addAICard(data) {
   lucide.createIcons();
   document.getElementById(exportBtnId)?.addEventListener('click', function() { exportPDF(data, this); });
   document.getElementById(copyBtnId)?.addEventListener('click', function() { copyResponse(data, this); });
+  const ttsBtn = document.getElementById(ttsBtnId);
+  if (ttsBtn) {
+    if (!_ttsAvailable) {
+      ttsBtn.style.display = 'none';
+    } else {
+      ttsBtn.addEventListener('click', () => toggleCardTTS(data, ttsBtnId));
+    }
+  }
+  document.getElementById(pipelineBtnId)?.addEventListener('click', function() { toggleRagPipeline(pipelinePanelId, this); });
   document.getElementById(detailsBtnId)?.addEventListener('click', function() { toggleDetails(panelId, this); });
   document.getElementById(feedbackId + '_up')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, 1));
   document.getElementById(feedbackId + '_dn')?.addEventListener('click', () => sendFeedback(feedbackId, data.condicion_principal, -1));
@@ -2079,7 +2661,7 @@ function _syncThemeIcon(theme) {
 
 // Aplica el tema guardado antes de pintar el DOM visible
 (function initTheme() {
-  const saved = localStorage.getItem('medi-theme') || 'light';
+  const saved = localStorage.getItem('medi-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
 })();
 
@@ -2114,6 +2696,10 @@ async function loadHealthStatus() {
     const motor = document.getElementById('sidebarMotor');
     if (motor) motor.textContent = h.hf_activo ? 'Qwen 2.5-7B' : 'RAG Template';
 
+    // Topbar chip
+    const topbarLibros = document.getElementById('topbarLibros');
+    if (topbarLibros && h.libros?.length) topbarLibros.textContent = h.libros.length;
+
     // Aviso visible si index falta
     if (degraded) {
       const warn = document.createElement('div');
@@ -2122,16 +2708,12 @@ async function loadHealthStatus() {
       document.querySelector('.sidebar-footer')?.before(warn);
     }
 
-    const ws = document.getElementById('welcomeStats');
-    if (ws) {
-      const modeLabel = h.hf_activo ? 'ReAct + LLM' : 'RAG Template';
-      const chunksLabel = h.chunks_indexados ? h.chunks_indexados.toLocaleString() + ' fragmentos' : '—';
-      const librosLabel = h.libros?.length ? h.libros.length + ' libros' : '—';
-      ws.innerHTML = `
-        <span class="meta-chip"><i data-lucide="database" style="width:11px;height:11px"></i> ${chunksLabel}</span>
-        <span class="meta-chip"><i data-lucide="${h.hf_activo ? 'cpu' : 'layers'}" style="width:11px;height:11px"></i> ${modeLabel}</span>
-        <span class="meta-chip"><i data-lucide="book-open" style="width:11px;height:11px"></i> ${librosLabel}</span>`;
-      lucide.createIcons({ nodes: [ws] });
+    const badgeText = document.getElementById('welcomeBadgeText');
+    if (badgeText) {
+      const chunks = h.chunks_indexados ? h.chunks_indexados.toLocaleString() + ' chunks' : '136K chunks';
+      const libros = h.libros?.length ? h.libros.length + ' libros' : '14 libros';
+      const modo   = h.hf_activo ? 'ReAct' : 'RAG';
+      badgeText.textContent = `${chunks} · e5-base · BM25+RRF · ${libros} · ${modo}`;
     }
   } catch {
     // Si el server no responde, dejamos los valores por defecto
@@ -2139,11 +2721,411 @@ async function loadHealthStatus() {
   }
 }
 
+// ===== TTS =====
+let _ttsEnabled = localStorage.getItem('medi-tts-enabled') === 'true';
+let _currentUtterance = null;
+let _ttsAvailable = false;
+
+function initTTS() {
+  if (!window.speechSynthesis) return;
+  const checkVoices = () => {
+    const voices = speechSynthesis.getVoices();
+    const esVoice = voices.find(v => v.lang.startsWith('es'));
+    if (esVoice || voices.length > 0) {
+      _ttsAvailable = true;
+      _syncTTSGlobalBtn();
+    }
+  };
+  speechSynthesis.onvoiceschanged = checkVoices;
+  checkVoices();
+}
+
+function _getSpanishVoice() {
+  const voices = speechSynthesis.getVoices();
+  return voices.find(v => v.lang.startsWith('es')) || voices[0] || null;
+}
+
+function _syncTTSGlobalBtn() {
+  const btn = document.getElementById('ttsGlobalBtn');
+  if (!btn) return;
+  if (!_ttsAvailable) { btn.style.display = 'none'; return; }
+  btn.classList.toggle('active', _ttsEnabled);
+  const icon = btn.querySelector('i');
+  if (icon) {
+    icon.setAttribute('data-lucide', _ttsEnabled ? 'volume-2' : 'volume-x');
+    lucide.createIcons({ nodes: [icon] });
+  }
+}
+
+function toggleTTSGlobal() {
+  if (!_ttsAvailable) return;
+  _ttsEnabled = !_ttsEnabled;
+  localStorage.setItem('medi-tts-enabled', _ttsEnabled);
+  _syncTTSGlobalBtn();
+  if (!_ttsEnabled) stopSpeaking();
+}
+
+function stopSpeaking() {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  _currentUtterance = null;
+  document.querySelectorAll('.tts-card-btn.speaking').forEach(btn => {
+    btn.classList.remove('speaking');
+    const icon = btn.querySelector('i');
+    if (icon) { icon.setAttribute('data-lucide', 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
+  });
+}
+
+function _extractCleanText(data) {
+  let text = (data.respuesta || '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '');
+  const words = text.split(/\s+/);
+  if (words.length > 500) {
+    const firstPara = text.split('\n\n')[0] || text.substring(0, 600);
+    const recomIdx = text.search(/recomendaci[oó]n|conclusi[oó]n/i);
+    const recomText = recomIdx > -1 ? text.substring(recomIdx, recomIdx + 400) : '';
+    text = firstPara + (recomText ? '. ' + recomText : '');
+  }
+  if (data.recomendacion) text += '. Recomendación: ' + data.recomendacion;
+  return text.trim();
+}
+
+function speakResponse(data, cardBtnId) {
+  if (!_ttsAvailable) return;
+  stopSpeaking();
+  const btn = cardBtnId ? document.getElementById(cardBtnId) : null;
+  const text = _extractCleanText(data);
+  if (!text) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = _getSpanishVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice?.lang || 'es-ES';
+  utterance.rate = 0.95;
+  _currentUtterance = utterance;
+  if (btn) {
+    btn.classList.add('speaking');
+    const icon = btn.querySelector('i');
+    if (icon) { icon.setAttribute('data-lucide', 'volume-x'); lucide.createIcons({ nodes: [icon] }); }
+  }
+  utterance.onend = utterance.onerror = () => {
+    _currentUtterance = null;
+    if (btn) {
+      btn.classList.remove('speaking');
+      const icon = btn.querySelector('i');
+      if (icon) { icon.setAttribute('data-lucide', 'volume-2'); lucide.createIcons({ nodes: [icon] }); }
+    }
+  };
+  speechSynthesis.speak(utterance);
+}
+
+function toggleCardTTS(data, cardBtnId) {
+  if (!_ttsAvailable) return;
+  const btn = document.getElementById(cardBtnId);
+  if (btn?.classList.contains('speaking')) {
+    stopSpeaking();
+  } else {
+    speakResponse(data, cardBtnId);
+  }
+}
+
+// ===== PERFIL CLÍNICO =====
+const _profileChips = { alergias: [], medicamentos: [], condiciones: [] };
+
+function openProfileModal() {
+  _loadProfileIntoModal();
+  document.getElementById('profileOverlay').classList.add('show');
+}
+
+function closeProfileModal() {
+  document.getElementById('profileOverlay').classList.remove('show');
+}
+
+function _loadProfileIntoModal() {
+  const raw = sessionStorage.getItem('medi-ia-profile');
+  const p = raw ? JSON.parse(raw) : {};
+  document.getElementById('profileNombre').value = p.nombre || '';
+  document.getElementById('profileEdad').value = p.edad || '';
+  _profileChips.alergias = p.alergias ? [...p.alergias] : [];
+  _profileChips.medicamentos = p.medicamentos ? [...p.medicamentos] : [];
+  _profileChips.condiciones = p.condiciones ? [...p.condiciones] : [];
+  const toggle = document.getElementById('profileEmbarazadaToggle');
+  if (toggle) toggle.classList.toggle('on', !!p.embarazada);
+  _renderChips('profileAlergiaChips', 'alergias');
+  _renderChips('profileMedChips', 'medicamentos');
+  _renderChips('profileCondChips', 'condiciones');
+}
+
+function _renderChips(containerId, key) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = _profileChips[key].map((v, i) =>
+    `<span class="profile-chip">${esc(v)}<button onclick="_removeChip('${key}',${i},'${containerId}')" title="Quitar">×</button></span>`
+  ).join('');
+}
+
+function _removeChip(key, idx, containerId) {
+  _profileChips[key].splice(idx, 1);
+  _renderChips(containerId, key);
+}
+
+function _setupChipInput(inputId, key, containerId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = input.value.trim().replace(/,$/, '');
+      if (val && !_profileChips[key].includes(val)) {
+        _profileChips[key].push(val);
+        _renderChips(containerId, key);
+      }
+      input.value = '';
+    }
+  });
+}
+
+function saveProfile() {
+  const profile = {
+    nombre: document.getElementById('profileNombre').value.trim(),
+    edad: parseInt(document.getElementById('profileEdad').value) || null,
+    alergias: [..._profileChips.alergias],
+    medicamentos: [..._profileChips.medicamentos],
+    condiciones: [..._profileChips.condiciones],
+    embarazada: document.getElementById('profileEmbarazadaToggle').classList.contains('on')
+  };
+  sessionStorage.setItem('medi-ia-profile', JSON.stringify(profile));
+  closeProfileModal();
+  showToast('Perfil guardado correctamente');
+}
+
+function buildProfilePrefix() {
+  const raw = sessionStorage.getItem('medi-ia-profile');
+  if (!raw) return '';
+  const p = JSON.parse(raw);
+  const parts = [];
+  if (p.nombre && p.edad) parts.push(`${p.nombre}, ${p.edad} años`);
+  else if (p.nombre) parts.push(p.nombre);
+  else if (p.edad) parts.push(`${p.edad} años`);
+  if (p.alergias?.length) parts.push(`Alergias: ${p.alergias.join(', ')}`);
+  if (p.medicamentos?.length) parts.push(`Medicamentos: ${p.medicamentos.join(', ')}`);
+  if (p.condiciones?.length) parts.push(`Condiciones: ${p.condiciones.join(', ')}`);
+  if (p.embarazada) parts.push('Embarazada: sí');
+  return parts.length ? `[Paciente: ${parts.join('. ')}]` : '';
+}
+
+function checkProfileOnLoad() {
+  if (!sessionStorage.getItem('medi-ia-profile')) {
+    setTimeout(openProfileModal, 800);
+  }
+}
+
+function initProfileModal() {
+  _setupChipInput('profileAlergiaInput', 'alergias', 'profileAlergiaChips');
+  _setupChipInput('profileMedInput', 'medicamentos', 'profileMedChips');
+  _setupChipInput('profileCondInput', 'condiciones', 'profileCondChips');
+  document.getElementById('profileOverlay')?.addEventListener('click', e => {
+    if (e.target.id === 'profileOverlay') closeProfileModal();
+  });
+}
+
+// ===== PIPELINE RAG VIZ =====
+function buildRagPipelineHtml(chunks, panelId) {
+  if (!chunks || !chunks.length) return '';
+  const RERANK_THRESHOLD = -3.0;
+  const reranked = [...chunks].sort((a, b) => (b.rerank_score || 0) - (a.rerank_score || 0));
+
+  const renderChunkCard = (c, phase) => {
+    const faissW = Math.round(Math.min(100, (c.faiss_score || 0) * 100));
+    const rrScore = c.rerank_score || 0;
+    const rrNorm = Math.round(Math.min(100, Math.max(0, ((rrScore + 10) / 20) * 100)));
+    const rrClass = rrScore >= 0 ? 'rerank-pos' : 'rerank-neg';
+    const bookShort = (c.book || '').split(' ').slice(0, 3).join(' ');
+    const isKept = rrScore > RERANK_THRESHOLD;
+
+    if (phase === 'retrieval') {
+      return `<div class="pipeline-chunk-card">
+        <div class="pipeline-chunk-hdr">
+          <span class="pipeline-rank">#${c.rank}</span>
+          <span class="pipeline-book"><i data-lucide="book-open" style="width:11px;height:11px;display:inline;margin-right:3px;vertical-align:-1px"></i>${esc(bookShort)}</span>
+          <span class="pipeline-page">p.${c.page}</span>
+        </div>
+        <div class="pipeline-score-row">
+          <span class="pipeline-score-label">FAISS</span>
+          <div class="pipeline-bar"><div class="pipeline-bar-fill faiss" data-target="${faissW}"></div></div>
+          <span class="pipeline-score-num">${(c.faiss_score||0).toFixed(3)}</span>
+        </div>
+        <div class="pipeline-preview">${esc(c.text_preview || '')}…</div>
+      </div>`;
+    }
+    if (phase === 'rerank') {
+      return `<div class="pipeline-chunk-card ${isKept ? '' : 'discarded'}">
+        <div class="pipeline-chunk-hdr">
+          <span class="pipeline-rank">#${c.rank}</span>
+          <span class="pipeline-book"><i data-lucide="book-open" style="width:11px;height:11px;display:inline;margin-right:3px;vertical-align:-1px"></i>${esc(bookShort)}</span>
+          <span class="pipeline-page">p.${c.page}</span>
+          ${isKept ? '<span class="pipeline-kept-badge">✓ relevante</span>' : '<span class="pipeline-discarded-badge">descartado</span>'}
+        </div>
+        <div class="pipeline-score-row">
+          <span class="pipeline-score-label">Rerank</span>
+          <div class="pipeline-bar"><div class="pipeline-bar-fill ${rrClass}" data-target="${rrNorm}"></div></div>
+          <span class="pipeline-score-num">${rrScore.toFixed(2)}</span>
+        </div>
+        <div class="pipeline-preview ${isKept ? '' : 'discarded-text'}">${esc(c.text_preview || '')}…</div>
+      </div>`;
+    }
+    if (phase === 'final') {
+      return `<div class="pipeline-chunk-card ${isKept ? 'kept' : 'discarded'}">
+        <div class="pipeline-chunk-hdr">
+          <span class="pipeline-rank">#${c.rank}</span>
+          <span class="pipeline-book"><i data-lucide="book-open" style="width:11px;height:11px;display:inline;margin-right:3px;vertical-align:-1px"></i>${esc(bookShort)}</span>
+          <span class="pipeline-page">p.${c.page}</span>
+          ${isKept ? '<span class="pipeline-kept-badge">→ enviado al LLM</span>' : '<span class="pipeline-discarded-badge">no incluido</span>'}
+        </div>
+        <div class="pipeline-preview ${isKept ? '' : 'discarded-text'}">${esc(c.text_preview || '')}…</div>
+      </div>`;
+    }
+    return '';
+  };
+
+  return `<div class="pipeline-inner" id="${panelId}_inner">
+    <div class="pipeline-step" id="${panelId}_s1">
+      <div class="pipeline-step-title">
+        <span>1. Recuperación</span>
+        <span class="pipeline-step-badge">BM25 + FAISS · ${chunks.length} chunks</span>
+      </div>
+      <div class="pipeline-chunks-grid">${chunks.map(c => renderChunkCard(c, 'retrieval')).join('')}</div>
+    </div>
+    <div class="pipeline-step" id="${panelId}_s2">
+      <div class="pipeline-step-title">
+        <span>2. Reranker</span>
+        <span class="pipeline-step-badge">Cross-Encoder mMARCO</span>
+      </div>
+      <div class="pipeline-chunks-grid">${reranked.map(c => renderChunkCard(c, 'rerank')).join('')}</div>
+    </div>
+    <div class="pipeline-step" id="${panelId}_s3">
+      <div class="pipeline-step-title">
+        <span>3. Contexto enviado al LLM</span>
+        <span class="pipeline-step-badge">${reranked.filter(c => (c.rerank_score||0) > RERANK_THRESHOLD).length} fragmentos</span>
+      </div>
+      <div class="pipeline-chunks-grid">${reranked.map(c => renderChunkCard(c, 'final')).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function toggleRagPipeline(panelId, btnEl) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  btnEl.classList.toggle('open', isOpen);
+  btnEl.querySelector('span.arrow').textContent = isOpen ? '▲' : '▼';
+  if (isOpen) {
+    lucide.createIcons({ nodes: [panel] });
+    ['_s1', '_s2', '_s3'].forEach((suffix, i) => {
+      setTimeout(() => {
+        const step = document.getElementById(panelId + suffix);
+        if (step) step.classList.add('visible');
+        step?.querySelectorAll('.pipeline-bar-fill[data-target]').forEach(bar => {
+          setTimeout(() => { bar.style.width = bar.dataset.target + '%'; }, 50);
+        });
+      }, i * 220);
+    });
+  } else {
+    ['_s1','_s2','_s3'].forEach(s => {
+      const step = document.getElementById(panelId + s);
+      if (step) {
+        step.classList.remove('visible');
+        step.querySelectorAll('.pipeline-bar-fill').forEach(b => { b.style.width = '0%'; });
+      }
+    });
+  }
+}
+
+// ===== BODY MAP =====
+const _selectedZones = new Map();
+
+function openBodyDrawer() {
+  document.getElementById('bodyDrawer').classList.add('open');
+  document.getElementById('bodyDrawerOverlay').classList.add('show');
+  lucide.createIcons({ nodes: [document.getElementById('bodyDrawer')] });
+  _selectedZones.forEach((label, zone) => {
+    document.querySelector(`[data-zone="${zone}"]`)?.classList.add('selected');
+  });
+}
+
+function closeBodyDrawer() {
+  document.getElementById('bodyDrawer').classList.remove('open');
+  document.getElementById('bodyDrawerOverlay').classList.remove('show');
+}
+
+function setBodyView(view) {
+  document.getElementById('bodySvgFront').style.display = view === 'front' ? 'block' : 'none';
+  document.getElementById('bodySvgBack').style.display  = view === 'back'  ? 'block' : 'none';
+  document.getElementById('btnViewFront').classList.toggle('active', view === 'front');
+  document.getElementById('btnViewBack').classList.toggle('active', view === 'back');
+}
+
+function toggleBodyZone(el) {
+  const zone  = el.dataset.zone;
+  const label = el.dataset.label;
+  if (_selectedZones.has(zone)) {
+    _selectedZones.delete(zone);
+    el.classList.remove('selected');
+  } else {
+    _selectedZones.set(zone, label);
+    el.classList.add('selected');
+  }
+  _renderBodyChips();
+  _renderZoneChipsBar();
+}
+
+function _removeZone(zone) {
+  _selectedZones.delete(zone);
+  document.querySelector(`[data-zone="${zone}"]`)?.classList.remove('selected');
+  _renderBodyChips();
+  _renderZoneChipsBar();
+}
+
+function _renderBodyChips() {
+  const container = document.getElementById('bodyMarkedChips');
+  if (!container) return;
+  if (_selectedZones.size === 0) {
+    container.innerHTML = '<span class="body-no-zones">Ninguna zona seleccionada</span>';
+    return;
+  }
+  container.innerHTML = [..._selectedZones.entries()].map(([zone, label]) =>
+    `<span class="body-zone-chip">${esc(label)}<button onclick="_removeZone('${zone}')" title="Quitar">×</button></span>`
+  ).join('');
+}
+
+function _renderZoneChipsBar() {
+  const bar = document.getElementById('zoneChipsBar');
+  const zoneBtn = document.getElementById('zoneBtn');
+  if (!bar) return;
+  if (_selectedZones.size === 0) {
+    bar.classList.remove('visible');
+    bar.innerHTML = '';
+    zoneBtn?.classList.remove('has-zones');
+    return;
+  }
+  bar.classList.add('visible');
+  zoneBtn?.classList.add('has-zones');
+  bar.innerHTML = [..._selectedZones.entries()].map(([zone, label]) =>
+    `<span class="zone-chip-tag">${esc(label)}<button onclick="_removeZone('${zone}')" title="Quitar">×</button></span>`
+  ).join('');
+}
+
+function buildZonePrefix() {
+  if (_selectedZones.size === 0) return '';
+  const labels = [..._selectedZones.values()].join(', ');
+  return `[Zonas afectadas: ${labels}.]`;
+}
+
 lucide.createIcons();
-_syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
+_syncThemeIcon(localStorage.getItem('medi-theme') || 'dark');
 initVoice();
+initTTS();
+initProfileModal();
 renderHistory();
 loadHealthStatus();
+checkProfileOnLoad();
 </script>
 </body>
 </html>
