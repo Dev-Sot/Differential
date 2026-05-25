@@ -360,7 +360,7 @@
   /* U4 — Scroll to bottom button */
   #scrollBottomBtn {
     position: fixed;
-    bottom: 90px;
+    bottom: 135px;
     right: 20px;
     width: 36px; height: 36px;
     background: var(--surface);
@@ -554,8 +554,8 @@
   #onboardingOverlay.active { pointer-events: all; }
   .ob-backdrop {
     position: absolute; inset: 0;
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(2px);
+    background: transparent;
+    pointer-events: none;
   }
   .ob-spotlight {
     position: absolute;
@@ -572,6 +572,7 @@
   }
   .ob-tooltip {
     position: absolute;
+    z-index: 10;
     background: var(--surface);
     border: 1px solid var(--border-em);
     border-radius: 14px;
@@ -1918,8 +1919,8 @@
 </head>
 <body>
 <div id="progressBar"></div>
-<div id="onboardingOverlay">
-  <div class="ob-backdrop" id="obBackdrop" onclick="skipOnboarding()"></div>
+<div id="onboardingOverlay" onclick="if(!event.target.closest('.ob-tooltip'))skipOnboarding()">
+  <div class="ob-backdrop" id="obBackdrop"></div>
   <div class="ob-spotlight" id="obSpotlight"></div>
   <div class="ob-tooltip" id="obTooltip">
     <div class="ob-step" id="obStep">Paso 1 de 3</div>
@@ -2823,11 +2824,16 @@ function cleanResponse(text) {
     'sintomas clave que coinciden',
     'síntomas clave que coinciden',
   ];
+  // Detecta líneas con mayoría de caracteres CJK (chino/japonés/coreano)
+  const isCJK = line => {
+    const cjk = (line.match(/[　-鿿가-힯豈-﫿]/g) || []).length;
+    return cjk > 4 || (line.length > 0 && cjk / line.length > 0.3);
+  };
   return text
     .split('\n')
     .filter(line => {
       const l = line.trim().toLowerCase();
-      return l.length > 0 && !skip.some(p => l.startsWith(p));
+      return l.length > 0 && !skip.some(p => l.startsWith(p)) && !isCJK(line);
     })
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
@@ -3447,9 +3453,9 @@ function buildProfilePrefix() {
 }
 
 function checkProfileOnLoad() {
-  if (!sessionStorage.getItem('medi-ia-profile')) {
-    setTimeout(openProfileModal, 800);
-  }
+  if (sessionStorage.getItem('medi-ia-profile')) return;
+  if (!localStorage.getItem('medi-onboarding-done')) return; // espera al onboarding
+  setTimeout(openProfileModal, 800);
 }
 
 function initProfileModal() {
@@ -3716,18 +3722,29 @@ let _obStep = 0;
 function _positionOBTooltip(targetRect) {
   const tip  = document.getElementById('obTooltip');
   const spot = document.getElementById('obSpotlight');
-  const pad  = 10;
+  const pad  = 8;
   spot.style.left   = (targetRect.left   - pad) + 'px';
   spot.style.top    = (targetRect.top    - pad) + 'px';
   spot.style.width  = (targetRect.width  + pad*2) + 'px';
   spot.style.height = (targetRect.height + pad*2) + 'px';
 
-  const tipW = 270, tipH = 160;
-  let tx = targetRect.left;
-  let ty = targetRect.bottom + 16;
-  if (ty + tipH > window.innerHeight) ty = targetRect.top - tipH - 16;
-  if (tx + tipW > window.innerWidth)  tx = window.innerWidth - tipW - 12;
-  tip.style.left = Math.max(8, tx) + 'px';
+  const tipW = 270, tipH = 175, gap = 20;
+  const midY = window.innerHeight / 2;
+
+  // Si el target está en la mitad inferior → tooltip va ARRIBA con más margen
+  let ty, tx;
+  if (targetRect.top > midY) {
+    ty = targetRect.top - tipH - gap;
+  } else {
+    ty = targetRect.bottom + gap;
+  }
+
+  // Centrar horizontalmente sobre el target, con límites de pantalla
+  tx = targetRect.left + targetRect.width / 2 - tipW / 2;
+  tx = Math.max(12, Math.min(tx, window.innerWidth - tipW - 12));
+  ty = Math.max(12, Math.min(ty, window.innerHeight - tipH - 12));
+
+  tip.style.left = tx + 'px';
   tip.style.top  = ty + 'px';
 }
 
@@ -3756,6 +3773,7 @@ function skipOnboarding() {
   ov.classList.remove('active');
   ov.style.display = 'none';
   localStorage.setItem('medi-onboarding-done', '1');
+  checkProfileOnLoad();
 }
 
 function initOnboarding() {
