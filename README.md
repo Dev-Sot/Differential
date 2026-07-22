@@ -1,6 +1,6 @@
 # MEDI-IA — Asistente Médico con IA
 
-[![CI](https://github.com/Milan32555/medi-ia-medical-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Milan32555/medi-ia-medical-agent/actions/workflows/ci.yml)
+[![CI](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-3.x-000000?logo=flask&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-185-brightgreen)
@@ -147,7 +147,7 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/Milan32555/medi-ia-medical-agent.git
+git clone https://github.com/Dev-Sot/medical-agent.git
 cd medi-ia-medical-agent
 
 # 2. Crear entorno virtual e instalar dependencias
