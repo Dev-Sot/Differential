@@ -6,6 +6,7 @@ import sys
 import os
 import uuid
 import json
+import hmac
 import functools
 import logging
 import time
@@ -70,8 +71,20 @@ def _start_cleanup_cron() -> None:
     log.info("cleanup_cron started interval_h=%d days_threshold=%d", interval_s // 3600, days)
 
 
+_SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not _SECRET_KEY:
+    if os.getenv("FLASK_DEBUG", "False").lower() == "true":
+        _SECRET_KEY = os.urandom(24).hex()
+        log.warning("SECRET_KEY no definida — usando una aleatoria (solo valido en modo debug local)")
+    else:
+        raise RuntimeError(
+            "SECRET_KEY no esta definida. Es obligatoria fuera de FLASK_DEBUG=True: "
+            "sin ella, cada reinicio del proceso invalida todas las sesiones activas. "
+            "Genera una con: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+app.secret_key = _SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 
@@ -131,7 +144,7 @@ def auth_login():
     if not AUTH_PASSWORD:
         session["authenticated"] = True
         return jsonify({"ok": True})
-    if password == AUTH_PASSWORD:
+    if hmac.compare_digest(password, AUTH_PASSWORD):
         session["authenticated"] = True
         log.info("rid=%s auth_ok ip=%s", g.rid, request.remote_addr)
         return jsonify({"ok": True})

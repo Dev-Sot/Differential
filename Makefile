@@ -1,7 +1,7 @@
 PYTHON = venv/Scripts/python.exe
 PIP    = venv/Scripts/pip.exe
 
-.PHONY: run ingest test install reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup
+.PHONY: run ingest test install install-dev lint format typecheck reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup
 
 ## Iniciar servidor Flask
 run:
@@ -18,6 +18,22 @@ test:
 ## Instalar dependencias
 install:
 	$(PIP) install -r requirements.txt
+
+## Instalar herramientas de desarrollo (ruff, black, mypy)
+install-dev:
+	$(PIP) install -r requirements-dev.txt
+
+## Revisar estilo y errores estaticos (ruff)
+lint:
+	venv/Scripts/ruff.exe check .
+
+## Formatear codigo (black)
+format:
+	venv/Scripts/black.exe .
+
+## Chequeo de tipos (mypy)
+typecheck:
+	venv/Scripts/mypy.exe src app.py
 
 ## Evaluacion completa del pipeline RAG (40 queries, metricas Recall/MRR/Precision)
 eval-full:
