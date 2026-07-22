@@ -1,0 +1,48 @@
+  :root {
+    --bg:        #090e1a;
+    --surface:   #0f1629;
+    --surface-2: #111d35;
+    --surface-3: #162140;
+    --border:    rgba(255,255,255,0.06);
+    --border-md: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.12);
+    --border-em: rgba(16,185,129,0.20);
+    --emerald:   #10b981;
+    --em:        #10b981;
+    --emerald-dark: #059669;
+    --em-dim:    rgba(16,185,129,0.12);
+    --em-glow:   rgba(16,185,129,0.18);
+    --emerald-light: rgba(16,185,129,0.12);
+    --emerald-glow: rgba(16,185,129,0.18);
+    --blue:      #3b82f6;
+    --blue-light: rgba(59,130,246,0.12);
+    --amber:     #f59e0b;
+    --amber-light: rgba(245,158,11,0.12);
+    --red:       #ef4444;
+    --red-light: rgba(239,68,68,0.12);
+    --purple:    #8b5cf6;
+    --purple-light: rgba(139,92,246,0.12);
+    --text:      #f1f5f9;
+    --text-2:    #94a3b8;
+    --text-3:    #475569;
+    --text-4:    #2d4060;
+    --sidebar-w: 200px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Lucide — los SVGs generados heredan el style= del <i> original */
+  svg.lucide { display: block; flex-shrink: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+

@@ -1,9 +1,9 @@
 PYTHON = venv/Scripts/python.exe
 PIP    = venv/Scripts/pip.exe
 
-.PHONY: run ingest test install install-dev lint format typecheck reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup
+.PHONY: run ingest test install install-dev lint format typecheck reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup frontend-install frontend-build frontend-dev frontend-typecheck
 
-## Iniciar servidor Flask
+## Iniciar servidor Flask (requiere haber corrido frontend-build al menos una vez)
 run:
 	$(PYTHON) app.py
 
@@ -62,6 +62,22 @@ docker-stop:
 ## Docker: construir indice FAISS dentro del contenedor
 docker-ingest:
 	docker compose exec medi-ia python ingest.py
+
+## Frontend: instalar dependencias (Vite/TS/Tailwind)
+frontend-install:
+	cd frontend && npm install
+
+## Frontend: build de produccion -> static/dist (lo sirve Flask)
+frontend-build:
+	cd frontend && npm run build
+
+## Frontend: servidor de Vite con hot-reload (para desarrollo del CSS/TS)
+frontend-dev:
+	cd frontend && npm run dev
+
+## Frontend: chequeo de tipos (tsc --noEmit)
+frontend-typecheck:
+	cd frontend && npm run typecheck
 
 ## Listar sesiones guardadas en SQLite
 sessions:

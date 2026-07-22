@@ -1,0 +1,42 @@
+  /* ===== TTS ===== */
+  .tts-global-btn {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-3);
+    transition: all 0.15s;
+  }
+  .tts-global-btn:hover { background: var(--surface-2); color: var(--text-2); }
+  .tts-global-btn.active {
+    color: var(--em);
+    border-color: var(--border-em);
+    background: var(--em-dim);
+    animation: tts-pulse 2s ease-in-out infinite;
+  }
+  @keyframes tts-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    50%      { box-shadow: 0 0 0 4px rgba(16,185,129,0.12); }
+  }
+  .tts-card-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    padding: 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-md);
+    border-radius: 6px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tts-card-btn:hover { background: var(--em-dim); border-color: var(--border-em); color: var(--em); }
+  .tts-card-btn.speaking { color: var(--em); border-color: var(--border-em); background: var(--em-dim); }
+

@@ -1,0 +1,22 @@
+  /* ========= RESPONSIVE ========= */
+  @media (max-width: 768px) {
+    .hamburger-btn { display: flex; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: calc(-1 * var(--sidebar-w));
+      height: 100%;
+      transition: left 0.3s ease, box-shadow 0.3s ease;
+      z-index: 200;
+    }
+    .sidebar.open {
+      left: 0;
+      box-shadow: var(--shadow-lg);
+    }
+    .topbar { padding: 0 16px; }
+    .chat-zone { padding: 16px; }
+    .input-bar { padding: 12px 16px; }
+    .chips-grid { grid-template-columns: 1fr; }
+    .emergency-bar { margin: 0 16px 12px; }
+    .followup-row { padding-left: 0; }
+  }

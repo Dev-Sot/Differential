@@ -1,0 +1,17 @@
+/* Punto de entrada de estilos — mismo orden que el <style> original de templates/index.html.
+   El orden importa: light-mode.css son overrides que dependen de la cascada de los anteriores. */
+@import "./base.css";
+@import "./sidebar.css";
+@import "./main-layout.css";
+@import "./light-mode.css";
+@import "./tts.css";
+@import "./profile.css";
+@import "./rag-viz.css";
+@import "./bodymap.css";
+@import "./emergency.css";
+@import "./responsive.css";
+
+/* Tailwind: solo utilidades, disponibles para componentes nuevos.
+   Preflight/base desactivado en tailwind.config.js para no pisar el reset de arriba. */
+@tailwind components;
+@tailwind utilities;

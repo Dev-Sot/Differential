@@ -1,0 +1,184 @@
+  /* ===== PERFIL CLÍNICO ===== */
+  .profile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .profile-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .profile-modal {
+    background: var(--surface);
+    border: 1px solid var(--border-em);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+    transform: translateY(8px);
+    transition: transform 0.2s;
+  }
+  .profile-overlay.show .profile-modal { transform: translateY(0); }
+  .profile-modal h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .profile-modal .profile-subtitle {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 20px;
+  }
+  .profile-field { margin-bottom: 16px; }
+  .profile-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .profile-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .profile-input:focus { border-color: var(--border-em); }
+  .profile-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    min-height: 38px;
+    cursor: text;
+    transition: border-color 0.15s;
+  }
+  .profile-chip-wrap:focus-within { border-color: var(--border-em); }
+  .profile-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 3px 10px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--em);
+    white-space: nowrap;
+  }
+  .profile-chip button {
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; flex-shrink: 0;
+    background: rgba(16,185,129,0.15); border: none; cursor: pointer;
+    color: var(--em); font-size: 11px; line-height: 1;
+    padding: 0; border-radius: 50%; opacity: 0.75; transition: opacity 0.15s;
+  }
+  .profile-chip button:hover { opacity: 1; }
+  .profile-chip-input {
+    flex: 1;
+    min-width: 80px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+  }
+  .profile-chip-hint { font-size: 10.5px; color: var(--text-4); margin-top: 4px; }
+  /* Los div de chips deben ser transparentes al layout flex del wrap */
+  #profileAlergiaChips, #profileMedChips, #profileCondChips { display: contents; }
+  .profile-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .profile-toggle-label { font-size: 13px; color: var(--text-2); }
+  .profile-toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border-strong);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    flex-shrink: 0;
+  }
+  .profile-toggle.on { background: var(--em); }
+  .profile-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .profile-toggle.on::after { left: 18px; }
+  .profile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+  .profile-btn-skip {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    color: var(--text-3);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .profile-btn-skip:hover { border-color: var(--border-strong); color: var(--text-2); }
+  .profile-btn-save {
+    padding: 8px 20px;
+    background: var(--em);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .profile-btn-save:hover { opacity: 0.88; }
+  .profile-modal { position: relative; }
+  .profile-close-x {
+    position: absolute; top: 14px; right: 14px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); padding: 4px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .profile-close-x:hover { background: var(--surface-2); color: var(--text-2); }
+

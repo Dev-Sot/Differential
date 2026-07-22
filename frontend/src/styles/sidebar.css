@@ -1,0 +1,208 @@
+  /* ========= SIDEBAR ========= */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 0; }
+
+  .sidebar-logo {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--em-dim);
+    border: 1px solid var(--border-em);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 14px var(--em-glow);
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo-text strong {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .logo-text span {
+    font-size: 10.5px;
+    color: var(--text-3);
+    font-weight: 400;
+  }
+
+  .sidebar-section {
+    padding: 16px 14px 8px;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    padding: 0 4px;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .sidebar-btn:hover { background: var(--surface-2); color: var(--text); }
+  .sidebar-btn.active { background: var(--em-dim); border: 1px solid var(--border-em); color: var(--em); font-weight: 500; }
+  .sidebar-btn svg.lucide { opacity: 0.75; }
+
+  .status-panel {
+    margin: 0 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .status-row:last-child { margin-bottom: 0; }
+
+  .status-key {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .status-val {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  .online-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--emerald);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* tool-list eliminado — aparece en panel de detalles de la card */
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:hover { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+  .export-conv-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+  .export-conv-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+  .export-conv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .profile-sidebar-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+  .profile-sidebar-btn:hover {
+    background: var(--em-dim);
+    border-color: var(--border-em);
+    color: var(--em);
+  }
+

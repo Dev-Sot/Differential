@@ -9,7 +9,9 @@ data/
 memory.db
 libros/*.pdf
 index/books.index
+index/metadata.json
 presentation/
-medi-ia-clean/
 *.md
 tests/
+frontend/node_modules/
+static/dist/
