@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 index/books.index
+index/metadata.json
 libros/*.pdf
 .env
 .DS_Store
