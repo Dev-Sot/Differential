@@ -235,7 +235,7 @@ class TestExportPdfEndpoint:
 
     def test_fpdf_error_returns_500(self, client):
         payload = {"respuesta": "Diagnostico.", "gravedad": "leve"}
-        with patch("app._build_pdf_bytes", side_effect=Exception("fpdf error")):
+        with patch("app.build_diagnosis_pdf", side_effect=Exception("fpdf error")):
             r = client.post("/api/export/pdf", json=payload)
         assert r.status_code == 500
         assert "error" in r.get_json()

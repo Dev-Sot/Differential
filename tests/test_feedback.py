@@ -11,6 +11,7 @@ import pytest
 from unittest.mock import patch
 
 import app as app_mod
+from src import metrics as metrics_mod
 
 flask_app = app_mod.app
 
@@ -161,10 +162,10 @@ class TestFeedbackEndpoint:
         assert stats["negative"] >= 1
 
     def test_feedback_reflected_in_metrics(self, client):
-        with app_mod._mtx:
-            app_mod._query_ts.clear()
-            app_mod._lat_log.clear()
-            app_mod._err_count[0] = 0
+        with metrics_mod._mtx:
+            metrics_mod._query_ts.clear()
+            metrics_mod._lat_log.clear()
+            metrics_mod._err_count[0] = 0
 
         client.post("/api/feedback", json={"rating": 1})
         client.post("/api/feedback", json={"rating": 1})

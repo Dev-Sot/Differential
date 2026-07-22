@@ -11,7 +11,6 @@ import functools
 import logging
 import time
 import threading
-from collections import deque
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
@@ -23,6 +22,8 @@ from flask_limiter.util import get_remote_address
 from src.agent import run, get_health
 from src.schemas import ConsultaRequest, ErrorResponse
 from src.memory import clear_session, save_feedback, get_feedback_stats, get_history
+from src import metrics as metrics_mod
+from src.pdf_export import build_diagnosis_pdf, build_conversation_pdf
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,25 +31,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 log = logging.getLogger("medi-ia")
-
-# ── Métricas en memoria (se pierden al reiniciar) ─────────────────────────────
-_mtx       = threading.Lock()
-_query_ts  = deque(maxlen=10_000)   # float timestamps de queries completadas
-_lat_log   = deque(maxlen=2_000)    # (ts: float, ms: int) por query
-_err_count = [0]                    # lista para mutación sin global
-_start_mono = time.monotonic()
-
-
-def _record_query(latency_ms: int) -> None:
-    now = time.time()
-    with _mtx:
-        _query_ts.append(now)
-        _lat_log.append((now, latency_ms))
-
-
-def _record_error() -> None:
-    with _mtx:
-        _err_count[0] += 1
 
 
 # ── Cron de limpieza de sesiones inactivas ────────────────────────────────────
@@ -183,14 +165,14 @@ def query_agent():
         result = run(consulta.message, session_id=session_id)
     except FileNotFoundError:
         log.error("rid=%s faiss_index_missing", g.rid)
-        _record_error()
+        metrics_mod.record_error()
         return jsonify({
             "success": False,
             "error": "Base de conocimiento no disponible. Ejecuta 'make ingest' para construir el indice FAISS.",
         }), 503
     inf_ms = int((time.monotonic() - t_inf) * 1000)
     log.info("rid=%s inference_ms=%d session=%s mode=%s", g.rid, inf_ms, session_id[:8], result.get("modo", "?"))
-    _record_query(inf_ms)
+    metrics_mod.record_query(inf_ms)
 
     nivel = result.get("gravedad_info", {})
     gravedad = result.get("gravedad", "moderada")
@@ -321,10 +303,10 @@ def stream_query():
                     stream_ms = int((time.monotonic() - t_stream) * 1000)
                     log.info("rid=%s stream_ms=%d session=%s iters=%d",
                              rid, stream_ms, session_id[:8], event.get("iteraciones", 0))
-                    _record_query(stream_ms)
+                    metrics_mod.record_query(stream_ms)
         except Exception as e:
             log.error("rid=%s stream_error=%s", rid, e)
-            _record_error()
+            metrics_mod.record_error()
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return Response(stream_with_context(generate()), mimetype="text/event-stream",
@@ -341,7 +323,7 @@ def export_pdf():
         return jsonify({"error": "No hay datos para exportar"}), 400
 
     try:
-        pdf_bytes = _build_pdf_bytes(data)
+        pdf_bytes = build_diagnosis_pdf(data)
         return Response(
             pdf_bytes,
             mimetype="application/pdf",
@@ -350,179 +332,6 @@ def export_pdf():
     except Exception as e:
         log.error("rid=%s pdf_error=%s", g.rid, e)
         return jsonify({"error": f"Error al generar PDF: {e}"}), 500
-
-
-def _build_pdf_bytes(data: dict) -> bytes:
-    from fpdf import FPDF
-    from datetime import datetime
-    import re
-
-    gravedad = data.get("gravedad", "moderada")
-    sev_fg = {
-        "leve":       (22, 163, 74),
-        "moderada":   (180, 110, 0),
-        "grave":      (185, 28, 28),
-        "emergencia": (91, 33, 182),
-    }.get(gravedad, (180, 110, 0))
-    sev_bg = {
-        "leve":       (240, 253, 244),
-        "moderada":   (255, 251, 235),
-        "grave":      (254, 242, 242),
-        "emergencia": (245, 243, 255),
-    }.get(gravedad, (255, 251, 235))
-
-    EMERALD = (16, 185, 129)
-    BLUE    = (59, 130, 246)
-    SLATE   = (71, 85, 105)
-    MUTED   = (148, 163, 184)
-    DARK    = (15, 23, 42)
-
-    def safe(text):
-        """Normalize Unicode to Latin-1 safe string (core PDF fonts)."""
-        replacements = {
-            "—": "-", "–": "-",
-            "“": '"', "”": '"',
-            "‘": "'", "’": "'",
-            "…": "...",
-        }
-        s = str(text or "")
-        for k, v in replacements.items():
-            s = s.replace(k, v)
-        return s.encode("latin-1", errors="replace").decode("latin-1")
-
-    def clean(text):
-        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text or "")
-        skip = [
-            "condicion principal", "condicion principal sugerida",
-            "nivel de urgencia", "recomendacion",
-            "esto no reemplaza", "este reporte",
-            "sintomas clave",
-        ]
-        lines = [
-            l for l in text.split("\n")
-            if l.strip() and not any(l.strip().lower().startswith(s) for s in skip)
-        ]
-        return safe("\n".join(lines).strip())
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_margins(20, 20, 20)
-    pdf.set_auto_page_break(auto=True, margin=20)
-    W = pdf.w - 40
-
-    def label(text):
-        pdf.set_font("Helvetica", "B", 7.5)
-        pdf.set_text_color(*MUTED)
-        pdf.cell(0, 5, text.upper(), ln=True)
-        pdf.ln(1)
-
-    def vbar(color, x, y, h):
-        pdf.set_fill_color(*color)
-        pdf.rect(x, y, 2, h, style="F")
-
-    def hline():
-        pdf.set_draw_color(226, 232, 240)
-        pdf.set_line_width(0.3)
-        pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
-        pdf.ln(4)
-
-    # Header
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-    pdf.set_font("Helvetica", "B", 22)
-    pdf.set_text_color(*EMERALD)
-    pdf.cell(0, 12, "MEDI-IA", ln=True)
-    pdf.set_font("Helvetica", "", 9)
-    pdf.set_text_color(*MUTED)
-    pdf.set_y(pdf.get_y() - 9)
-    pdf.cell(0, 9, f"Reporte de evaluacion medica  |  {fecha}", align="R", ln=True)
-    pdf.set_draw_color(*EMERALD)
-    pdf.set_line_width(1.0)
-    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
-    pdf.ln(8)
-
-    # Query box
-    query = safe(data.get("query", ""))
-    if query:
-        y0 = pdf.get_y()
-        pdf.set_xy(25, y0 + 1)
-        pdf.set_font("Helvetica", "B", 7)
-        pdf.set_text_color(*BLUE)
-        pdf.cell(0, 4, "CONSULTA DEL PACIENTE", ln=True)
-        pdf.set_x(25)
-        pdf.set_font("Helvetica", "", 10)
-        pdf.set_text_color(*DARK)
-        pdf.multi_cell(W - 5, 5.5, query)
-        vbar(BLUE, 20, y0, pdf.get_y() - y0)
-        pdf.ln(7)
-
-    # Severity pill + condition
-    lbl  = safe(data.get("gravedad_label", gravedad.upper()))
-    cond = safe(data.get("condicion_principal", ""))
-    pill_w = min(len(lbl) * 2.6 + 10, 45)
-    pdf.set_font("Helvetica", "B", 9)
-    pdf.set_fill_color(*sev_bg)
-    pdf.set_text_color(*sev_fg)
-    pdf.set_draw_color(*sev_fg)
-    pdf.set_line_width(0.4)
-    pdf.cell(pill_w, 7, lbl, border=1, fill=True, align="C", ln=False)
-    pdf.set_font("Helvetica", "B", 13)
-    pdf.set_text_color(*DARK)
-    pdf.cell(5, 7, "", ln=False)
-    pdf.multi_cell(W - pill_w - 5, 7, cond)
-    pdf.ln(7)
-
-    # Analysis
-    label("Analisis medico")
-    y0 = pdf.get_y()
-    pdf.set_xy(25, y0)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(*SLATE)
-    pdf.multi_cell(W - 5, 5.5, clean(data.get("respuesta", "")))
-    vbar(EMERALD, 20, y0, pdf.get_y() - y0)
-    pdf.ln(7)
-
-    # Recommendation
-    label("Recomendacion")
-    rec_y = pdf.get_y()
-    pdf.set_x(20)
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(*DARK)
-    pdf.set_fill_color(240, 253, 244)
-    pdf.multi_cell(W, 5.5, safe(data.get("recomendacion", "")), fill=True)
-    rec_h = pdf.get_y() - rec_y
-    pdf.set_draw_color(*EMERALD)
-    pdf.set_line_width(0.4)
-    pdf.rect(20, rec_y, W, rec_h)
-    pdf.ln(7)
-
-    # Sources
-    fuentes = data.get("fuentes", [])
-    if fuentes:
-        label("Fuentes bibliograficas")
-        pdf.set_font("Helvetica", "I", 9)
-        pdf.set_text_color(*MUTED)
-        pdf.multi_cell(W, 5, safe(", ".join(fuentes)))
-        pdf.ln(5)
-
-    # Engine
-    label("Motor de IA")
-    pdf.set_font("Courier", "", 9)
-    pdf.set_text_color(*MUTED)
-    pdf.cell(0, 5, safe(data.get("modo", "")), ln=True)
-    pdf.ln(7)
-
-    # Disclaimer
-    hline()
-    pdf.set_font("Helvetica", "I", 8.5)
-    pdf.set_text_color(*MUTED)
-    pdf.multi_cell(W, 5,
-        "MEDI-IA no reemplaza la consulta medica profesional. "
-        "Este reporte es generado por inteligencia artificial y debe ser validado "
-        "por un profesional de la salud calificado. "
-        "En caso de emergencia llame al 123 o dirigase a urgencias inmediatamente."
-    )
-
-    return bytes(pdf.output())
 
 
 @app.route("/api/evaluate/full", methods=["GET"])
@@ -552,7 +361,7 @@ def export_conversation():
     if not turns:
         return jsonify({"error": "La sesión está vacía"}), 400
     try:
-        pdf_bytes = _build_conversation_pdf(turns)
+        pdf_bytes = build_conversation_pdf(turns)
         return Response(
             pdf_bytes,
             mimetype="application/pdf",
@@ -561,107 +370,6 @@ def export_conversation():
     except Exception as e:
         log.error("rid=%s conversation_pdf_error=%s", g.rid, e)
         return jsonify({"error": f"Error al generar PDF: {e}"}), 500
-
-
-def _build_conversation_pdf(turns: list) -> bytes:
-    from fpdf import FPDF
-    from datetime import datetime
-    import re
-
-    EMERALD = (16, 185, 129)
-    BLUE    = (59, 130, 246)
-    SLATE   = (71, 85, 105)
-    MUTED   = (148, 163, 184)
-    DARK    = (15, 23, 42)
-    USER_BG = (219, 234, 254)   # blue-100
-    ASST_BG = (209, 250, 229)   # emerald-100
-
-    def safe(text):
-        replacements = {"—": "-", "–": "-", "“": '"', "”": '"',
-                        "‘": "'", "’": "'", "…": "..."}
-        s = str(text or "")
-        for k, v in replacements.items():
-            s = s.replace(k, v)
-        return s.encode("latin-1", errors="replace").decode("latin-1")
-
-    def strip_md(text):
-        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text or "")
-        text = re.sub(r"\*(.*?)\*", r"\1", text)
-        return text
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_margins(20, 20, 20)
-    pdf.set_auto_page_break(auto=True, margin=20)
-    W = pdf.w - 40
-
-    # Header
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-    pdf.set_font("Helvetica", "B", 22)
-    pdf.set_text_color(*EMERALD)
-    pdf.cell(0, 12, "MEDI-IA", ln=True)
-    pdf.set_font("Helvetica", "", 9)
-    pdf.set_text_color(*MUTED)
-    pdf.set_y(pdf.get_y() - 9)
-    pdf.cell(0, 9, f"Historial de sesion  |  {fecha}", align="R", ln=True)
-    pdf.set_draw_color(*EMERALD)
-    pdf.set_line_width(1.0)
-    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
-    pdf.ln(10)
-
-    for turn in turns:
-        role = turn.get("role", "")
-        content = safe(strip_md(turn.get("content", "")))
-        if not content.strip():
-            continue
-
-        if role == "user":
-            # Barra azul + etiqueta
-            bar_color = BLUE
-            bg_color  = USER_BG
-            label_txt = "PACIENTE"
-            label_color = BLUE
-        else:
-            bar_color = EMERALD
-            bg_color  = ASST_BG
-            label_txt = "MEDI-IA"
-            label_color = (5, 150, 105)
-
-        y0 = pdf.get_y()
-        # Etiqueta de rol
-        pdf.set_font("Helvetica", "B", 7)
-        pdf.set_text_color(*label_color)
-        pdf.set_x(25)
-        pdf.cell(0, 4, label_txt, ln=True)
-        pdf.ln(1)
-        # Contenido con fondo
-        pdf.set_x(25)
-        pdf.set_font("Helvetica", "", 9.5)
-        pdf.set_text_color(*SLATE)
-        pdf.set_fill_color(*bg_color)
-        x_before = pdf.get_x()
-        y_before = pdf.get_y()
-        pdf.multi_cell(W - 5, 5.2, content, fill=True)
-        # Barra lateral de color
-        bar_h = pdf.get_y() - y0
-        pdf.set_fill_color(*bar_color)
-        pdf.rect(20, y0, 2, bar_h, style="F")
-        pdf.ln(6)
-
-    # Disclaimer
-    pdf.set_draw_color(226, 232, 240)
-    pdf.set_line_width(0.3)
-    pdf.line(20, pdf.get_y(), pdf.w - 20, pdf.get_y())
-    pdf.ln(4)
-    pdf.set_font("Helvetica", "I", 8)
-    pdf.set_text_color(*MUTED)
-    pdf.multi_cell(W, 4.5,
-        "MEDI-IA no reemplaza la consulta medica profesional. "
-        "Este historial es generado por inteligencia artificial y debe ser validado "
-        "por un profesional de la salud. En emergencias llame al 123."
-    )
-
-    return bytes(pdf.output())
 
 
 @app.route("/metrics", methods=["GET"])
@@ -716,52 +424,12 @@ def feedback():
 @require_auth
 def get_metrics():
     """Métricas básicas en memoria: queries/hora, latencia, errores, uptime, feedback."""
-    from datetime import datetime, timedelta
-    now = time.time()
-    cutoff_1h  = now - 3_600
-    cutoff_24h = now - 86_400
-
-    with _mtx:
-        q_1h   = sum(1 for ts in _query_ts if ts > cutoff_1h)
-        q_24h  = sum(1 for ts in _query_ts if ts > cutoff_24h)
-        q_total = len(_query_ts)
-        lats_1h = [ms for ts, ms in _lat_log if ts > cutoff_1h]
-        errors  = _err_count[0]
-        # Distribución horaria — 24 buckets (bucket 0 = más antiguo, 23 = hora actual)
-        hourly = [0] * 24
-        for ts in _query_ts:
-            age_h = (now - ts) / 3600
-            if 0 <= age_h < 24:
-                hourly[23 - int(age_h)] += 1
-
-    avg_ms = round(sum(lats_1h) / len(lats_1h)) if lats_1h else 0
-    p95_ms = 0
-    if lats_1h:
-        sorted_lats = sorted(lats_1h)
-        p95_ms = sorted_lats[max(0, int(len(sorted_lats) * 0.95) - 1)]
-
-    now_dt = datetime.now()
-    labels = [(now_dt - timedelta(hours=23 - i)).strftime("%H:00") for i in range(24)]
-
     try:
         fb = get_feedback_stats()
     except Exception:
         fb = {"total": 0, "positive": 0, "negative": 0}
 
-    return jsonify({
-        "queries_last_1h":       q_1h,
-        "queries_last_24h":      q_24h,
-        "queries_session_total": q_total,
-        "avg_latency_ms":        avg_ms,
-        "p95_latency_ms":        p95_ms,
-        "error_count":           errors,
-        "uptime_s":              int(time.monotonic() - _start_mono),
-        "hourly_last_24h":       hourly,
-        "hourly_labels":         labels,
-        "feedback_total":        fb["total"],
-        "feedback_positive":     fb["positive"],
-        "feedback_negative":     fb["negative"],
-    })
+    return jsonify(metrics_mod.snapshot(fb))
 
 
 @app.route("/evaluate", methods=["GET"])

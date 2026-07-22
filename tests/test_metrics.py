@@ -1,6 +1,6 @@
 """
 Tests para el sistema de métricas en memoria de MEDI-IA.
-Cubre: _record_query, _record_error, /api/metrics endpoint y distribución horaria.
+Cubre: src.metrics (record_query/record_error/snapshot) y el endpoint /api/metrics.
 """
 
 import sys
@@ -12,6 +12,7 @@ import pytest
 from unittest.mock import patch
 
 import app as app_mod
+from src import metrics as metrics_mod
 
 flask_app = app_mod.app
 
@@ -19,15 +20,15 @@ flask_app = app_mod.app
 @pytest.fixture(autouse=True)
 def reset_metrics():
     """Limpia las métricas en memoria antes y después de cada test."""
-    with app_mod._mtx:
-        app_mod._query_ts.clear()
-        app_mod._lat_log.clear()
-        app_mod._err_count[0] = 0
+    with metrics_mod._mtx:
+        metrics_mod._query_ts.clear()
+        metrics_mod._lat_log.clear()
+        metrics_mod._err_count[0] = 0
     yield
-    with app_mod._mtx:
-        app_mod._query_ts.clear()
-        app_mod._lat_log.clear()
-        app_mod._err_count[0] = 0
+    with metrics_mod._mtx:
+        metrics_mod._query_ts.clear()
+        metrics_mod._lat_log.clear()
+        metrics_mod._err_count[0] = 0
 
 
 @pytest.fixture
@@ -42,42 +43,42 @@ def client(tmp_path, monkeypatch):
         yield c
 
 
-# ─── _record_query / _record_error ────────────────────────────────────────────
+# ─── record_query / record_error ──────────────────────────────────────────────
 
 class TestRecordHelpers:
     def test_record_query_increments_ts(self):
-        assert len(app_mod._query_ts) == 0
-        app_mod._record_query(200)
-        assert len(app_mod._query_ts) == 1
+        assert len(metrics_mod._query_ts) == 0
+        metrics_mod.record_query(200)
+        assert len(metrics_mod._query_ts) == 1
 
     def test_record_query_stores_latency(self):
-        app_mod._record_query(350)
-        assert len(app_mod._lat_log) == 1
-        _ts, ms = app_mod._lat_log[0]
+        metrics_mod.record_query(350)
+        assert len(metrics_mod._lat_log) == 1
+        _ts, ms = metrics_mod._lat_log[0]
         assert ms == 350
 
     def test_record_query_multiple(self):
         for ms in [100, 200, 300]:
-            app_mod._record_query(ms)
-        assert len(app_mod._query_ts) == 3
-        assert len(app_mod._lat_log) == 3
+            metrics_mod.record_query(ms)
+        assert len(metrics_mod._query_ts) == 3
+        assert len(metrics_mod._lat_log) == 3
 
     def test_record_error_increments_count(self):
-        assert app_mod._err_count[0] == 0
-        app_mod._record_error()
-        assert app_mod._err_count[0] == 1
+        assert metrics_mod._err_count[0] == 0
+        metrics_mod.record_error()
+        assert metrics_mod._err_count[0] == 1
 
     def test_record_error_multiple(self):
-        app_mod._record_error()
-        app_mod._record_error()
-        app_mod._record_error()
-        assert app_mod._err_count[0] == 3
+        metrics_mod.record_error()
+        metrics_mod.record_error()
+        metrics_mod.record_error()
+        assert metrics_mod._err_count[0] == 3
 
     def test_record_query_ts_is_recent(self):
         before = time.time()
-        app_mod._record_query(100)
+        metrics_mod.record_query(100)
         after = time.time()
-        ts = app_mod._query_ts[0]
+        ts = metrics_mod._query_ts[0]
         assert before <= ts <= after
 
 
@@ -137,8 +138,8 @@ class TestMetricsEndpoint:
         assert data["uptime_s"] >= 0
 
     def test_query_count_reflects_records(self, client):
-        app_mod._record_query(150)
-        app_mod._record_query(250)
+        metrics_mod.record_query(150)
+        metrics_mod.record_query(250)
         with patch.object(app_mod, "get_feedback_stats", return_value={"total": 0, "positive": 0, "negative": 0}):
             r = client.get("/api/metrics")
         data = r.get_json()
@@ -147,16 +148,16 @@ class TestMetricsEndpoint:
         assert data["queries_last_24h"] == 2
 
     def test_avg_latency_computed_correctly(self, client):
-        app_mod._record_query(100)
-        app_mod._record_query(300)
+        metrics_mod.record_query(100)
+        metrics_mod.record_query(300)
         with patch.object(app_mod, "get_feedback_stats", return_value={"total": 0, "positive": 0, "negative": 0}):
             r = client.get("/api/metrics")
         data = r.get_json()
         assert data["avg_latency_ms"] == 200
 
     def test_error_count_reflected_in_metrics(self, client):
-        app_mod._record_error()
-        app_mod._record_error()
+        metrics_mod.record_error()
+        metrics_mod.record_error()
         with patch.object(app_mod, "get_feedback_stats", return_value={"total": 0, "positive": 0, "negative": 0}):
             r = client.get("/api/metrics")
         data = r.get_json()
@@ -172,7 +173,7 @@ class TestMetricsEndpoint:
         assert data["feedback_negative"] == 2
 
     def test_recent_query_counted_in_1h_bucket(self, client):
-        app_mod._record_query(500)
+        metrics_mod.record_query(500)
         with patch.object(app_mod, "get_feedback_stats", return_value={"total": 0, "positive": 0, "negative": 0}):
             r = client.get("/api/metrics")
         data = r.get_json()
@@ -182,8 +183,8 @@ class TestMetricsEndpoint:
     def test_p95_latency_with_multiple_records(self, client):
         # 20 records: 19 de 100ms y 1 de 1000ms — p95 debe ser >= 100
         for _ in range(19):
-            app_mod._record_query(100)
-        app_mod._record_query(1000)
+            metrics_mod.record_query(100)
+        metrics_mod.record_query(1000)
         with patch.object(app_mod, "get_feedback_stats", return_value={"total": 0, "positive": 0, "negative": 0}):
             r = client.get("/api/metrics")
         data = r.get_json()
