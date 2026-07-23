@@ -7,26 +7,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:        #0a0e17;
-    --surface:   #0f1629;
-    --border:    rgba(255,255,255,0.09);
-    --border-strong: rgba(255,255,255,0.12);
-    --border-em: rgba(201,151,75,0.24);
+    --bg:        #f0f4f8;
+    --surface:   #ffffff;
+    --border:    #e2e8f0;
+    --border-strong: #cbd5e1;
+    --border-em: rgba(201,151,75,0.35);
     --emerald:   #c9974b;
     --em:        #c9974b;
     --emerald-dark: #a3762e;
-    --em-dim:    rgba(201,151,75,0.14);
-    --em-glow:   rgba(201,151,75,0.20);
-    --emerald-light: rgba(201,151,75,0.14);
-    --red:       #ef4444;
-    --red-light: rgba(239,68,68,0.12);
-    --text:      #f1f5f9;
-    --text-2:    #94a3b8;
-    --text-3:    #475569;
+    --em-dim:    #f5e6c8;
+    --em-glow:   rgba(201,151,75,0.16);
+    --emerald-light: #f5e6c8;
+    --red:       #dc2626;
+    --red-light: #fee2e2;
+    --text:      #0f172a;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
     --serif:     'Source Serif 4', ui-serif, Georgia, serif;
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+    --shadow-lg: 0 16px 40px rgba(15,23,42,0.10), 0 4px 10px rgba(15,23,42,0.05);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: card-in .45s cubic-bezier(.16,1,.3,1); }
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
   body {
     font-family: 'Inter', sans-serif;
     background: var(--bg);
@@ -62,7 +69,7 @@
   input[type="password"], input[type="email"] {
     width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-strong); border-radius: 9px;
     font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text);
-    background: rgba(255,255,255,0.04); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f8fafc; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   }
   input[type="password"]:focus, input[type="email"]:focus {
     border-color: var(--emerald); box-shadow: 0 0 0 3px var(--em-dim); background: var(--surface);

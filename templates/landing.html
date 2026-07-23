@@ -10,23 +10,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:        #0a0e17;
-    --surface:   #0f1629;
-    --surface-2: #111d35;
-    --border:    rgba(255,255,255,0.08);
-    --border-strong: rgba(255,255,255,0.14);
+    --bg:        #f0f4f8;
+    --surface:   #ffffff;
+    --surface-2: #f8fafc;
+    --border:    #e2e8f0;
+    --border-strong: #cbd5e1;
     --em:        #c9974b;
-    --em-dim:    rgba(201,151,75,0.14);
-    --em-glow:   rgba(201,151,75,0.20);
-    --text:      #f1f5f9;
-    --text-2:    #94a3b8;
-    --text-3:    #5a6a85;
+    --em-dim:    #f5e6c8;
+    --em-glow:   rgba(201,151,75,0.18);
+    --text:      #0f172a;
+    --text-2:    #475569;
+    --text-3:    #94a3b8;
     --serif:     'Source Serif 4', ui-serif, Georgia, serif;
     --mono:      'JetBrains Mono', ui-monospace, monospace;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
   a { color:inherit; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { animation: reveal-up .6s cubic-bezier(.16,1,.3,1) both; }
+    .reveal-delay-1 { animation-delay: .08s; }
+    .reveal-delay-2 { animation-delay: .16s; }
+    .card, .plan, .stat { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .card:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: 0 8px 20px rgba(15,23,42,0.06); }
+  }
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   .wrap { max-width:920px; margin:0 auto; padding:0 24px; }
   section { padding:64px 0; }
@@ -126,16 +138,16 @@
 <div class="wrap hero">
   <div class="hero-grid">
     <div>
-      <p class="eyebrow">Práctica de diagnóstico diferencial</p>
-      <h1>Entrena el razonamiento clínico que los libros <em>no</em> te enseñan.</h1>
-      <p class="hero-sub">Casos clínicos reales, en español. Tú propones el diferencial — nosotros lo evaluamos y te mostramos exactamente dónde reforzar, con la cita del libro que lo respalda.</p>
-      <div class="hero-cta">
+      <p class="eyebrow reveal">Práctica de diagnóstico diferencial</p>
+      <h1 class="reveal reveal-delay-1">Entrena el razonamiento clínico que los libros <em>no</em> te enseñan.</h1>
+      <p class="hero-sub reveal reveal-delay-1">Casos clínicos reales, en español. Tú propones el diferencial — nosotros lo evaluamos y te mostramos exactamente dónde reforzar, con la cita del libro que lo respalda.</p>
+      <div class="hero-cta reveal reveal-delay-2">
         <a class="btn btn-primary btn-lg" href="/">Probar el chat — sin cuenta</a>
         <a class="btn btn-ghost btn-lg" href="/signup">Crear cuenta para practicar casos</a>
       </div>
-      <p class="hero-note">El chat es de acceso libre. Crear cuenta solo hace falta para guardar tu progreso practicando casos.</p>
+      <p class="hero-note reveal reveal-delay-2">El chat es de acceso libre. Crear cuenta solo hace falta para guardar tu progreso practicando casos.</p>
     </div>
-    <div class="diagram">
+    <div class="diagram reveal reveal-delay-2">
       <div class="diagram-label">El diferencial de un caso real</div>
       <svg viewBox="0 0 340 210" width="100%" height="auto">
         <line x1="170" y1="35" x2="60" y2="115" stroke="var(--border)" stroke-width="1.5"/>

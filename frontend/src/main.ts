@@ -937,7 +937,7 @@ function _syncThemeIcon(theme) {
 
 // Aplica el tema guardado antes de pintar el DOM visible
 (function initTheme() {
-  const saved = localStorage.getItem('medi-theme') || 'dark';
+  const saved = localStorage.getItem('medi-theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
 })();
 
@@ -1462,7 +1462,7 @@ function buildZonePrefix() {
 }
 
 lucide.createIcons();
-_syncThemeIcon(localStorage.getItem('medi-theme') || 'dark');
+_syncThemeIcon(localStorage.getItem('medi-theme') || 'light');
 initVoice();
 initTTS();
 initProfileModal();
