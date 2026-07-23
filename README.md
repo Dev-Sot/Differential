@@ -130,11 +130,13 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 | LLM | Qwen2.5-7B-Instruct via HuggingFace Inference API (remoto) |
 | TTS | `edge-tts` — `es-ES-AlvaroNeural` streaming progresivo |
 | Persistencia | SQLite — sesiones, historial, feedback, métricas |
-| Frontend | HTML5 + CSS3 + JS vanilla + Chart.js + Lucide Icons |
+| Rate limiting | flask-limiter, respaldado por Redis (memoria solo en dev local) |
+| Frontend | TypeScript + Vite (build propio) + Chart.js + Lucide Icons |
 | PDF | fpdf2 (pure Python, sin dependencias nativas) |
-| Tests | pytest 185 aserciones |
-| CI | GitHub Actions (Python 3.13, ubuntu-latest) |
-| Deploy | Docker + docker-compose + nginx |
+| Tests | pytest 185 aserciones · tsc --noEmit para el frontend |
+| Calidad | ruff + black + mypy (`pyproject.toml`) |
+| CI | GitHub Actions — lint + tests (Python 3.13) y build + typecheck (Node 20) |
+| Deploy | Docker (build multi-stage) + docker-compose (app + redis) + nginx |
 
 ---
 
@@ -142,6 +144,7 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 
 ### Requisitos previos
 - Python 3.13+
+- Node.js 20+ (solo para compilar el frontend — no se necesita en runtime)
 - PDFs de los libros en `libros/` (ver tabla de libros indexados)
 - Token de HuggingFace (opcional, pero requerido para el agente ReAct)
 
@@ -156,15 +159,19 @@ venv\Scripts\activate          # Windows
 # source venv/bin/activate     # Linux / Mac
 make install
 
-# 3. Configurar variables de entorno
+# 3. Compilar el frontend (Vite -> static/dist)
+make frontend-install
+make frontend-build
+
+# 4. Configurar variables de entorno
 copy .env.example .env         # Windows
 # cp .env.example .env         # Linux / Mac
-# Editar .env: agregar HF_TOKEN y SECRET_KEY
+# Editar .env: agregar HF_TOKEN y SECRET_KEY (obligatoria fuera de FLASK_DEBUG=True)
 
-# 4. Indexar los libros (primera vez, tarda ~5-15 min según cantidad de libros)
+# 5. Indexar los libros (primera vez, tarda ~5-15 min según cantidad de libros)
 make ingest
 
-# 5. Iniciar el servidor
+# 6. Iniciar el servidor
 make run
 # Abre http://localhost:5000
 ```
@@ -189,6 +196,7 @@ El sistema funciona sin token. Las respuestas son fragmentos del libro sin anál
 | `CLEANUP_INTERVAL_HOURS` | `24` | Frecuencia del cron de limpieza automática |
 | `MEMORY_DB_PATH` | `data/memory.db` | Ruta del archivo SQLite |
 | `PORT` | `5000` | Puerto del servidor |
+| `REDIS_URL` | — | Store compartido para el rate limiter. Sin esto, con >1 worker de gunicorn el límite no se aplica correctamente (ver `gunicorn.conf.py`) |
 
 ---
 
@@ -242,13 +250,13 @@ Los tests de `test_retriever.py` hacen skip automático si el índice FAISS no e
 ## Deploy con Docker
 
 ```bash
-# Construir imagen
+# Construir imagen (incluye un stage de Node que compila el frontend)
 make docker-build
 
 # Crear .env con las variables necesarias
 copy .env.example .env
 
-# Levantar (requiere índice FAISS pre-construido en ./index/)
+# Levantar app + redis (requiere índice FAISS pre-construido en ./index/)
 make docker-run
 
 # Si el índice no existe, construirlo dentro del contenedor
@@ -261,6 +269,8 @@ docker compose logs -f
 make docker-stop
 ```
 
+`docker-compose.yml` levanta un servicio `redis` junto con la app y define `REDIS_URL` automáticamente — el rate limiter queda correctamente compartido entre los workers de gunicorn sin configuración adicional.
+
 Para producción con nginx, usar `nginx/medi-ia.conf` — incluye `proxy_buffering off` para el endpoint SSE `/api/stream`.
 
 ---
@@ -269,18 +279,25 @@ Para producción con nginx, usar `nginx/medi-ia.conf` — incluye `proxy_bufferi
 
 ```
 medi-ia/
-├── app.py                     # Flask app, endpoints, métricas, cron cleanup, TTS
+├── app.py                     # Flask app: rutas HTTP + auth + orquestacion (delgado)
 ├── ingest.py                  # Indexación de PDFs → FAISS (chunk 600/120, sentence-aware)
+├── rebuild_index_from_metadata.py  # Reconstruye books.index desde metadata.json sin PDFs
 ├── manage.py                  # CLI: listar sesiones, cleanup, clear
 ├── gunicorn.conf.py           # Config producción (2 workers sync, preload_app)
+├── pyproject.toml             # Config de ruff / black / mypy
+├── requirements.txt           # Dependencias directas, version fijada
+├── requirements-lock.txt      # pip freeze completo — build reproducible
+├── requirements-dev.txt       # ruff / black / mypy
 ├── src/
 │   ├── agent.py               # Orquestador: ReAct vs RAG fallback
 │   ├── agent_loop.py          # Bucle ReAct + generador SSE (max 6 iteraciones)
 │   ├── guardrails.py          # Filtro regex pre-LLM
 │   ├── llm.py                 # Cliente HuggingFace InferenceClient
 │   ├── memory.py              # Historial + feedback en SQLite
+│   ├── metrics.py             # Metricas en memoria (queries/hora, latencia, errores)
+│   ├── pdf_export.py          # Generacion de PDF (diagnostico + historial de sesion)
 │   ├── schemas.py             # Pydantic: ConsultaRequest, DiagnosticoResponse
-│   ├── tools.py               # 4 herramientas del agente ReAct
+│   ├── tools.py                # 4 herramientas del agente ReAct
 │   ├── evaluation_full.py     # Evaluación completa con dataset anotado
 │   └── rag/
 │       ├── embeddings.py      # Singleton SentenceTransformer (e5-base, 768 dims)
@@ -289,23 +306,28 @@ medi-ia/
 │       ├── reranker.py        # CrossEncoder reranker
 │       ├── section_mapping.py # Página → capítulo por libro
 │       └── semantic_fallback.py  # Fallback cuando rerank_score < threshold
+├── frontend/                  # Build del chat UI (Vite + TypeScript + Tailwind)
+│   ├── src/main.ts            # Toda la logica de UI, tipada, un solo modulo
+│   ├── src/styles/*.css       # CSS organizado por seccion (10 archivos)
+│   └── vite.config.ts         # Build -> ../static/dist (lo sirve Flask)
 ├── templates/
-│   ├── index.html             # UI chat (TTS, mapa corporal, perfil clínico, onboarding)
+│   ├── index.html             # Markup del chat (328 lineas — CSS/JS van en frontend/)
 │   ├── metrics.html           # Dashboard métricas con Chart.js
 │   ├── evaluate.html          # Dashboard evaluación RAG
 │   ├── live.html              # Monitor tiempo real
 │   └── login.html             # Página de autenticación
+├── static/dist/                # Bundle generado por Vite (gitignored, `make frontend-build`)
 ├── data/
-│   ├── memory.db              # SQLite — sesiones, feedback (generado en runtime)
+│   ├── memory.db               # SQLite — sesiones, feedback (generado en runtime)
 │   ├── eval_dataset.json      # 40 queries anotadas para evaluación (v1.3)
 │   └── eval_full_results.json # Resultados de la última evaluación completa
 ├── tests/                     # 185 tests pytest
 ├── index/                     # Índice FAISS (generado por ingest.py, no incluido en repo)
 ├── libros/                    # PDFs fuente (no incluidos en el repo)
 ├── nginx/medi-ia.conf         # Config nginx para producción
-├── Dockerfile
-├── docker-compose.yml
-└── .github/workflows/ci.yml   # CI: pytest en cada push/PR
+├── Dockerfile                  # Multi-stage: build frontend (Node) -> runtime (Python)
+├── docker-compose.yml          # Servicios: medi-ia + redis
+└── .github/workflows/ci.yml    # CI: lint + tests (Python) y build + typecheck (frontend)
 ```
 
 ---
