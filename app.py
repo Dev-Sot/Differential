@@ -1,5 +1,5 @@
 """
-MEDI-IA — Flask Application v4 (ReAct Agent)
+Differential — Flask Application (ReAct Agent)
 """
 
 import functools
@@ -44,7 +44,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-5s %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
-log = logging.getLogger("medi-ia")
+log = logging.getLogger("differential")
 
 
 # ── Cron de limpieza de sesiones inactivas ────────────────────────────────────
@@ -218,7 +218,7 @@ def query_agent():
         "modo": result.get("modo", ""),
         "trajectory": result.get("trajectory", []),
         "tools_used": result.get("tools_used", []),
-        "disclaimer": "MEDI-IA no reemplaza la consulta medica profesional.",
+        "disclaimer": "Differential es una herramienta de practica y no reemplaza la consulta medica profesional.",
     }
     return jsonify(response)
 
@@ -350,7 +350,7 @@ def export_pdf():
         return Response(
             pdf_bytes,
             mimetype="application/pdf",
-            headers={"Content-Disposition": "attachment; filename=medi-ia-reporte.pdf"},
+            headers={"Content-Disposition": "attachment; filename=differential-reporte.pdf"},
         )
     except Exception as e:
         log.error("rid=%s pdf_error=%s", g.rid, e)
@@ -388,7 +388,7 @@ def export_conversation():
         return Response(
             pdf_bytes,
             mimetype="application/pdf",
-            headers={"Content-Disposition": "attachment; filename=medi-ia-sesion.pdf"},
+            headers={"Content-Disposition": "attachment; filename=differential-sesion.pdf"},
         )
     except Exception as e:
         log.error("rid=%s conversation_pdf_error=%s", g.rid, e)
@@ -410,13 +410,13 @@ def live_page():
 @app.route("/manifest.json", methods=["GET"])
 def pwa_manifest():
     return jsonify({
-        "name": "MEDI-IA",
-        "short_name": "MEDI-IA",
-        "description": "Asistente médico con diagnóstico diferencial — 14 libros médicos, RAG + ReAct",
+        "name": "Differential",
+        "short_name": "Differential",
+        "description": "Practica diagnostico diferencial con casos reales, citados a tus libros de texto",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#090e1a",
-        "theme_color": "#10b981",
+        "background_color": "#0a0e17",
+        "theme_color": "#c9974b",
         "orientation": "portrait-primary",
         "icons": [
             {"src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23090e1a'/><text y='72' x='50' text-anchor='middle' font-size='60'>🩺</text></svg>", "sizes": "any", "type": "image/svg+xml"}
@@ -537,6 +537,6 @@ def tts_endpoint():
 
 
 if __name__ == "__main__":
-    print("[MEDI-IA] Iniciando servidor...")
+    print("[Differential] Iniciando servidor...")
     _start_cleanup_cron()
     app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

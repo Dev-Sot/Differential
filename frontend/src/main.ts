@@ -442,7 +442,7 @@ function addAICard(data) {
            </div>`
         : ''}
 
-      <div class="card-disclaimer">MEDI-IA no reemplaza la consulta médica profesional. En emergencias llame al 123.</div>
+      <div class="card-disclaimer">Differential es una herramienta de práctica y no reemplaza la consulta médica profesional. En emergencias llame al 123.</div>
     </div>`;
 
   chatZone.appendChild(d);
@@ -483,7 +483,7 @@ async function exportPDF(data, btn) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `medi-ia-reporte-${Date.now()}.pdf`;
+    a.download = `differential-reporte-${Date.now()}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('PDF descargado', 'success');
@@ -682,7 +682,7 @@ async function exportConversation(btn) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'medi-ia-sesion.pdf';
+    a.download = 'differential-sesion.pdf';
     a.click();
     URL.revokeObjectURL(url);
     showToast('PDF de sesión descargado', 'success');
@@ -722,7 +722,7 @@ async function sendFeedback(groupId, condicion, rating) {
 // ── Copiar respuesta ─────────────────────────────────────────────────────────
 function copyResponse(data, btn) {
   const lines = [
-    'DIAGNÓSTICO DIFERENCIAL — MEDI-IA',
+    'DIAGNÓSTICO DIFERENCIAL — DIFFERENTIAL',
     '',
     `Condición principal: ${data.condicion_principal}`,
     `Gravedad: ${data.gravedad_label}`,
@@ -1150,7 +1150,7 @@ function closeProfileModal() {
 }
 
 function _loadProfileIntoModal() {
-  const raw = sessionStorage.getItem('medi-ia-profile');
+  const raw = sessionStorage.getItem('differential-profile');
   const p = raw ? JSON.parse(raw) : {};
   (document.getElementById('profileNombre') as HTMLInputElement).value = p.nombre || '';
   (document.getElementById('profileEdad') as HTMLInputElement).value = p.edad || '';
@@ -1202,13 +1202,13 @@ function saveProfile() {
     condiciones: [..._profileChips.condiciones],
     embarazada: document.getElementById('profileEmbarazadaToggle').classList.contains('on')
   };
-  sessionStorage.setItem('medi-ia-profile', JSON.stringify(profile));
+  sessionStorage.setItem('differential-profile', JSON.stringify(profile));
   closeProfileModal();
   showToast('Perfil guardado correctamente');
 }
 
 function buildProfilePrefix() {
-  const raw = sessionStorage.getItem('medi-ia-profile');
+  const raw = sessionStorage.getItem('differential-profile');
   if (!raw) return '';
   const p = JSON.parse(raw);
   const parts = [];
@@ -1223,7 +1223,7 @@ function buildProfilePrefix() {
 }
 
 function checkProfileOnLoad() {
-  if (sessionStorage.getItem('medi-ia-profile')) return;
+  if (sessionStorage.getItem('differential-profile')) return;
   if (!localStorage.getItem('medi-onboarding-done')) return; // espera al onboarding
   setTimeout(openProfileModal, 800);
 }
@@ -1485,7 +1485,7 @@ const OB_STEPS = [
   {
     targetId: 'ttsGlobalBtn',
     title: 'Modo manos libres',
-    desc: 'Activa el TTS neural para que MEDI-IA te lea las respuestas como un médico. Ideal para la consulta.',
+    desc: 'Activa el TTS neural para que Differential te lea las respuestas como un médico. Ideal para practicar en voz alta.',
   },
 ];
 let _obStep = 0;
