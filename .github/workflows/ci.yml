@@ -84,7 +84,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-          cache: pip
+          # sin cache: pip aqui a proposito — el job "test" cachea con la misma
+          # requirements.txt y, al correr en paralelo, ambos jobs compiten por
+          # guardar la misma clave de cache (colision -> "Post Set up Python"
+          # falla aunque los tests reales pasen). Ver commit que agrego este comentario.
 
       - name: "Crear venv e instalar dependencias (mismo layout que local, venv/bin/python)"
         run: |
