@@ -1,0 +1,132 @@
+[
+  {
+    "id": "cardio-01",
+    "specialty": "Cardiología",
+    "vignette": "Hombre de 58 años, fumador de 30 paquetes-año, acude a urgencias por dolor retroesternal opresivo de 40 minutos de evolución, irradiado a brazo izquierdo y mandíbula, acompañado de sudoración fría y náuseas. Antecedente de hipertensión mal controlada.",
+    "reference_differential": [
+      {"dx": "Infarto agudo de miocardio (SCA)", "why": "Dolor opresivo típico + irradiación + factores de riesgo (tabaquismo, HTA) + cortejo vegetativo"},
+      {"dx": "Angina inestable", "why": "Mismo espectro que SCA, se distingue por marcadores de necrosis y ECG"},
+      {"dx": "Tromboembolismo pulmonar", "why": "Puede dar dolor torácico agudo, pero típicamente pleurítico y con disnea más prominente"},
+      {"dx": "Reflujo gastroesofágico (ERGE)", "why": "Diagnóstico de exclusión — no explica el cortejo vegetativo ni la irradiación característica"}
+    ],
+    "correct_dx": "Infarto agudo de miocardio (SCA)",
+    "teaching_point": "El dolor torácico con irradiación a brazo/mandíbula + cortejo vegetativo en paciente con factores de riesgo cardiovascular es SCA hasta demostrar lo contrario — el ECG y las troponinas seriadas son el siguiente paso, no un diagnóstico presuntivo de ERGE."
+  },
+  {
+    "id": "neuro-01",
+    "specialty": "Neurología",
+    "vignette": "Mujer de 24 años consulta por la 'peor cefalea de su vida', de inicio súbito ('en trueno'), acompañada de rigidez de nuca y fotofobia. No tiene antecedentes de migraña.",
+    "reference_differential": [
+      {"dx": "Hemorragia subaracnoidea (HSA)", "why": "Cefalea 'en trueno' de inicio súbito es la presentación clásica — requiere descartar con TC/punción lumbar de inmediato"},
+      {"dx": "Meningitis", "why": "Rigidez de nuca + fotofobia son compatibles, pero el inicio suele ser más gradual y con fiebre"},
+      {"dx": "Migraña con aura", "why": "Menos probable sin antecedente previo y con inicio tan abrupto ('en trueno')"},
+      {"dx": "Cefalea tensional", "why": "No explica la rigidez de nuca ni la intensidad descrita como 'la peor de su vida'"}
+    ],
+    "correct_dx": "Hemorragia subaracnoidea (HSA)",
+    "teaching_point": "Toda cefalea 'en trueno' (thunderclap headache) de inicio súbito y máxima intensidad en segundos es HSA hasta descartarla — es una de las pocas cefaleas que exige neuroimagen urgente sin excepción."
+  },
+  {
+    "id": "infecto-01",
+    "specialty": "Infectología",
+    "vignette": "Niño de 6 años con fiebre de 39°C de 2 días de evolución, cefalea intensa, vómitos y aparición en las últimas horas de manchas purpúricas que no desaparecen a la digitopresión en piernas y tronco. Aspecto tóxico.",
+    "reference_differential": [
+      {"dx": "Meningococcemia / meningitis meningocócica", "why": "Fiebre + rash purpúrico no blanqueable + aspecto tóxico es la tríada de alarma clásica — emergencia médica"},
+      {"dx": "Dengue con signos de alarma", "why": "Puede dar fiebre y petequias, pero el contexto epidemiológico y la progresión son distintos"},
+      {"dx": "Púrpura de Henoch-Schönlein", "why": "Rash palpable en piernas, pero sin fiebre alta ni aspecto tóxico típicamente"},
+      {"dx": "Exantema viral inespecífico", "why": "No explica el rash purpúrico no blanqueable ni el aspecto tóxico — diagnóstico peligroso de asumir por descarte"}
+    ],
+    "correct_dx": "Meningococcemia / meningitis meningocócica",
+    "teaching_point": "Un rash purpúrico que NO blanquea con la digitopresión, en un paciente febril con aspecto tóxico, es meningococcemia hasta demostrar lo contrario — antibiótico empírico inmediato, no esperar confirmación microbiológica."
+  },
+  {
+    "id": "derma-01",
+    "specialty": "Dermatología",
+    "vignette": "Mujer de 35 años con una placa eritematosa, bien delimitada, con escama plateada gruesa en codos y rodillas, de varios meses de evolución, que empeora con el rascado. Refiere pequeñas depresiones puntiformes en las uñas.",
+    "reference_differential": [
+      {"dx": "Psoriasis en placas", "why": "Placas eritematoescamosas bien delimitadas en superficies extensoras (codos/rodillas) + pitting ungueal son el cuadro clásico"},
+      {"dx": "Dermatitis atópica", "why": "Suele afectar pliegues flexores, no extensores, y no cursa con pitting ungueal"},
+      {"dx": "Tiña corporis", "why": "Lesión anular con borde activo, no placas gruesas con escama plateada característica"},
+      {"dx": "Liquen plano", "why": "Pápulas violáceas pruriginosas, no la escama plateada gruesa descrita"}
+    ],
+    "correct_dx": "Psoriasis en placas",
+    "teaching_point": "La combinación de distribución en superficies extensoras + escama plateada gruesa + pitting ungueal es prácticamente patognomónica de psoriasis — el signo de Auspitz (sangrado puntiforme al desprender la escama) la confirma clínicamente."
+  },
+  {
+    "id": "psiq-01",
+    "specialty": "Psiquiatría",
+    "vignette": "Hombre de 45 años, llevado por su familia porque desde hace 3 semanas duerme solo 3 horas por noche, gasta dinero de forma impulsiva, habla de forma acelerada y dice tener 'un plan de negocios que cambiará el mundo'. Nunca antes había tenido un episodio similar.",
+    "reference_differential": [
+      {"dx": "Episodio maníaco (trastorno bipolar tipo I)", "why": "Disminución de la necesidad de sueño + grandiosidad + impulsividad + fuga de ideas durante ≥1 semana es criterio central de manía"},
+      {"dx": "Intoxicación por estimulantes", "why": "Debe descartarse con historia de consumo y tóxicos en orina antes de asumir causa primaria psiquiátrica"},
+      {"dx": "Hipertiroidismo", "why": "Puede simular síntomas de activación, pero no explica la grandiosidad ni la fuga de ideas"},
+      {"dx": "Esquizofrenia", "why": "Los síntomas afectivos (euforia, grandiosidad) predominan sobre los psicóticos — el curso es más compatible con manía"}
+    ],
+    "correct_dx": "Episodio maníaco (trastorno bipolar tipo I)",
+    "teaching_point": "Antes de diagnosticar un primer episodio maníaco hay que descartar causas orgánicas y tóxicas (tiroides, sustancias) — pero el patrón sintomático descrito (sueño, grandiosidad, impulsividad, taquipsiquia) es el cuadro nuclear de manía."
+  },
+  {
+    "id": "patologia-01",
+    "specialty": "Patología / Fisiopatología",
+    "vignette": "Hombre de 62 años con pérdida de peso de 8 kg en 3 meses, ictericia progresiva indolora y prurito generalizado. Refiere heces pálidas y orina oscura. A la exploración, vesícula biliar palpable no dolorosa.",
+    "reference_differential": [
+      {"dx": "Cáncer de cabeza de páncreas", "why": "Ictericia obstructiva indolora + vesícula palpable no dolorosa (signo de Courvoisier) + pérdida de peso es la tríada clásica"},
+      {"dx": "Coledocolitiasis", "why": "También da ictericia obstructiva, pero típicamente con dolor cólico y vesícula NO palpable (litiásica, fibrótica)"},
+      {"dx": "Colangitis", "why": "Cursaría con fiebre y dolor (tríada de Charcot), ausentes en este cuadro indoloro"},
+      {"dx": "Hepatitis viral", "why": "No explica la vesícula palpable ni el patrón puramente obstructivo (heces pálidas, orina oscura sin patrón hepatocelular)"}
+    ],
+    "correct_dx": "Cáncer de cabeza de páncreas",
+    "teaching_point": "El signo de Courvoisier (vesícula palpable, indolora, en paciente ictérico) sugiere obstrucción biliar maligna, no litiásica — la vesícula litiásica suele estar fibrótica y no se distiende igual ante la obstrucción."
+  },
+  {
+    "id": "cardio-02",
+    "specialty": "Cardiología / Emergencias",
+    "vignette": "Mujer de 70 años con disnea progresiva de 2 semanas, ortopnea (duerme con 3 almohadas), edema bilateral de miembros inferiores y distensión venosa yugular. Antecedente de infarto previo hace 5 años.",
+    "reference_differential": [
+      {"dx": "Insuficiencia cardíaca descompensada", "why": "Ortopnea + edema + ingurgitación yugular + antecedente de IAM es el cuadro clásico de ICC descompensada"},
+      {"dx": "Embolia pulmonar", "why": "Da disnea, pero no explica el edema bilateral progresivo ni la ortopnea de instauración gradual"},
+      {"dx": "EPOC reagudizado", "why": "No explica la ingurgitación yugular ni el edema bilateral tan marcado sin antecedente respiratorio"},
+      {"dx": "Síndrome nefrótico", "why": "Causa edema pero no ortopnea ni ingurgitación yugular — el edema es más generalizado (anasarca, no solo MMII)"}
+    ],
+    "correct_dx": "Insuficiencia cardíaca descompensada",
+    "teaching_point": "La tríada ortopnea + edema de miembros inferiores + ingurgitación yugular en un paciente con cardiopatía estructural previa es prácticamente diagnóstica de ICC — el BNP y la radiografía de tórax confirman, no son necesarios para sospecharla."
+  },
+  {
+    "id": "infecto-02",
+    "specialty": "Infectología",
+    "vignette": "Hombre de 30 años con fiebre alta de 5 días, cefalea retroorbitaria intensa, mialgias generalizadas ('quiebrahuesos') y aparición de un exantema maculopapular en tronco. Vive en zona endémica y refiere picaduras de mosquito recientes.",
+    "reference_differential": [
+      {"dx": "Dengue", "why": "Fiebre + cefalea retroorbitaria + mialgias intensas ('quiebrahuesos') + exantema + contexto epidemiológico es el cuadro clásico"},
+      {"dx": "Chikungunya", "why": "También transmitido por mosquito, pero predomina la artralgia intensa y simétrica sobre la mialgia"},
+      {"dx": "Zika", "why": "Cuadro típicamente más leve, con conjuntivitis no purulenta prominente, ausente aquí"},
+      {"dx": "Influenza", "why": "No explica el exantema ni la cefalea retroorbitaria característica, y no depende de exposición a mosquitos"}
+    ],
+    "correct_dx": "Dengue",
+    "teaching_point": "La cefalea retroorbitaria junto con mialgias intensas ('quiebrahuesos') en zona endémica es muy sugestiva de dengue — vigilar signos de alarma (dolor abdominal intenso, sangrado, hipotensión) que anuncian progresión a dengue grave."
+  },
+  {
+    "id": "neuro-02",
+    "specialty": "Neurología",
+    "vignette": "Mujer de 68 años, diabética e hipertensa, presenta de forma súbita debilidad en el brazo y pierna derechos junto con dificultad para articular palabras, mientras desayunaba. Los síntomas persisten desde hace 45 minutos.",
+    "reference_differential": [
+      {"dx": "Accidente cerebrovascular isquémico", "why": "Déficit focal (hemiparesia + disartria) de inicio súbito con factores de riesgo vascular es un ACV hasta demostrar lo contrario — código ictus inmediato"},
+      {"dx": "Ataque isquémico transitorio (AIT)", "why": "Se distingue del ACV solo retrospectivamente si los síntomas resuelven en <24h — no cambia el manejo inicial urgente"},
+      {"dx": "Hipoglucemia", "why": "Puede simular focalidad neurológica — se descarta en segundos con glucometría, paso obligatorio antes de imagen"},
+      {"dx": "Migraña con aura hemipléjica", "why": "Diagnóstico de exclusión, muy improbable como primer episodio a los 68 años sin antecedente migrañoso"}
+    ],
+    "correct_dx": "Accidente cerebrovascular isquémico",
+    "teaching_point": "Ante déficit neurológico focal de inicio súbito, el reloj corre: glucometría inmediata para descartar hipoglucemia, y si se confirma focalidad, TC craneal urgente — la ventana para trombólisis se mide en minutos, no en horas."
+  },
+  {
+    "id": "casos-01",
+    "specialty": "Medicina interna / Razonamiento clínico",
+    "vignette": "Mujer de 45 años con fatiga progresiva de 3 meses, piel y mucosas pálidas, y menorragia (sangrado menstrual abundante) desde hace 6 meses. Niega sangrado digestivo. Dieta vegetariana estricta.",
+    "reference_differential": [
+      {"dx": "Anemia ferropénica", "why": "Pérdida crónica de hierro por menorragia + baja ingesta (dieta vegetariana) explica la fatiga y palidez progresivas"},
+      {"dx": "Anemia por enfermedad crónica", "why": "Menos probable sin enfermedad inflamatoria o infecciosa de base evidente en el relato"},
+      {"dx": "Anemia perniciosa (déficit de B12)", "why": "La dieta vegetariana estricta es factor de riesgo, pero no explica la menorragia como causa primaria"},
+      {"dx": "Hipotiroidismo", "why": "Puede causar fatiga y menorragia, pero no explica la palidez tan marcada sin anemia macrocítica típica asociada"}
+    ],
+    "correct_dx": "Anemia ferropénica",
+    "teaching_point": "En una mujer en edad fértil con fatiga y palidez, la menorragia es la causa más común de anemia ferropénica — siempre preguntar activamente por patrón menstrual antes de buscar sangrado digestivo oculto."
+  }
+]

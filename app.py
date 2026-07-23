@@ -183,6 +183,69 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/practice", methods=["GET"])
+@require_auth
+def practice_page():
+    return render_template("practice.html")
+
+
+@app.route("/api/practice/case", methods=["GET"])
+@require_auth
+def practice_new_case():
+    from src import practice as practice_mod
+    exclude = request.args.getlist("exclude")
+    case = practice_mod.get_random_case(exclude_ids=exclude)
+    return jsonify(practice_mod.public_case(case))
+
+
+@app.route("/api/practice/submit", methods=["POST"])
+@require_auth
+@limiter.limit("30 per minute")
+def practice_submit():
+    from src import practice as practice_mod
+    data = request.get_json() or {}
+    case_id = data.get("case_id", "")
+    user_answer = (data.get("answer") or "").strip()
+
+    case = practice_mod.get_case(case_id)
+    if not case:
+        return jsonify({"error": "Caso no encontrado"}), 404
+    if not user_answer:
+        return jsonify({"error": "Escribe tu diferencial antes de enviar"}), 400
+
+    result = practice_mod.evaluate_answer(case, user_answer)
+    result["attempt_id"] = practice_mod.record_attempt(
+        user_id=session["user_id"],
+        case_id=case_id,
+        specialty=case["specialty"],
+        user_answer=user_answer,
+        mode=result["mode"],
+    )
+    return jsonify(result)
+
+
+@app.route("/api/practice/rate", methods=["POST"])
+@require_auth
+def practice_rate():
+    from src import practice as practice_mod
+    data = request.get_json() or {}
+    attempt_id = data.get("attempt_id")
+    self_rating = data.get("self_rating")
+    if self_rating not in ("correct", "partial", "incorrect"):
+        return jsonify({"error": "self_rating debe ser correct, partial o incorrect"}), 400
+    ok = practice_mod.rate_attempt(attempt_id, session["user_id"], self_rating)
+    if not ok:
+        return jsonify({"error": "Intento no encontrado"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/practice/progress", methods=["GET"])
+@require_auth
+def practice_progress():
+    from src import practice as practice_mod
+    return jsonify(practice_mod.get_progress(session["user_id"]))
+
+
 @app.route("/api/query", methods=["POST"])
 @require_auth
 @limiter.limit("10 per minute")

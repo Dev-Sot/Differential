@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Differential — Práctica de casos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg:        #0a0e17;
+    --surface:   #0f1629;
+    --surface-2: #111d35;
+    --border:    rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --em:        #c9974b;
+    --em-dim:    rgba(201,151,75,0.14);
+    --em-glow:   rgba(201,151,75,0.20);
+    --green:     #2f9e64;
+    --green-dim: rgba(47,158,100,0.14);
+    --amber:     #d9a441;
+    --amber-dim: rgba(217,164,65,0.14);
+    --red:       #e2635f;
+    --red-dim:   rgba(226,99,95,0.14);
+    --text:      #f1f5f9;
+    --text-2:    #94a3b8;
+    --text-3:    #5a6a85;
+    --serif:     'Source Serif 4', ui-serif, Georgia, serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh;
+  }
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px; border-bottom:1px solid var(--border);
+  }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand-icon {
+    width:32px; height:32px; background:var(--em-dim); border:1px solid rgba(201,151,75,0.24);
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+  }
+  .brand strong { font-family:var(--serif); font-size:16px; font-weight:600; }
+  .nav-links { display:flex; align-items:center; gap:8px; }
+  .nav-link {
+    font-size:13px; color:var(--text-2); text-decoration:none; padding:7px 12px;
+    border-radius:7px; display:flex; align-items:center; gap:6px;
+  }
+  .nav-link:hover { background:var(--surface-2); color:var(--text); }
+
+  .wrap { max-width:720px; margin:0 auto; padding:40px 24px 80px; }
+
+  .progress-strip {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border);
+    border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:32px;
+  }
+  .progress-stat { background:var(--surface); padding:14px 16px; }
+  .progress-stat .n { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:600; }
+  .progress-stat .l { font-size:11px; color:var(--text-3); margin-top:2px; }
+
+  .case-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:28px; margin-bottom:20px;
+  }
+  .specialty-tag {
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--em); background:var(--em-dim);
+    padding:4px 10px; border-radius:5px; margin-bottom:16px;
+  }
+  .vignette { font-size:16px; line-height:1.65; color:var(--text); }
+
+  .answer-box { margin-top:24px; }
+  .answer-box label { display:block; font-size:12.5px; color:var(--text-2); margin-bottom:8px; font-weight:600; }
+  textarea {
+    width:100%; min-height:100px; background:var(--surface-2); border:1.5px solid var(--border-strong);
+    border-radius:10px; padding:12px 14px; color:var(--text); font-family:'Inter',sans-serif;
+    font-size:14px; resize:vertical; outline:none;
+  }
+  textarea:focus { border-color:var(--em); box-shadow:0 0 0 3px var(--em-glow); }
+
+  .actions { display:flex; gap:10px; margin-top:16px; }
+  .btn {
+    font-family:'Inter',sans-serif; font-size:13.5px; font-weight:700; padding:10px 20px;
+    border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; gap:7px;
+  }
+  .btn-primary { background:var(--em); color:#1c1710; }
+  .btn-primary:hover { filter:brightness(1.08); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-ghost { background:transparent; border:1px solid var(--border-strong); color:var(--text-2); }
+  .btn-ghost:hover { color:var(--text); border-color:var(--text-2); }
+
+  .feedback-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:24px 28px; margin-bottom:20px; display:none;
+  }
+  .feedback-card.show { display:block; }
+  .feedback-label { font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--text-3); margin-bottom:10px; }
+  .correct-dx { font-family:var(--serif); font-size:19px; font-weight:600; color:var(--em); margin-bottom:14px; }
+  .ddx-list { list-style:none; margin:0 0 16px; padding:0; }
+  .ddx-list li { padding:9px 0; border-top:1px solid var(--border); font-size:14px; }
+  .ddx-list li:first-child { border-top:none; }
+  .ddx-list .dx-name { font-weight:600; }
+  .ddx-list .dx-why { color:var(--text-2); font-size:13px; margin-top:2px; }
+  .teaching-point {
+    background:var(--em-dim); border-left:3px solid var(--em); border-radius:0 8px 8px 0;
+    padding:12px 16px; font-size:13.5px; color:var(--text); margin-bottom:16px;
+  }
+  .llm-feedback {
+    background:var(--surface-2); border-radius:10px; padding:14px 16px; font-size:14px;
+    line-height:1.6; margin-bottom:16px; white-space:pre-wrap;
+  }
+
+  .rate-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .rate-row span { font-size:12.5px; color:var(--text-2); margin-right:4px; }
+  .rate-btn {
+    font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:7px; cursor:pointer;
+    border:1px solid var(--border-strong); background:transparent; color:var(--text-2);
+  }
+  .rate-btn.correct:hover, .rate-btn.correct.active { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+  .rate-btn.partial:hover, .rate-btn.partial.active { background:var(--amber-dim); color:var(--amber); border-color:var(--amber); }
+  .rate-btn.incorrect:hover, .rate-btn.incorrect.active { background:var(--red-dim); color:var(--red); border-color:var(--red); }
+
+  .loading { text-align:center; padding:40px; color:var(--text-3); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon"><i data-lucide="stethoscope" style="width:16px;height:16px;color:var(--em)"></i></div>
+    <strong>Differential</strong>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="/"><i data-lucide="message-square" style="width:14px;height:14px"></i> Chat libre</a>
+    <a class="nav-link" href="/metrics"><i data-lucide="bar-chart-2" style="width:14px;height:14px"></i> Métricas</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="progress-strip" id="progressStrip">
+    <div class="progress-stat"><div class="n" id="statTotal">—</div><div class="l">Casos practicados</div></div>
+    <div class="progress-stat"><div class="n" id="statAccuracy">—</div><div class="l">Precisión autoevaluada</div></div>
+    <div class="progress-stat"><div class="n" id="statWeak">—</div><div class="l">Área más débil</div></div>
+  </div>
+
+  <div id="caseArea" class="loading">Cargando caso...</div>
+</div>
+
+<script>
+let currentCase = null;
+let seenIds = [];
+let currentAttemptId = null;
+
+async function loadProgress() {
+  const r = await fetch('/api/practice/progress');
+  if (!r.ok) return;
+  const p = await r.json();
+  document.getElementById('statTotal').textContent = p.total_attempts;
+  document.getElementById('statAccuracy').textContent = p.accuracy != null ? Math.round(p.accuracy * 100) + '%' : '—';
+  document.getElementById('statWeak').textContent = p.weakest_specialty || '—';
+}
+
+async function loadNewCase() {
+  currentAttemptId = null;
+  const area = document.getElementById('caseArea');
+  area.innerHTML = '<div class="loading">Cargando caso...</div>';
+
+  const qs = seenIds.map(id => 'exclude=' + encodeURIComponent(id)).join('&');
+  const r = await fetch('/api/practice/case' + (qs ? '?' + qs : ''));
+  currentCase = await r.json();
+  seenIds.push(currentCase.id);
+  if (seenIds.length > 8) seenIds = seenIds.slice(-8); // deja que el banco rote
+
+  area.innerHTML = `
+    <div class="case-card">
+      <span class="specialty-tag">${esc(currentCase.specialty)}</span>
+      <p class="vignette">${esc(currentCase.vignette)}</p>
+      <div class="answer-box">
+        <label for="answerInput">Tu diferencial (ordenado de más a menos probable, con tu razonamiento)</label>
+        <textarea id="answerInput" placeholder="Ej: Sospecho ante todo X porque... También consideraría Y por..."></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()">
+          <i data-lucide="send" style="width:14px;height:14px"></i> Enviar diferencial
+        </button>
+        <button class="btn btn-ghost" onclick="loadNewCase()">Saltar caso</button>
+      </div>
+    </div>
+    <div class="feedback-card" id="feedbackCard"></div>
+  `;
+  lucide.createIcons();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+async function submitAnswer() {
+  const input = document.getElementById('answerInput');
+  const answer = input.value.trim();
+  if (!answer) { input.focus(); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Evaluando...';
+
+  const r = await fetch('/api/practice/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ case_id: currentCase.id, answer }),
+  });
+  const data = await r.json();
+  if (!r.ok) {
+    alert(data.error || 'Error al evaluar');
+    btn.disabled = false;
+    btn.textContent = 'Enviar diferencial';
+    return;
+  }
+
+  currentAttemptId = data.attempt_id;
+  renderFeedback(data);
+  input.disabled = true;
+  btn.style.display = 'none';
+}
+
+function renderFeedback(data) {
+  const card = document.getElementById('feedbackCard');
+  const ddxHtml = data.reference_differential.map(d => `
+    <li><div class="dx-name">${esc(d.dx)}</div><div class="dx-why">${esc(d.why)}</div></li>
+  `).join('');
+
+  const llmHtml = data.mode === 'llm_coach'
+    ? `<div class="feedback-label">Feedback del tutor</div><div class="llm-feedback">${esc(data.feedback)}</div>`
+    : '';
+
+  card.innerHTML = `
+    ${llmHtml}
+    <div class="feedback-label">Diagnóstico correcto</div>
+    <div class="correct-dx">${esc(data.correct_dx)}</div>
+    <div class="feedback-label">Diferencial de referencia</div>
+    <ul class="ddx-list">${ddxHtml}</ul>
+    <div class="teaching-point">${esc(data.teaching_point)}</div>
+    <div class="rate-row">
+      <span>¿Cómo te fue?</span>
+      <button class="rate-btn correct" onclick="rate('correct', this)">Acerté</button>
+      <button class="rate-btn partial" onclick="rate('partial', this)">Parcial</button>
+      <button class="rate-btn incorrect" onclick="rate('incorrect', this)">Me equivoqué</button>
+      <button class="btn btn-primary" style="margin-left:auto" onclick="loadNewCase()">
+        Siguiente caso →
+      </button>
+    </div>
+  `;
+  card.classList.add('show');
+}
+
+async function rate(value, btn) {
+  document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  await fetch('/api/practice/rate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ attempt_id: currentAttemptId, self_rating: value }),
+  });
+  loadProgress();
+}
+
+loadProgress();
+loadNewCase();
+</script>
+</body>
+</html>

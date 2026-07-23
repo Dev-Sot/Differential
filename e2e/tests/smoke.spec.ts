@@ -110,3 +110,31 @@ test.describe("Shell de la app (con sesion)", () => {
     expect(after).not.toBe(before);
   });
 });
+
+test.describe("Practica de casos", () => {
+  test.beforeEach(async ({ page }) => {
+    await signUpAndEnter(page);
+  });
+
+  test("carga un caso y el flujo completo de responder + autocalificar funciona", async ({ page }) => {
+    await page.goto("/practice");
+    await expect(page.locator(".case-card")).toBeVisible();
+    await expect(page.locator(".vignette")).not.toBeEmpty();
+
+    await page.locator("#answerInput").fill("Sospecho X por el cuadro clinico descrito.");
+    await page.locator("#submitBtn").click();
+
+    const feedback = page.locator("#feedbackCard");
+    await expect(feedback).toHaveClass(/show/);
+    await expect(feedback.locator(".correct-dx")).not.toBeEmpty();
+
+    await feedback.locator(".rate-btn.correct").click();
+    await expect(feedback.locator(".rate-btn.correct")).toHaveClass(/active/);
+  });
+
+  test("el enlace de la sidebar del chat lleva a /practice", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Práctica de casos" }).click();
+    await expect(page).toHaveURL(/\/practice$/);
+  });
+});

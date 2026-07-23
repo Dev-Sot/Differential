@@ -45,9 +45,16 @@
   </div>
 
   <div class="sidebar-section">
+    <div class="sidebar-label">Practicar</div>
+    <button class="sidebar-btn" onclick="window.location.href='/practice'" style="border:1px solid var(--border-em);background:var(--em-dim);color:var(--em);font-weight:600;">
+      <i data-lucide="graduation-cap" style="width:15px;height:15px;stroke-width:2"></i> Práctica de casos
+    </button>
+  </div>
+
+  <div class="sidebar-section">
     <div class="sidebar-label">Consulta</div>
     <button class="sidebar-btn active">
-      <i data-lucide="message-square" style="width:15px;height:15px;stroke-width:2"></i> Síntomas
+      <i data-lucide="message-square" style="width:15px;height:15px;stroke-width:2"></i> Chat libre
     </button>
     <button class="sidebar-btn" onclick="window.open('/api/health')">
       <i data-lucide="activity" style="width:15px;height:15px;stroke-width:2"></i> Estado del sistema
