@@ -9,7 +9,8 @@ libros/*.pdf
 .env
 .DS_Store
 memory.db
-data/
+data/*
+!data/case_bank.json
 .claude/
 node_modules/
 static/dist/

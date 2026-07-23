@@ -125,6 +125,12 @@ class TestLoginEndpoint:
         client.post("/auth/signup", json={"email": "out@example.com", "password": "password123"})
         client.post("/auth/logout")
         r = client.get("/")
+        assert r.status_code == 200
+        assert b"Crear cuenta" in r.data  # landing publica, no el chat
+
+    def test_practice_page_still_requires_auth_after_landing_change(self, client):
+        """La landing en '/' no debe aflojar require_auth en el resto de las rutas."""
+        r = client.get("/practice")
         assert r.status_code == 302
         assert "/login" in r.headers.get("Location", "")
 
@@ -132,10 +138,18 @@ class TestLoginEndpoint:
 # ─── require_auth: rutas protegidas sin sesion ─────────────────────────────
 
 class TestRequireAuth:
-    def test_index_redirects_to_login_when_anonymous(self, client):
+    def test_index_shows_landing_page_when_anonymous(self, client):
+        """'/' ya no redirige a /login estando anonimo — muestra la landing publica."""
         r = client.get("/")
-        assert r.status_code == 302
-        assert "/login" in r.headers.get("Location", "")
+        assert r.status_code == 200
+        assert b"Differential" in r.data
+        assert b"Crear cuenta" in r.data
+
+    def test_index_shows_chat_when_authenticated(self, client):
+        client.post("/auth/signup", json={"email": "chat@example.com", "password": "password123"})
+        r = client.get("/")
+        assert r.status_code == 200
+        assert b"chatZone" in r.data
 
     def test_api_route_returns_401_json_when_anonymous(self, client):
         r = client.get("/api/health")

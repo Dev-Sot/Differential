@@ -25,10 +25,17 @@ async function signUpAndEnter(page: Page): Promise<string> {
 // tests de la interfaz real".
 
 test.describe("Autenticacion", () => {
-  test("una sesion anonima es redirigida a /login", async ({ page }) => {
+  test("una sesion anonima ve la landing publica en /, no el chat", async ({ page }) => {
     const response = await page.goto("/");
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("link", { name: "Crear cuenta gratis" }).first()).toBeVisible();
+    await expect(page.locator("#chatZone")).toHaveCount(0);
+  });
+
+  test("una sesion anonima SI es redirigida a /login en rutas protegidas", async ({ page }) => {
+    await page.goto("/practice");
     await expect(page).toHaveURL(/\/login$/);
-    expect(response?.status()).toBe(200); // 200 tras seguir el redirect a /login
   });
 
   test("la pagina de registro carga y permite crear cuenta", async ({ page }) => {

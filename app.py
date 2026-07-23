@@ -178,8 +178,9 @@ def auth_logout():
 
 
 @app.route("/")
-@require_auth
 def index():
+    if not session.get("user_id"):
+        return render_template("landing.html")
     return render_template("index.html")
 
 
