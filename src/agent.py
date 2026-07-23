@@ -4,7 +4,9 @@ Orquesta entre el agente ReAct (HuggingFace) y el pipeline RAG de respaldo.
 """
 
 import os
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")
@@ -45,10 +47,10 @@ def _run_react_agent(sintomas: str, session_id: str) -> dict:
 
 def _run_rag_fallback(sintomas: str) -> dict:
     """Pipeline RAG sin LLM — usado cuando no hay HF_TOKEN."""
-    from src.rag.retriever import retrieve
     from src.rag.reranker import rerank
+    from src.rag.retriever import retrieve
     from src.rag.section_mapping import enrich_chunks
-    from src.rag.semantic_fallback import needs_fallback, fallback_response
+    from src.rag.semantic_fallback import fallback_response, needs_fallback
 
     candidates = retrieve(sintomas, top_k=20)
     ranked = rerank(sintomas, candidates, top_k=5)

@@ -20,7 +20,10 @@ jobs:
           cache: pip
 
       - name: Install Python dependencies
-        run: pip install --no-cache-dir -r requirements.txt
+        run: pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
 
       - name: Run tests
         env:

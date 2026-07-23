@@ -4,7 +4,8 @@ Modelo: Qwen/Qwen2.5-7B-Instruct (multilingue, gratis)
 """
 
 import os
-from typing import Iterator
+from collections.abc import Iterator
+
 from huggingface_hub import InferenceClient
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")

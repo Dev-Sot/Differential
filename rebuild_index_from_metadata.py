@@ -6,8 +6,9 @@ prefijo "passage: {book}: {text}" que ingest.py.
 Ejecutar una sola vez: venv/Scripts/python.exe rebuild_index_from_metadata.py
 """
 
-import os
 import json
+import os
+
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -20,7 +21,7 @@ MODEL_NAME = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
 
 
 def main():
-    with open(META_PATH, "r", encoding="utf-8") as f:
+    with open(META_PATH, encoding="utf-8") as f:
         metadata = json.load(f)
 
     print(f"[MEDI-IA] Chunks en metadata.json: {len(metadata)}")

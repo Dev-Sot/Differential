@@ -3,14 +3,16 @@ Tests de integracion para los endpoints Flask de MEDI-IA.
 Mockean run(), get_health() y WeasyPrint para no depender de FAISS ni HF.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import json
 import types
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 import app as app_mod
 

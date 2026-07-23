@@ -9,6 +9,7 @@ Modelo activo: intfloat/multilingual-e5-base (768 dims, retrieval-optimized)
 """
 
 import os
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
 

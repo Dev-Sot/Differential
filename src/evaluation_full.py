@@ -13,15 +13,15 @@ Uso:
   make eval-full
 """
 
-import os
-import json
-import time
 import csv
+import json
+import os
+import time
 from datetime import datetime
 
-from src.rag.retriever import retrieve
-from src.rag.reranker import rerank
 from src.guardrails import is_medical_query
+from src.rag.reranker import rerank
+from src.rag.retriever import retrieve
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -320,7 +320,7 @@ def save_results(data: dict) -> None:
             row["precision_5"]  = f"{r['precision_5']:.4f}"
             writer.writerow(row)
 
-    print(f"  Resultados guardados:")
+    print("  Resultados guardados:")
     print(f"    JSON completo : {RESULTS_PATH}")
     print(f"    CSV (Excel)   : {CSV_PATH}")
 

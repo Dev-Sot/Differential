@@ -7,6 +7,11 @@ exclude = ["venv", "index", "libros", "data"]
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# app.py necesita load_dotenv() ejecutado antes de importar src.*, que leen
+# variables de entorno al importarse — el orden de imports es intencional.
+"app.py" = ["E402"]
+
 [tool.black]
 line-length = 100
 target-version = ["py313"]

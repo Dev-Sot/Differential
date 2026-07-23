@@ -6,12 +6,13 @@ hasta producir una respuesta final.
 Patron: Thought -> Action -> Input -> Observation -> ... -> Final Answer
 """
 
-import re
 import os
-from typing import Iterator
+import re
+from collections.abc import Iterator
+
 from src.llm import chat, chat_stream
-from src.tools import execute_tool, tools_description, TOOLS, get_last_chunks
-from src.memory import get_history, add_turn, set_system
+from src.memory import add_turn, get_history, set_system
+from src.tools import execute_tool, get_last_chunks, tools_description
 
 MAX_ITERATIONS = 6  # maximo de ciclos Thought-Action-Observation
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
@@ -26,7 +27,7 @@ _GRAVITY_LEVELS = {
 
 def _load_system_prompt() -> str:
     path = os.path.join(PROMPTS_DIR, "system.txt")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         template = f.read()
     return template.format(tools_description=tools_description())
 

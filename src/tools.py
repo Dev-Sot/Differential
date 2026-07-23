@@ -3,10 +3,10 @@ Herramientas medicas que el agente ReAct puede llamar.
 Cada tool tiene: nombre, descripcion, funcion ejecutable.
 """
 
-import json
 import threading
-from src.rag.retriever import retrieve
+
 from src.rag.reranker import rerank
+from src.rag.retriever import retrieve
 from src.rag.section_mapping import enrich_chunks
 
 # Almacena los últimos chunks recuperados por request (thread-safe).

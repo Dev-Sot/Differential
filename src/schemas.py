@@ -2,12 +2,12 @@
 Modelos Pydantic para validar entradas y salidas de MEDI-IA.
 """
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
-from typing import Optional
-from enum import Enum
 
 
-class NivelGravedad(str, Enum):
+class NivelGravedad(StrEnum):
     leve = "leve"
     moderada = "moderada"
     grave = "grave"

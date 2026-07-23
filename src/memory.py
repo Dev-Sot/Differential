@@ -3,10 +3,10 @@ Memoria de conversacion para MEDI-IA.
 Historial persistido en SQLite (memory.db) por sesion — sobrevive reinicios del servidor.
 """
 
-import sqlite3
 import os
+import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 MAX_TURNS = 10
 
@@ -19,7 +19,7 @@ DB_PATH = os.getenv("MEMORY_DB_PATH", os.path.join(_DATA_DIR, "memory.db"))
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _init_schema() -> None:
@@ -145,7 +145,7 @@ def cleanup_old_sessions(days: int = 30) -> int:
     Retorna el numero de sesiones eliminadas.
     """
     from datetime import timedelta
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.now(UTC) - timedelta(days=days)
     cutoff_iso = cutoff.isoformat()
 
     with _db() as conn:

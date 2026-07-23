@@ -3,11 +3,11 @@ Tests unitarios de src/evaluation.py.
 Mockean retrieve y rerank para no necesitar indice FAISS.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import pytest
 from unittest.mock import patch
 
 # ── fixtures de datos ──────────────────────────────────────────────────────────

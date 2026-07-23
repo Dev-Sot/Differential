@@ -5,6 +5,7 @@ frente a la query del usuario. Mejora significativamente la precision.
 """
 
 import os
+
 from sentence_transformers import CrossEncoder
 
 # Modelo multilingue entrenado en mMARCO (26 idiomas, incluido espanol).
@@ -39,7 +40,7 @@ def rerank(query: str, chunks: list[dict], top_k: int = 5) -> list[dict]:
     pairs = [(query, c["text"]) for c in chunks]
     scores = encoder.predict(pairs)
 
-    for chunk, score in zip(chunks, scores):
+    for chunk, score in zip(chunks, scores, strict=True):
         chunk["rerank_score"] = float(score)
 
     reranked = sorted(chunks, key=lambda x: x["rerank_score"], reverse=True)

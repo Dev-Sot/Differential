@@ -3,13 +3,13 @@ Benchmark cuantitativo: compara FAISS (cosine) vs cross-encoder reranker
 en 6 queries medicas fijas. Guarda resultados en data/eval_snapshot.json.
 """
 
-import os
 import json
+import os
 import time
 from datetime import datetime
 
-from src.rag.retriever import retrieve
 from src.rag.reranker import rerank
+from src.rag.retriever import retrieve
 
 BENCHMARK_QUERIES = [
     "dolor en el pecho que se irradia al brazo izquierdo",
@@ -125,7 +125,7 @@ def load_snapshot() -> dict | None:
     if not os.path.exists(SNAPSHOT_PATH):
         return None
     try:
-        with open(SNAPSHOT_PATH, "r", encoding="utf-8") as f:
+        with open(SNAPSHOT_PATH, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None

@@ -3,8 +3,9 @@ Tests para src/guardrails.py.
 Logica pura — no requiere FAISS ni modelos ML.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.guardrails import is_medical_query, refusal_result

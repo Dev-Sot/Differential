@@ -7,18 +7,19 @@ search_symptoms / get_drug_info / get_section: mockean retrieve() y rerank()
 execute_tool: testea el dispatcher con mocks y con assess_urgency real.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
 from src.tools import (
+    TOOLS,
     assess_urgency,
     execute_tool,
     tools_description,
-    TOOLS,
 )
-
 
 # ── Chunks de ejemplo reutilizables en tests con mock ────────────────────────
 
@@ -212,5 +213,5 @@ class TestToolsDescription:
         assert isinstance(self.desc, str)
 
     def test_has_four_lines(self):
-        lines = [l for l in self.desc.strip().splitlines() if l.strip()]
+        lines = [line for line in self.desc.strip().splitlines() if line.strip()]
         assert len(lines) == 4

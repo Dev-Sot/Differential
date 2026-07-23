@@ -3,13 +3,15 @@ Tests para el sistema de métricas en memoria de MEDI-IA.
 Cubre: src.metrics (record_query/record_error/snapshot) y el endpoint /api/metrics.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import time
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 import app as app_mod
 from src import metrics as metrics_mod

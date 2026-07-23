@@ -3,10 +3,11 @@ Recupera los chunks mas relevantes usando busqueda hibrida:
   FAISS (denso, cosine) + BM25 (keywords) fusionados con Reciprocal Rank Fusion.
 """
 
-import os
 import json
+import os
+
 import faiss
-import numpy as np
+
 from src.rag.embeddings import encode
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -27,7 +28,7 @@ def _load():
                 "Indice FAISS no encontrado. Ejecuta: python ingest.py"
             )
         _index = faiss.read_index(INDEX_PATH)
-        with open(META_PATH, "r", encoding="utf-8") as f:
+        with open(META_PATH, encoding="utf-8") as f:
             _metadata = json.load(f)
         # Validar que el indice es compatible con el modelo de embeddings actual
         test_vec = encode(["test"])
@@ -46,7 +47,7 @@ def _retrieve_faiss(query: str, top_k: int) -> list[dict]:
     scores, indices = _index.search(query_vec, top_k)
 
     results = []
-    for score, idx in zip(scores[0], indices[0]):
+    for score, idx in zip(scores[0], indices[0], strict=True):
         if idx >= 0 and float(score) >= MIN_SCORE:
             entry = _metadata[idx].copy()
             entry["score"] = float(score)

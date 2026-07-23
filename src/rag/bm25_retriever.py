@@ -24,8 +24,8 @@ def _load():
         return
     try:
         from rank_bm25 import BM25Okapi
-    except ImportError:
-        raise ImportError("Instala rank-bm25: pip install rank-bm25")
+    except ImportError as e:
+        raise ImportError("Instala rank-bm25: pip install rank-bm25") from e
 
     if not os.path.exists(META_PATH):
         raise FileNotFoundError("Indice no encontrado. Ejecuta: python ingest.py")

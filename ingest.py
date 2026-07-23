@@ -4,12 +4,13 @@ Lee PDFs médicos, los divide en chunks, genera embeddings y construye un índic
 Ejecutar: python ingest.py
 """
 
+import json
 import os
 import re
-import json
 import sys
-import fitz  # PyMuPDF
+
 import faiss
+import fitz  # PyMuPDF
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
@@ -18,8 +19,7 @@ INDEX_DIR = os.path.join(os.path.dirname(__file__), "index")
 INDEX_PATH = os.path.join(INDEX_DIR, "books.index")
 META_PATH = os.path.join(INDEX_DIR, "metadata.json")
 
-import os as _os
-MODEL_NAME = _os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
+MODEL_NAME = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
 CHUNK_SIZE = 600    # subido de 400 — más contexto clínico por chunk
 CHUNK_OVERLAP = 120  # subido de 80
 
@@ -154,7 +154,7 @@ def ingest_all_books():
         print(f"    Chunks válidos: {book_chunks}  |  Filtrados (basura): {book_filtered}")
 
     print(f"\n[MEDI-IA] Total chunks: {len(all_passages)}  |  Filtrados: {total_filtered}")
-    print(f"[MEDI-IA] Generando embeddings... (puede tomar varios minutos)")
+    print("[MEDI-IA] Generando embeddings... (puede tomar varios minutos)")
 
     batch_size = 256
     all_embeddings = []
@@ -179,7 +179,7 @@ def ingest_all_books():
     print(f"[OK] Indice FAISS guardado: {INDEX_PATH}")
     print(f"[OK] Metadata guardada:     {META_PATH}")
     print(f"[OK] Vectores indexados:    {index.ntotal}")
-    print(f"\n[MEDI-IA] Ingesta completada. El sistema usara los libros medicos reales.")
+    print("\n[MEDI-IA] Ingesta completada. El sistema usara los libros medicos reales.")
 
 
 if __name__ == "__main__":

@@ -3,12 +3,14 @@ Tests para src/memory.py (implementacion SQLite).
 Cada test usa una base de datos temporal aislada via tmp_path.
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+
 import pytest
-import time
+
 import src.memory as mem_mod
 
 

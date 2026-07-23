@@ -7,9 +7,9 @@ Uso:
     python manage.py clear <session_id>    # eliminar una sesion concreta
 """
 
-import sys
 import argparse
-from src.memory import cleanup_old_sessions, session_stats, clear_session
+
+from src.memory import cleanup_old_sessions, clear_session, session_stats
 
 
 def cmd_sessions(_args):

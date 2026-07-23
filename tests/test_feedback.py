@@ -3,12 +3,14 @@ Tests para el sistema de feedback de MEDI-IA.
 Cubre: save_feedback / get_feedback_stats (memory.py) y POST /api/feedback (endpoint).
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 import app as app_mod
 from src import metrics as metrics_mod

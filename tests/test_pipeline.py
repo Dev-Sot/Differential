@@ -3,13 +3,16 @@ Tests basicos para MEDI-IA.
 Ejecutar: python -m pytest tests/ -v
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import pytest
-from src.rag.section_mapping import get_section, enrich_chunks
-from src.rag.semantic_fallback import needs_fallback, fallback_response
+from pydantic import ValidationError
+
+from src.rag.section_mapping import enrich_chunks, get_section
+from src.rag.semantic_fallback import fallback_response, needs_fallback
 from src.schemas import ConsultaRequest, NivelGravedad
 
 
@@ -55,7 +58,7 @@ class TestSchemas:
         assert len(c.message) >= 5
 
     def test_too_short_consulta(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ConsultaRequest(message="ok")
 
     def test_gravedad_enum(self):
@@ -78,7 +81,7 @@ class TestRetriever:
 
     def test_retrieve_score_above_threshold(self):
         try:
-            from src.rag.retriever import retrieve, MIN_SCORE
+            from src.rag.retriever import MIN_SCORE, retrieve
             results = retrieve("infarto de miocardio dolor pecho", top_k=5)
             # En modo híbrido RRF, resultados de BM25 puro pueden tener score=0.0
             # Se verifica que al menos el top resultado tenga score FAISS válido

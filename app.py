@@ -2,28 +2,42 @@
 MEDI-IA — Flask Application v4 (ReAct Agent)
 """
 
-import sys
-import os
-import uuid
-import json
-import hmac
 import functools
+import hmac
+import json
 import logging
-import time
+import os
+import sys
 import threading
+import time
+import uuid
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, session, Response, stream_with_context, redirect, url_for, g
+from flask import (
+    Flask,
+    Response,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    stream_with_context,
+    url_for,
+)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from src.agent import run, get_health
-from src.schemas import ConsultaRequest, ErrorResponse
-from src.memory import clear_session, save_feedback, get_feedback_stats, get_history
+
 from src import metrics as metrics_mod
-from src.pdf_export import build_diagnosis_pdf, build_conversation_pdf
+from src.agent import get_health, run
+from src.memory import clear_session, get_feedback_stats, get_history, save_feedback
+from src.pdf_export import build_conversation_pdf, build_diagnosis_pdf
+from src.schemas import ConsultaRequest, ErrorResponse
 
 logging.basicConfig(
     level=logging.INFO,
@@ -480,9 +494,10 @@ def run_evaluation():
 @require_auth
 @limiter.limit("30 per minute")
 def tts_endpoint():
-    import edge_tts
-    from threading import Thread
     from queue import Queue
+    from threading import Thread
+
+    import edge_tts
 
     data = request.json or {}
     text = (data.get("text") or "").strip()
@@ -495,7 +510,6 @@ def tts_endpoint():
     q: Queue = Queue()
 
     async def _gen():
-        import asyncio
         try:
             communicate = edge_tts.Communicate(text, voice)
             async for chunk in communicate.stream():
