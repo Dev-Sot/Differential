@@ -3,8 +3,18 @@ import { test, expect, type Page } from "@playwright/test";
 // El overlay de onboarding (initOnboarding() en main.ts) tapa el resto de la
 // pagina hasta que se descarta — simulamos un usuario que ya lo vio para
 // poder probar el sidebar/tema sin que el overlay intercepte los clicks.
+//
+// checkProfileOnLoad() en main.ts abre el modal de "perfil clinico" 800ms
+// despues de cargar SI el onboarding ya esta marcado como visto Y no hay
+// perfil guardado — comportamiento real de la app (le pide al usuario que
+// complete su perfil tras el tour), pero interfiere con estos tests que no
+// prueban el modal de perfil. Se simula un perfil ya guardado para que
+// checkProfileOnLoad() no dispare el modal.
 async function skipOnboarding(page: Page) {
-  await page.addInitScript(() => localStorage.setItem("medi-onboarding-done", "1"));
+  await page.addInitScript(() => {
+    localStorage.setItem("medi-onboarding-done", "1");
+    sessionStorage.setItem("differential-profile", JSON.stringify({}));
+  });
 }
 
 // La app ahora exige cuenta real (src/auth.py) — cada test crea la suya via

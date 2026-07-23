@@ -1,5 +1,5 @@
 """
-MEDI-IA Agent — Punto de entrada principal.
+Differential Agent — Punto de entrada principal.
 Orquesta entre el agente ReAct (HuggingFace) y el pipeline RAG de respaldo.
 """
 
@@ -116,6 +116,7 @@ def _extract_recommendation(text: str) -> str:
 
 
 def get_health() -> dict:
+    from src.rag.embeddings import MODEL_NAME
     from src.rag.retriever import get_index_stats
     try:
         stats = get_index_stats()
@@ -131,5 +132,6 @@ def get_health() -> dict:
         "hf_activo": bool(HF_TOKEN),
         "chunks_indexados": stats["total_chunks"],
         "libros": stats["libros"],
+        "embedding_model": MODEL_NAME,
         "tools_disponibles": ["search_symptoms", "assess_urgency", "get_drug_info", "get_section"],
     }

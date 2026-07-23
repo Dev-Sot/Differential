@@ -986,10 +986,11 @@ async function loadHealthStatus() {
 
     const badgeText = document.getElementById('welcomeBadgeText');
     if (badgeText) {
-      const chunks = h.chunks_indexados ? h.chunks_indexados.toLocaleString() + ' chunks' : '136K chunks';
-      const libros = h.libros?.length ? h.libros.length + ' libros' : '14 libros';
+      const chunks = h.chunks_indexados ? h.chunks_indexados.toLocaleString() + ' chunks' : '— chunks';
+      const libros = h.libros?.length ? h.libros.length + ' libros' : '— libros';
+      const modelo = (h.embedding_model || '').split('/').pop() || 'embeddings';
       const modo   = h.hf_activo ? 'ReAct' : 'RAG';
-      badgeText.textContent = `${chunks} · e5-base · BM25+RRF · ${libros} · ${modo}`;
+      badgeText.textContent = `${chunks} · ${modelo} · BM25+RRF · ${libros} · ${modo}`;
     }
   } catch {
     // Si el server no responde, dejamos los valores por defecto
