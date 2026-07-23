@@ -21,15 +21,20 @@ flask_app = app_mod.app
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    """Cliente de test Flask con SQLite temporal para la memoria."""
+    """Cliente de test Flask con SQLite temporal y una sesion ya autenticada."""
+    import src.auth as auth_mod
     import src.memory as mem_mod
     monkeypatch.setattr(mem_mod, "DB_PATH", str(tmp_path / "test_api.db"))
     mem_mod._init_schema()
+    auth_mod._init_schema()
+    user_id = auth_mod.create_user("test@example.com", "password123")
 
     flask_app.config["TESTING"] = True
     flask_app.config["SECRET_KEY"] = "test-secret-key"
     flask_app.config["RATELIMIT_ENABLED"] = False
     with flask_app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["user_id"] = user_id
         yield c
 
 

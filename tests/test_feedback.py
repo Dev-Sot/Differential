@@ -29,13 +29,18 @@ def db(tmp_path, monkeypatch):
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    import src.auth as auth_mod
     import src.memory as mem_mod
     monkeypatch.setattr(mem_mod, "DB_PATH", str(tmp_path / "test_feedback_api.db"))
     mem_mod._init_schema()
+    auth_mod._init_schema()
+    user_id = auth_mod.create_user("test@example.com", "password123")
 
     flask_app.config["TESTING"] = True
     flask_app.config["SECRET_KEY"] = "test-secret-key"
     with flask_app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["user_id"] = user_id
         yield c
 
 

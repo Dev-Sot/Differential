@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Differential — Iniciar sesión</title>
+<title>Differential — Crear cuenta</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -24,7 +24,6 @@
     --text-2:    #94a3b8;
     --text-3:    #475569;
     --serif:     'Source Serif 4', ui-serif, Georgia, serif;
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -47,103 +46,45 @@
     max-width: 380px;
     box-shadow: var(--shadow-lg);
   }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
+  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
   .logo-icon {
-    width: 44px;
-    height: 44px;
-    background: var(--em-dim);
-    border: 1px solid var(--border-em);
-    box-shadow: 0 0 14px var(--em-glow);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
+    width: 44px; height: 44px; background: var(--em-dim); border: 1px solid var(--border-em);
+    box-shadow: 0 0 14px var(--em-glow); border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 22px;
   }
   .logo-text strong { font-family: var(--serif); font-size: 19px; font-weight: 600; letter-spacing: -0.3px; }
   .logo-text span { font-size: 11px; color: var(--text-3); display: block; }
   h1 { font-family: var(--serif); font-size: 21px; font-weight: 600; margin-bottom: 6px; }
   .subtitle { font-size: 13px; color: var(--text-2); margin-bottom: 28px; }
-  label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-2);
-    margin-bottom: 6px;
-    letter-spacing: 0.2px;
-  }
-  .input-wrap {
-    position: relative;
-    margin-bottom: 16px;
-  }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; letter-spacing: 0.2px; }
+  .input-wrap { position: relative; margin-bottom: 16px; }
+  .hint { font-size: 11px; color: var(--text-3); margin-top: 5px; }
   input[type="password"], input[type="email"] {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border-strong);
-    border-radius: 9px;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    color: var(--text);
-    background: rgba(255,255,255,0.04);
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-strong); border-radius: 9px;
+    font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text);
+    background: rgba(255,255,255,0.04); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   }
   input[type="password"]:focus, input[type="email"]:focus {
-    border-color: var(--emerald);
-    box-shadow: 0 0 0 3px var(--em-dim);
-    background: var(--surface);
+    border-color: var(--emerald); box-shadow: 0 0 0 3px var(--em-dim); background: var(--surface);
   }
   .btn {
-    width: 100%;
-    padding: 11px;
-    background: var(--emerald);
-    color: #1c1710;
-    border: none;
-    border-radius: 9px;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    transition: all 0.15s;
-    box-shadow: 0 2px 8px var(--em-glow);
-    margin-top: 6px;
+    width: 100%; padding: 11px; background: var(--emerald); color: #1c1710; border: none;
+    border-radius: 9px; font-size: 14px; font-weight: 700; font-family: 'Inter', sans-serif;
+    cursor: pointer; transition: all 0.15s; box-shadow: 0 2px 8px var(--em-glow); margin-top: 6px;
   }
   .btn:hover { background: var(--emerald-dark); color: var(--text); }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
   .error {
-    background: var(--red-light);
-    border: 1px solid rgba(239,68,68,0.3);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: var(--red);
-    margin-bottom: 16px;
-    display: none;
-    align-items: center;
-    gap: 7px;
+    background: var(--red-light); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; color: var(--red); margin-bottom: 16px;
+    display: none; align-items: center; gap: 7px;
   }
   .error.show { display: flex; }
-  .switch-mode {
-    margin-top: 20px;
-    font-size: 13px;
-    color: var(--text-2);
-    text-align: center;
-  }
+  .switch-mode { margin-top: 20px; font-size: 13px; color: var(--text-2); text-align: center; }
   .switch-mode a { color: var(--em); text-decoration: none; font-weight: 600; }
   .switch-mode a:hover { text-decoration: underline; }
-  .footer-note {
-    margin-top: 24px;
-    font-size: 11px;
-    color: var(--text-3);
-    text-align: center;
-    line-height: 1.5;
-  }
+  .footer-note { margin-top: 24px; font-size: 11px; color: var(--text-3); text-align: center; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -156,44 +97,45 @@
     </div>
   </div>
 
-  <h1>Iniciar sesión</h1>
-  <p class="subtitle">Entra con tu correo para seguir tu progreso.</p>
+  <h1>Crear cuenta</h1>
+  <p class="subtitle">Gratis — sin tarjeta de crédito.</p>
 
-  <div class="error" id="errorMsg">⚠️ <span id="errorText">Credenciales incorrectas.</span></div>
+  <div class="error" id="errorMsg">⚠️ <span id="errorText">No se pudo crear la cuenta.</span></div>
 
-  <form id="loginForm" onsubmit="doLogin(event)">
+  <form id="signupForm" onsubmit="doSignup(event)">
     <label for="email">Correo</label>
     <div class="input-wrap">
       <input type="email" id="email" placeholder="tu@correo.com" autofocus autocomplete="email" required>
     </div>
     <label for="pwd">Contraseña</label>
     <div class="input-wrap">
-      <input type="password" id="pwd" placeholder="••••••••" autocomplete="current-password" required>
+      <input type="password" id="pwd" placeholder="••••••••" autocomplete="new-password" required minlength="8">
+      <div class="hint">Mínimo 8 caracteres.</div>
     </div>
-    <button class="btn" id="loginBtn" type="submit">Entrar</button>
+    <button class="btn" id="signupBtn" type="submit">Crear cuenta</button>
   </form>
 
-  <p class="switch-mode">¿No tienes cuenta? <a href="/signup">Crea una</a></p>
+  <p class="switch-mode">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
   <p class="footer-note">Differential es una herramienta de práctica y no reemplaza la consulta médica profesional.</p>
 </div>
 
 <script>
-async function doLogin(e) {
+async function doSignup(e) {
   e.preventDefault();
   const email = document.getElementById('email').value;
   const pwd = document.getElementById('pwd').value;
-  const btn = document.getElementById('loginBtn');
+  const btn = document.getElementById('signupBtn');
   const errBox = document.getElementById('errorMsg');
   const errText = document.getElementById('errorText');
 
   if (!email || !pwd) return;
 
   btn.disabled = true;
-  btn.textContent = 'Verificando...';
+  btn.textContent = 'Creando cuenta...';
   errBox.classList.remove('show');
 
   try {
-    const r = await fetch('/auth/login', {
+    const r = await fetch('/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pwd }),
@@ -202,17 +144,15 @@ async function doLogin(e) {
       window.location.href = '/';
     } else {
       const data = await r.json().catch(() => ({}));
-      errText.textContent = data.error || 'Credenciales incorrectas.';
+      errText.textContent = data.error || 'No se pudo crear la cuenta.';
       errBox.classList.add('show');
-      document.getElementById('pwd').value = '';
-      document.getElementById('pwd').focus();
     }
   } catch {
     errText.textContent = 'Error de conexión. Intenta de nuevo.';
     errBox.classList.add('show');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.textContent = 'Crear cuenta';
   }
 }
 </script>

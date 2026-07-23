@@ -66,7 +66,7 @@ Consulta del usuario
 | **Historial** | Consultas anteriores en sidebar (localStorage) |
 | **Dark mode** | Toggle luna/sol, persiste en localStorage |
 | **Input de voz** | Web Speech API, resultados en tiempo real (Chrome) |
-| **Autenticación** | Password opcional via `AUTH_PASSWORD` |
+| **Autenticación** | Cuentas reales (email + password hasheado) — `/signup`, `/login` |
 | **Cron cleanup** | Limpieza automática de sesiones inactivas (daemon thread) |
 | **Docker** | Dockerfile + docker-compose + nginx (SSE-ready) |
 | **185 tests** | pytest: guardrails, tools, memory, api, metrics, feedback, evaluation, pipeline |
@@ -192,7 +192,6 @@ El sistema funciona sin token. Las respuestas son fragmentos del libro sin anál
 | `HF_TOKEN` | — | Activa el agente ReAct. Sin él → modo RAG Template |
 | `HF_MODEL` | `Qwen/Qwen2.5-7B-Instruct` | Modelo LLM via HuggingFace Inference API |
 | `SECRET_KEY` | (random) | **Definir en producción** — clave Flask para sesiones |
-| `AUTH_PASSWORD` | — | Si se define, protege toda la app con password |
 | `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Modelo de embeddings (384 dims) — debe coincidir con el usado para construir `index/books.index` |
 | `RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo reranker |
 | `RERANK_THRESHOLD` | `-3.0` | Umbral de relevancia (chunks > 0 = relevantes) |
@@ -208,11 +207,15 @@ El sistema funciona sin token. Las respuestas son fragmentos del libro sin anál
 
 | Endpoint | Método | Rate limit | Descripción |
 |----------|--------|-----------|-------------|
-| `/` | GET | — | Interfaz de chat |
+| `/` | GET | — | Interfaz de chat (requiere sesión iniciada) |
 | `/metrics` | GET | — | Dashboard de métricas con Chart.js |
 | `/live` | GET | — | Monitor en tiempo real (refresh 5 s) |
 | `/evaluate` | GET | — | Dashboard de evaluación RAG |
-| `/login` | GET | — | Página de login (solo si AUTH_PASSWORD definido) |
+| `/login` | GET | — | Página de inicio de sesión |
+| `/signup` | GET | — | Página de registro (cuenta nueva) |
+| `/auth/signup` | POST | 10/hora | Crear cuenta — email + password (min. 8 caracteres) |
+| `/auth/login` | POST | 5/min | Iniciar sesión |
+| `/auth/logout` | POST | — | Cerrar sesión |
 | `/manifest.json` | GET | — | PWA manifest |
 | `/api/query` | POST | 10/min | Consulta RAG/ReAct — respuesta completa |
 | `/api/stream` | POST | 10/min | SSE streaming del agente token a token |

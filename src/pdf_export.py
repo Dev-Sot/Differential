@@ -10,7 +10,7 @@ from datetime import datetime
 
 from fpdf import FPDF
 
-EMERALD = (16, 185, 129)
+EMERALD = (201, 151, 75)  # brass/gold — acento de marca Differential
 BLUE = (59, 130, 246)
 SLATE = (71, 85, 105)
 MUTED = (148, 163, 184)
@@ -93,7 +93,7 @@ def build_diagnosis_pdf(data: dict) -> bytes:
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(*EMERALD)
-    pdf.cell(0, 12, "MEDI-IA", ln=True)
+    pdf.cell(0, 12, "Differential", ln=True)
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(*MUTED)
     pdf.set_y(pdf.get_y() - 9)
@@ -180,7 +180,7 @@ def build_diagnosis_pdf(data: dict) -> bytes:
     pdf.set_text_color(*MUTED)
     pdf.multi_cell(
         W, 5,
-        "MEDI-IA no reemplaza la consulta medica profesional. "
+        "Differential es una herramienta de practica y no reemplaza la consulta medica profesional. "
         "Este reporte es generado por inteligencia artificial y debe ser validado "
         "por un profesional de la salud calificado. "
         "En caso de emergencia llame al 123 o dirigase a urgencias inmediatamente.",
@@ -204,7 +204,7 @@ def build_conversation_pdf(turns: list) -> bytes:
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(*EMERALD)
-    pdf.cell(0, 12, "MEDI-IA", ln=True)
+    pdf.cell(0, 12, "Differential", ln=True)
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(*MUTED)
     pdf.set_y(pdf.get_y() - 9)
@@ -228,7 +228,7 @@ def build_conversation_pdf(turns: list) -> bytes:
         else:
             bar_color = EMERALD
             bg_color = ASST_BG
-            label_txt = "MEDI-IA"
+            label_txt = "Differential"
             label_color = (5, 150, 105)
 
         y0 = pdf.get_y()
@@ -255,7 +255,7 @@ def build_conversation_pdf(turns: list) -> bytes:
     pdf.set_text_color(*MUTED)
     pdf.multi_cell(
         W, 4.5,
-        "MEDI-IA no reemplaza la consulta medica profesional. "
+        "Differential es una herramienta de practica y no reemplaza la consulta medica profesional. "
         "Este historial es generado por inteligencia artificial y debe ser validado "
         "por un profesional de la salud. En emergencias llame al 123.",
     )

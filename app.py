@@ -3,7 +3,6 @@ Differential — Flask Application (ReAct Agent)
 """
 
 import functools
-import hmac
 import json
 import logging
 import os
@@ -33,6 +32,7 @@ from flask import (
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+from src import auth as auth_mod
 from src import metrics as metrics_mod
 from src.agent import get_health, run
 from src.memory import clear_session, get_feedback_stats, get_history, save_feedback
@@ -113,14 +113,11 @@ limiter = Limiter(
     storage_uri=_REDIS_URL or "memory://",
 )
 
-AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
-
-
 def require_auth(f):
-    """Decorator: exige sesion autenticada si AUTH_PASSWORD esta definida."""
+    """Decorator: exige una cuenta real con sesion iniciada (session['user_id'])."""
     @functools.wraps(f)
     def decorated(*args, **kwargs):
-        if AUTH_PASSWORD and not session.get("authenticated"):
+        if not session.get("user_id"):
             if request.path.startswith("/api/"):
                 return jsonify({"error": "No autenticado. Inicia sesion en /login"}), 401
             return redirect(url_for("login_page"))
@@ -136,25 +133,42 @@ def _get_session_id() -> str:
 
 @app.route("/login", methods=["GET"])
 def login_page():
-    if not AUTH_PASSWORD or session.get("authenticated"):
+    if session.get("user_id"):
         return redirect(url_for("index"))
     return render_template("login.html")
+
+
+@app.route("/signup", methods=["GET"])
+def signup_page():
+    if session.get("user_id"):
+        return redirect(url_for("index"))
+    return render_template("signup.html")
+
+
+@app.route("/auth/signup", methods=["POST"])
+@limiter.limit("10 per hour")
+def auth_signup():
+    data = request.get_json() or {}
+    try:
+        user_id = auth_mod.create_user(data.get("email", ""), data.get("password", ""))
+    except auth_mod.AuthError as e:
+        return jsonify({"error": str(e)}), 400
+    session["user_id"] = user_id
+    log.info("rid=%s signup_ok user_id=%s", g.rid, user_id)
+    return jsonify({"ok": True})
 
 
 @app.route("/auth/login", methods=["POST"])
 @limiter.limit("5 per minute")
 def auth_login():
-    data = request.get_json()
-    password = (data or {}).get("password", "")
-    if not AUTH_PASSWORD:
-        session["authenticated"] = True
-        return jsonify({"ok": True})
-    if hmac.compare_digest(password, AUTH_PASSWORD):
-        session["authenticated"] = True
-        log.info("rid=%s auth_ok ip=%s", g.rid, request.remote_addr)
-        return jsonify({"ok": True})
-    log.warning("rid=%s auth_fail ip=%s", g.rid, request.remote_addr)
-    return jsonify({"error": "Contraseña incorrecta"}), 401
+    data = request.get_json() or {}
+    user_id = auth_mod.verify_user(data.get("email", ""), data.get("password", ""))
+    if user_id is None:
+        log.warning("rid=%s auth_fail ip=%s", g.rid, request.remote_addr)
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+    session["user_id"] = user_id
+    log.info("rid=%s auth_ok user_id=%s", g.rid, user_id)
+    return jsonify({"ok": True})
 
 
 @app.route("/auth/logout", methods=["POST"])
