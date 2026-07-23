@@ -7,10 +7,10 @@
     --border:    #e2e8f0;
     --border-md: #cbd5e1;
     --border-strong: #cbd5e1;
-    --border-em: rgba(16,185,129,0.3);
-    --em-dim:    #d1fae5;
-    --em-glow:   rgba(16,185,129,0.12);
-    --emerald-light: #d1fae5;
+    --border-em: rgba(201,151,75,0.35);
+    --em-dim:    #f5e6c8;
+    --em-glow:   rgba(201,151,75,0.14);
+    --emerald-light: #f5e6c8;
     --blue-light: #dbeafe;
     --amber-light: #fef3c7;
     --red-light:  #fee2e2;
@@ -25,10 +25,10 @@
   }
 
   [data-theme="light"] .rec-box {
-    background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+    background: linear-gradient(135deg, #faf3e3, #eff6ff);
   }
   [data-theme="light"] .traj-thought { background: #eff6ff; }
-  [data-theme="light"] .traj-obs     { background: #f0fdf4; }
+  [data-theme="light"] .traj-obs     { background: #faf3e3; }
   [data-theme="light"] .tools-strip  { background: #fafcff; }
   [data-theme="light"] .src-chip {
     background: #fef9ec;
@@ -61,8 +61,8 @@
   }
   [data-theme="light"] .hist-item:hover { background: #f8fafc; }
   [data-theme="light"] .followup-chip { background: #ffffff; border-color: #cbd5e1; }
-  [data-theme="light"] .followup-chip:hover { background: #d1fae5; }
-  [data-theme="light"] .copy-btn:hover { background: #d1fae5; border-color: #10b981; color: #059669; }
+  [data-theme="light"] .followup-chip:hover { background: #f5e6c8; }
+  [data-theme="light"] .copy-btn:hover { background: #f5e6c8; border-color: #c9974b; color: #8a6423; }
   [data-theme="light"] .rag-chunk { background: #ffffff; }
   [data-theme="light"] .card-foot { background: #f8fafc; }
   [data-theme="light"] .card-header { background: #f8fafc; }

@@ -43,10 +43,10 @@
     fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.18); stroke-width: 1;
     cursor: pointer; transition: fill 0.18s, stroke 0.18s, filter 0.18s;
   }
-  .body-zone:hover { fill: rgba(16,185,129,0.18); stroke: rgba(16,185,129,0.5); }
+  .body-zone:hover { fill: rgba(201,151,75,0.18); stroke: rgba(201,151,75,0.5); }
   .body-zone.selected {
-    fill: rgba(16,185,129,0.35); stroke: var(--em); stroke-width: 1.5;
-    filter: drop-shadow(0 0 5px rgba(16,185,129,0.55));
+    fill: rgba(201,151,75,0.35); stroke: var(--em); stroke-width: 1.5;
+    filter: drop-shadow(0 0 5px rgba(201,151,75,0.55));
   }
   .body-marked-section {
     padding: 10px 16px; border-top: 1px solid var(--border); flex-shrink: 0; min-height: 60px;
