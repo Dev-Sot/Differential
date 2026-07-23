@@ -131,6 +131,12 @@ def _get_session_id() -> str:
     return session["session_id"]
 
 
+@app.route("/about", methods=["GET"])
+def about_page():
+    """Pitch/landing publico — no es la puerta de entrada (esa es '/', libre sin cuenta)."""
+    return render_template("landing.html")
+
+
 @app.route("/login", methods=["GET"])
 def login_page():
     if session.get("user_id"):
@@ -179,9 +185,9 @@ def auth_logout():
 
 @app.route("/")
 def index():
-    if not session.get("user_id"):
-        return render_template("landing.html")
-    return render_template("index.html")
+    """El chat es de acceso libre — probarlo no requiere cuenta.
+    Solo /practice (progreso persistente) exige sesion iniciada."""
+    return render_template("index.html", is_authenticated=bool(session.get("user_id")))
 
 
 @app.route("/practice", methods=["GET"])
@@ -248,7 +254,6 @@ def practice_progress():
 
 
 @app.route("/api/query", methods=["POST"])
-@require_auth
 @limiter.limit("10 per minute")
 def query_agent():
     data = request.get_json()
@@ -302,7 +307,6 @@ def query_agent():
 
 
 @app.route("/api/reset", methods=["POST"])
-@require_auth
 def reset_session():
     """Reinicia la conversacion (nueva sesion)."""
     session_id = _get_session_id()
@@ -312,7 +316,6 @@ def reset_session():
 
 
 @app.route("/api/health", methods=["GET"])
-@require_auth
 def health_check():
     return jsonify(get_health())
 
@@ -336,7 +339,6 @@ def reload_index():
 
 
 @app.route("/api/stream", methods=["POST"])
-@require_auth
 @limiter.limit("10 per minute")
 def stream_query():
     """Endpoint SSE: hace streaming token a token del agente ReAct."""
@@ -415,7 +417,6 @@ def stream_query():
 
 
 @app.route("/api/export/pdf", methods=["POST"])
-@require_auth
 @limiter.limit("5 per minute")
 def export_pdf():
     """Genera un PDF del reporte de diagnostico y lo devuelve como descarga."""
@@ -503,7 +504,6 @@ def pwa_manifest():
 
 
 @app.route("/api/feedback", methods=["POST"])
-@require_auth
 @limiter.limit("30 per minute")
 def feedback():
     data = request.get_json()

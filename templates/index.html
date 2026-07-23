@@ -48,6 +48,7 @@
     <div class="sidebar-label">Practicar</div>
     <button class="sidebar-btn" onclick="window.location.href='/practice'" style="border:1px solid var(--border-em);background:var(--em-dim);color:var(--em);font-weight:600;">
       <i data-lucide="graduation-cap" style="width:15px;height:15px;stroke-width:2"></i> Práctica de casos
+      {% if not is_authenticated %}<span style="margin-left:auto;font-size:9.5px;opacity:.75;">cuenta gratis</span>{% endif %}
     </button>
   </div>
 
@@ -143,9 +144,15 @@
       <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
         <i data-lucide="sun" id="themeIcon" style="width:15px;height:15px;stroke-width:2"></i>
       </button>
+      {% if is_authenticated %}
       <button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-md);border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text-3)';this.style.borderColor='var(--border-md)'">
         <i data-lucide="log-out" style="width:13px;height:13px"></i> Salir
       </button>
+      {% else %}
+      <a href="/login" style="display:flex;align-items:center;gap:5px;padding:5px 13px;border:1px solid var(--border-em);border-radius:8px;background:var(--em-dim);color:var(--em);font-size:12px;font-weight:600;font-family:'Inter',sans-serif;text-decoration:none;">
+        <i data-lucide="log-in" style="width:13px;height:13px"></i> Iniciar sesión
+      </a>
+      {% endif %}
     </div>
   </div>
 

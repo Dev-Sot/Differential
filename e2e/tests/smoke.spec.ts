@@ -25,15 +25,20 @@ async function signUpAndEnter(page: Page): Promise<string> {
 // tests de la interfaz real".
 
 test.describe("Autenticacion", () => {
-  test("una sesion anonima ve la landing publica en /, no el chat", async ({ page }) => {
+  test("una sesion anonima puede usar el chat directamente, sin cuenta", async ({ page }) => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("link", { name: "Crear cuenta gratis" }).first()).toBeVisible();
-    await expect(page.locator("#chatZone")).toHaveCount(0);
+    await expect(page.locator("#chatZone")).toBeVisible();
+    await expect(page.locator("a[href='/login']")).toBeVisible();
   });
 
-  test("una sesion anonima SI es redirigida a /login en rutas protegidas", async ({ page }) => {
+  test("/about tiene el pitch publico", async ({ page }) => {
+    await page.goto("/about");
+    await expect(page.getByRole("link", { name: "Crear cuenta gratis" }).first()).toBeVisible();
+  });
+
+  test("una sesion anonima SI es redirigida a /login en /practice (requiere cuenta)", async ({ page }) => {
     await page.goto("/practice");
     await expect(page).toHaveURL(/\/login$/);
   });

@@ -124,26 +124,26 @@ class TestLoginEndpoint:
     def test_logout_clears_session(self, client):
         client.post("/auth/signup", json={"email": "out@example.com", "password": "password123"})
         client.post("/auth/logout")
-        r = client.get("/")
-        assert r.status_code == 200
-        assert b"Crear cuenta" in r.data  # landing publica, no el chat
+        # '/' sigue siendo el chat tras logout (acceso libre) — lo que debe
+        # cambiar es que /practice vuelva a exigir login
+        r = client.get("/practice")
+        assert r.status_code == 302
+        assert "/login" in r.headers.get("Location", "")
 
-    def test_practice_page_still_requires_auth_after_landing_change(self, client):
-        """La landing en '/' no debe aflojar require_auth en el resto de las rutas."""
+    def test_practice_page_still_requires_auth(self, client):
         r = client.get("/practice")
         assert r.status_code == 302
         assert "/login" in r.headers.get("Location", "")
 
 
-# ─── require_auth: rutas protegidas sin sesion ─────────────────────────────
+# ─── '/' es de acceso libre: probar el chat NO requiere cuenta ────────────
+# (solo /practice, que guarda progreso, exige sesion iniciada)
 
-class TestRequireAuth:
-    def test_index_shows_landing_page_when_anonymous(self, client):
-        """'/' ya no redirige a /login estando anonimo — muestra la landing publica."""
+class TestFreeChatAccess:
+    def test_index_shows_chat_when_anonymous(self, client):
         r = client.get("/")
         assert r.status_code == 200
-        assert b"Differential" in r.data
-        assert b"Crear cuenta" in r.data
+        assert b"chatZone" in r.data
 
     def test_index_shows_chat_when_authenticated(self, client):
         client.post("/auth/signup", json={"email": "chat@example.com", "password": "password123"})
@@ -151,8 +151,22 @@ class TestRequireAuth:
         assert r.status_code == 200
         assert b"chatZone" in r.data
 
-    def test_api_route_returns_401_json_when_anonymous(self, client):
+    def test_about_page_has_the_pitch_and_is_public(self, client):
+        r = client.get("/about")
+        assert r.status_code == 200
+        assert b"Differential" in r.data
+        assert b"Crear cuenta" in r.data
+
+    def test_api_health_is_public(self, client):
         r = client.get("/api/health")
+        assert r.status_code == 200
+
+
+# ─── require_auth: rutas que SI siguen protegidas ──────────────────────────
+
+class TestRequireAuth:
+    def test_practice_api_returns_401_json_when_anonymous(self, client):
+        r = client.get("/api/practice/progress")
         assert r.status_code == 401
         assert "error" in r.get_json()
 
