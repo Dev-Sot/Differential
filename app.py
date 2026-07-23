@@ -83,11 +83,20 @@ def _after_request(response):
     log.info("rid=%s %s %s %d %dms", rid, request.method, request.path, response.status_code, elapsed_ms)
     return response
 
+_REDIS_URL = os.getenv("REDIS_URL", "")
+if not _REDIS_URL:
+    log.warning(
+        "REDIS_URL no definida — el rate limiter usa memoria de proceso. "
+        "Con gunicorn.conf.py (workers=2) cada worker lleva su propio contador: "
+        "un cliente puede obtener hasta el doble del limite anunciado repartiendo "
+        "requests entre workers. Ver docker-compose.yml para el servicio redis."
+    )
+
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://",
+    storage_uri=_REDIS_URL or "memory://",
 )
 
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")

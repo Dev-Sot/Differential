@@ -1,10 +1,26 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   medi-ia:
     build: .
     ports:
       - "${PORT:-5000}:5000"
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
     volumes:
       - ./index:/app/index      # indice FAISS (construir con: make ingest)
       - ./data:/app/data        # sesiones SQLite persistentes
@@ -15,3 +31,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s         # tiempo para que carguen los modelos ML
+
+volumes:
+  redis-data:
