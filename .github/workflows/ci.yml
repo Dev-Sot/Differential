@@ -20,7 +20,11 @@ jobs:
           cache: pip
 
       - name: Install Python dependencies
-        run: pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
+        # sin --no-cache-dir a proposito: cache: pip (arriba) necesita que pip
+        # realmente escriba en ~/.cache/pip para tener algo que guardar/reusar.
+        # --no-cache-dir dejaba esa carpeta vacia y el paso de guardado del
+        # cache fallaba con "Cache folder path ... doesn't exist on disk".
+        run: pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Lint (ruff)
         run: ruff check .
@@ -84,15 +88,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-          # sin cache: pip aqui a proposito — el job "test" cachea con la misma
-          # requirements.txt y, al correr en paralelo, ambos jobs compiten por
-          # guardar la misma clave de cache (colision -> "Post Set up Python"
-          # falla aunque los tests reales pasen). Ver commit que agrego este comentario.
+          cache: pip
 
       - name: "Crear venv e instalar dependencias (mismo layout que local, venv/bin/python)"
         run: |
           python -m venv venv
-          venv/bin/pip install --no-cache-dir -r requirements.txt
+          venv/bin/pip install -r requirements.txt
 
       - name: Download frontend build
         uses: actions/download-artifact@v4
