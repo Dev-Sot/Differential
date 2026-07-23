@@ -7,14 +7,18 @@
 ![Tests](https://img.shields.io/badge/tests-230-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Entrena el razonamiento clínico que los libros no te enseñan. Differential no te da un diagnóstico — te presenta un caso, **tú** propones tu diferencial, y el sistema te evalúa y cita la fuente exacta del libro que lo respalda. Construido sobre un pipeline RAG real (BM25 + FAISS + reranker + agente ReAct con Qwen2.5-7B) contra 14 libros médicos.
+**[🔗 Ver demo en vivo](https://medical-agent-production-7f7a.up.railway.app)** — desplegado en Railway (Docker multi-stage, ver [Deploy](#deploy))
 
-<!--
-  TODO: capturas de pantalla reales una vez desplegado.
-  Sugeridas: (1) landing "/about", (2) chat libre "/" en modo claro,
-  (3) práctica de casos "/practice" con feedback visible.
-  ![Chat de Differential](docs/screenshots/chat.png)
--->
+> ⚠️ **Estado del demo:** el índice FAISS (`index/`) está excluido del repo a propósito — ver [Libros indexados](#libros-indexados-8-de-14-activos) y [Deploy](#deploy). Hasta que ese índice se suba al servicio de Railway, el chat responde en modo degradado (sin libros cargados). El resto del producto (auth, práctica de casos, UI) funciona normal.
+
+Entrena el razonamiento clínico que los libros no te enseñan. Differential no te da un diagnóstico — te presenta un caso, **tú** propones tu diferencial, y el sistema te evalúa y cita la fuente exacta del libro que lo respalda. Construido sobre un pipeline RAG real (BM25 + FAISS + reranker + agente ReAct con Qwen2.5-7B) contra libros médicos reales.
+
+![Chat de Differential](docs/screenshots/chat.png)
+<sub>El chat libre — sin necesidad de cuenta. Los números de esta captura son de una build anterior; el conteo real de libros/chunks se actualiza solo desde `/api/health`.</sub>
+
+### Contenido
+
+[Cómo funciona](#cómo-funciona) · [Arquitectura](#arquitectura) · [Características](#características) · [Métricas](#métricas-de-evaluación) · [Libros indexados](#libros-indexados-8-de-14-activos) · [Stack técnico](#stack-técnico) · [Inicio rápido](#inicio-rápido) · [Variables de entorno](#variables-de-entorno) · [API Endpoints](#api-endpoints) · [Tests](#tests) · [Deploy](#deploy) · [Estructura](#estructura-del-proyecto)
 
 ---
 
@@ -286,6 +290,14 @@ make docker-stop
 
 El backend carga modelos de embeddings + FAISS + PyTorch en memoria y mantiene estado entre requests — esto no entra en el modelo serverless de Vercel (límite ~250MB, sin disco persistente, timeouts cortos). Para desplegar Differential completo, usar un host que corra el Dockerfile como proceso/contenedor largo: **Railway, Render o Fly.io** son las opciones más simples (deploy directo desde GitHub, sin cambiar código). Vercel sí sirve si en el futuro se separa un frontend estático puro del backend.
 
+### Subir el índice a un host sin acceso al filesystem local
+
+`index/books.index` e `index/metadata.json` están excluidos de git a propósito (ver [Libros indexados](#libros-indexados-8-de-14-activos) — contenido derivado de libros con copyright, no apto para redistribución pública). Eso significa que un deploy fresco desde GitHub (Railway, Render, Fly.io) arranca **sin índice**. Opciones para resolverlo, de más a menos privada:
+
+1. **Volumen persistente + subida manual** — la mayoría de estos hosts permiten montar un volumen en `/app/index` y subir los archivos una sola vez via su CLI/shell (`railway run`, `fly ssh console`, etc.). Mantiene el contenido fuera de cualquier canal público.
+2. **Storage privado propio** (S3, R2, Google Drive con service account) — el Dockerfile/entrypoint descarga los archivos al arrancar usando credenciales privadas. Requiere configurar ese storage aparte.
+3. **Aceptar el riesgo y versionarlo** — si el repo/deploy es de uso personal/portfolio de bajo perfil, se puede decidir conscientemente volver a incluir `index/metadata.json` en el repo (quitándolo de `.gitignore`). Es la opción más simple, pero reintroduce la exposición de copyright que se saco a propósito — solo si se acepta ese trade-off explícitamente.
+
 ---
 
 ## Estructura del proyecto
@@ -327,6 +339,7 @@ medical-agent/
 │   ├── practice.html          # Practica de casos (requiere cuenta)
 │   ├── metrics.html · evaluate.html · live.html  # Dashboards internos
 ├── static/dist/                # Bundle generado por Vite (gitignored, `make frontend-build`)
+├── docs/screenshots/            # Capturas para este README
 ├── data/
 │   ├── case_bank.json          # 10 casos clinicos originales (contenido fuente, versionado)
 │   ├── memory.db               # SQLite — usuarios, sesiones, feedback (runtime, gitignored)
