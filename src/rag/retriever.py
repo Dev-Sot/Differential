@@ -101,5 +101,10 @@ def retrieve(query: str, top_k: int = 10) -> list[dict]:
 
 def get_index_stats() -> dict:
     _load()
-    books = list({m["book"] for m in _metadata})
+    # metadata.json puede tener mas chunks que el indice FAISS si este se
+    # construyo parcialmente (ver rebuild_index_from_metadata.py) — limitar
+    # al rango realmente cubierto, si no el health check reporta libros que
+    # en realidad no son buscables.
+    covered = _metadata[:_index.ntotal]
+    books = sorted({m["book"] for m in covered})
     return {"total_chunks": _index.ntotal, "libros": books}

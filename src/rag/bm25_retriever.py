@@ -1,14 +1,10 @@
 """
 BM25 keyword-based retrieval complementario al FAISS denso.
-Se construye lazy desde el metadata.json existente — no requiere re-ingesta.
+Se construye lazy reutilizando la metadata ya cargada por retriever.py —
+no requiere re-ingesta ni una segunda copia de metadata.json en memoria.
 """
 
-import json
-import os
 import re
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-META_PATH = os.path.join(BASE_DIR, "index", "metadata.json")
 
 _bm25 = None
 _corpus: list[dict] | None = None
@@ -27,11 +23,13 @@ def _load():
     except ImportError as e:
         raise ImportError("Instala rank-bm25: pip install rank-bm25") from e
 
-    if not os.path.exists(META_PATH):
-        raise FileNotFoundError("Indice no encontrado. Ejecuta: python ingest.py")
-
-    with open(META_PATH, encoding="utf-8") as f:
-        _corpus = json.load(f)
+    from src.rag import retriever
+    retriever._load()
+    # Limitar al mismo rango que cubre el indice FAISS: si metadata.json
+    # tiene mas chunks que el indice (ver rebuild_index_from_metadata.py),
+    # BM25 no debe servir libros que la busqueda densa no puede encontrar —
+    # si no, el "8 de 14 libros" documentado en el README seria falso.
+    _corpus = retriever._metadata[: retriever._index.ntotal]
 
     tokenized = [_tokenize(doc["text"]) for doc in _corpus]
     _bm25 = BM25Okapi(tokenized)
