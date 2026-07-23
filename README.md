@@ -97,24 +97,28 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 
 ---
 
-## Libros indexados (14)
+## Libros indexados (8 de 14 activos — ver nota)
 
-| Libro | Especialidad |
-|-------|-------------|
-| Harrison Principios de Medicina Interna 19ª ed. | Diagnóstico diferencial general |
-| Oxford Handbook of Clinical Medicine 10th ed. | Referencia clínica rápida |
-| Symptoms to Diagnosis | Razonamiento clínico basado en síntomas |
-| The Top 100 Drugs Clinical | Farmacología y tratamientos |
-| Tintinalli Emergency Medicine Manual | Urgencias y emergencias |
-| Adams & Victor's Principles of Neurology 8th ed. | Neurología |
-| Harrison's Infectious Disease | Enfermedades infecciosas |
-| Infectious Diseases: A Clinical Short Course | Infectología clínica |
-| Compendio de Robbins y Cotran Patología | Fisiopatología |
-| Nelson Textbook of Pediatrics | Pediatría |
-| Kaplan-Sadock Pocket Handbook | Psiquiatría |
-| Williams Obstetrics | Obstetricia y ginecología |
-| Lange Case Files (Medical) | Casos clínicos integrados |
-| ABC of Dermatology | Dermatología |
+> El índice se reconstruyó manualmente tras un incidente que borró `index/books.index` local (ver historial de commits). Para tener algo funcional rápido se re-indexó con un modelo de embeddings más liviano y se cortó a propósito en 8 libros completos — los 6 restantes quedan como trabajo pendiente, no perdidos (el texto ya extraído de los 14 libros sigue completo en `index/metadata.json`, re-indexarlos es solo tiempo de cómputo vía `make ingest` o `rebuild_index_from_metadata.py`).
+
+| Libro | Especialidad | Estado |
+|-------|-------------|--------|
+| Harrison Principios de Medicina Interna 19ª ed. | Diagnóstico diferencial general | ✅ Indexado |
+| Adams & Victor's Principles of Neurology 8th ed. | Neurología | ✅ Indexado |
+| Harrison's Infectious Disease | Enfermedades infecciosas | ✅ Indexado |
+| Infectious Diseases: A Clinical Short Course | Infectología clínica | ✅ Indexado |
+| Compendio de Robbins y Cotran Patología | Fisiopatología | ✅ Indexado |
+| Kaplan-Sadock Pocket Handbook | Psiquiatría | ✅ Indexado |
+| Lange Case Files (Medical) | Casos clínicos integrados | ✅ Indexado |
+| ABC of Dermatology | Dermatología | ✅ Indexado |
+| Nelson Textbook of Pediatrics | Pediatría | ⏳ Pendiente (libro más grande del corpus, ~1/3 de todos los chunks) |
+| Oxford Handbook of Clinical Medicine 10th ed. | Referencia clínica rápida | ⏳ Pendiente |
+| Symptoms to Diagnosis | Razonamiento clínico basado en síntomas | ⏳ Pendiente |
+| The Top 100 Drugs Clinical | Farmacología y tratamientos | ⏳ Pendiente |
+| Tintinalli Emergency Medicine Manual | Urgencias y emergencias | ⏳ Pendiente |
+| Williams Obstetrics | Obstetricia y ginecología | ⏳ Pendiente |
+
+**Próximo paso propuesto:** completar la re-indexación de los 6 libros pendientes (~1h40min adicionales con el modelo liviano actual, según benchmark real de 13.8 chunks/seg) y, si se quiere volver a la mayor calidad de retrieval de `intfloat/multilingual-e5-base`, re-ingestar todo el corpus con GPU o en un proceso overnight — en CPU tomaría varias horas para los 136k chunks completos.
 
 ---
 
@@ -123,7 +127,7 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 | Capa | Tecnología |
 |------|-----------|
 | Backend | Flask 3.x + Gunicorn (2 workers sync) |
-| Embeddings | `intfloat/multilingual-e5-base` (~500 MB, 768 dims, retrieval-optimized) |
+| Embeddings | `paraphrase-multilingual-MiniLM-L12-v2` (384 dims) — temporal tras recuperación de índice, ver [Libros indexados](#libros-indexados-8-de-14-activos--ver-nota); `intfloat/multilingual-e5-base` (768 dims) es el objetivo de mayor calidad |
 | Índice vectorial | FAISS `IndexFlatIP` (cosine via inner product) |
 | BM25 | `rank-bm25` — fusión con FAISS vía Reciprocal Rank Fusion |
 | Reranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` (~120 MB, 26 idiomas) |
@@ -189,7 +193,7 @@ El sistema funciona sin token. Las respuestas son fragmentos del libro sin anál
 | `HF_MODEL` | `Qwen/Qwen2.5-7B-Instruct` | Modelo LLM via HuggingFace Inference API |
 | `SECRET_KEY` | (random) | **Definir en producción** — clave Flask para sesiones |
 | `AUTH_PASSWORD` | — | Si se define, protege toda la app con password |
-| `EMBEDDING_MODEL` | `intfloat/multilingual-e5-base` | Modelo de embeddings (768 dims) |
+| `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Modelo de embeddings (384 dims) — debe coincidir con el usado para construir `index/books.index` |
 | `RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo reranker |
 | `RERANK_THRESHOLD` | `-3.0` | Umbral de relevancia (chunks > 0 = relevantes) |
 | `CLEANUP_DAYS` | `30` | Días de inactividad para eliminar sesiones |
