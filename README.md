@@ -1,12 +1,38 @@
-# MEDI-IA — Asistente Médico con IA
+# Differential — Práctica de Diagnóstico Diferencial
 
 [![CI](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-3.x-000000?logo=flask&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-185-brightgreen)
+![TypeScript](https://img.shields.io/badge/typescript-vite-3178C6?logo=typescript&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-230-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Agente de diagnóstico diferencial basado en **14 libros médicos reales** (~136 000 chunks). Combina recuperación híbrida BM25+FAISS con fusión RRF, reranking con cross-encoder multilingüe y un agente ReAct con Qwen2.5-7B via HuggingFace.
+Entrena el razonamiento clínico que los libros no te enseñan. Differential no te da un diagnóstico — te presenta un caso, **tú** propones tu diferencial, y el sistema te evalúa y cita la fuente exacta del libro que lo respalda. Construido sobre un pipeline RAG real (BM25 + FAISS + reranker + agente ReAct con Qwen2.5-7B) contra 14 libros médicos.
+
+<!--
+  TODO: capturas de pantalla reales una vez desplegado.
+  Sugeridas: (1) landing "/about", (2) chat libre "/" en modo claro,
+  (3) práctica de casos "/practice" con feedback visible.
+  ![Chat de Differential](docs/screenshots/chat.png)
+-->
+
+---
+
+## Cómo funciona
+
+La mayoría de los asistentes médicos con IA hacen esto: describes síntomas → la IA te da un diagnóstico → lo lees. Differential invierte el orden a propósito:
+
+```
+1. El sistema presenta un caso clínico real
+2. TÚ propones tu diferencial y tu razonamiento
+3. El sistema evalúa tu respuesta y cita el libro exacto que la respalda
+```
+
+Es el mismo motor (RAG + agente ReAct), pero quién razona es distinto — los exámenes de medicina evalúan tu capacidad de razonar un diferencial, no si sabes leer la respuesta de una IA.
+
+**Dos modos de acceso:**
+- **Chat libre (`/`)** — sin cuenta, sin fricción. Describe síntomas, recibe un diagnóstico diferencial fundamentado con citas.
+- **Práctica de casos (`/practice`)** — requiere cuenta gratuita (para guardar tu progreso). Casos reales, autoevaluación tipo Anki, coaching con IA si hay `HF_TOKEN` configurado.
 
 ---
 
@@ -37,7 +63,7 @@ Consulta del usuario
         │   Reciprocal Rank Fusion (RRF)    │
         │   + CrossEncoder reranker         │
         │   mMARCO multilingüe (26 idiomas) │
-        │   14 libros médicos indexados     │
+        │   8 de 14 libros médicos activos  │
         └──────────────────────────────────┘
 ```
 
@@ -47,6 +73,9 @@ Consulta del usuario
 
 | Feature | Descripción |
 |---------|-------------|
+| **Chat libre, sin cuenta** | Describe síntomas y recibe un diferencial fundamentado — cero fricción para probar el producto |
+| **Práctica de casos** | 10 casos clínicos originales (propios, sin copyright), autoevaluación tipo Anki o coaching con IA |
+| **Cuentas reales** | Email + password hasheado (`werkzeug.security`) — solo para guardar progreso de práctica |
 | **Agente ReAct** | Qwen2.5-7B con 4 tools: `search_symptoms`, `assess_urgency`, `get_drug_info`, `get_section` |
 | **Retrieval híbrido** | BM25 + FAISS `IndexFlatIP` fusionados con Reciprocal Rank Fusion (RRF, k=60) |
 | **Reranker multilingüe** | cross-encoder mMARCO (26 idiomas) con umbral configurable |
@@ -55,49 +84,35 @@ Consulta del usuario
 | **Mapa corporal SVG** | 24 zonas interactivas (frontal + dorsal) — inyecta contexto en la query |
 | **Perfil clínico** | Modal con alergias, medicamentos y condiciones — inyección silenciosa en cada consulta |
 | **Visualización RAG** | Panel colapsable por respuesta: pasos FAISS → reranker → LLM con scores reales |
-| **Demo chips** | 6 queries reales del benchmark (IAM, meningitis, apendicitis, LES, NAC, ICC) |
-| **Follow-ups contextuales** | Preguntas de seguimiento generadas a partir del diagnóstico |
 | **Dashboard métricas** | Gráfico queries/hora, latencia avg/p95, uptime (Chart.js) |
 | **Dashboard evaluación** | Recall@1/3/5, MRR, Precision@5 por categoría con 40 queries anotadas |
-| **Live monitor** | `/live` — dashboard tiempo real con refresh automático (5 s) |
 | **PWA** | Manifest `/manifest.json` — instalable desde el browser |
-| **Feedback** | Botones 👍👎 por respuesta, persistidos en SQLite |
 | **Export PDF** | Por diagnóstico individual o sesión completa |
-| **Historial** | Consultas anteriores en sidebar (localStorage) |
-| **Dark mode** | Toggle luna/sol, persiste en localStorage |
-| **Input de voz** | Web Speech API, resultados en tiempo real (Chrome) |
-| **Autenticación** | Cuentas reales (email + password hasheado) — `/signup`, `/login` |
-| **Cron cleanup** | Limpieza automática de sesiones inactivas (daemon thread) |
-| **Docker** | Dockerfile + docker-compose + nginx (SSE-ready) |
-| **185 tests** | pytest: guardrails, tools, memory, api, metrics, feedback, evaluation, pipeline |
+| **Tema claro / oscuro** | Claro por defecto, toggle persistente en localStorage |
+| **Rate limiting compartido** | flask-limiter + Redis — correcto incluso con varios workers de gunicorn |
+| **Docker multi-stage** | Build de frontend (Node) separado del runtime (Python) — no se necesita Node en producción |
+| **230 tests + E2E** | pytest (backend) + Playwright (navegador real) — ver [Tests](#tests) |
 
 ---
 
 ## Métricas de evaluación
 
-Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
+Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails):
 
-| Métrica | MiniLM · 4 libros | e5-base · 4 libros | **e5-base · 14 libros (actual)** |
-|---------|:-----------------:|:------------------:|:--------------------------------:|
-| Recall@1 | 74.3% | 91.4% | **97.1%** |
-| Recall@3 | 94.3% | 100% | **100%** |
-| Recall@5 | 97.1% | 100% | **100%** |
-| MRR | 0.8405 | 0.9571 | **0.9857** |
-| Precision@5 | 74.3% | 94.3% | **80.6%** |
-| Guardrails | 100% | 100% | **100%** |
+| Métrica | MiniLM · 4 libros | e5-base · 4 libros | e5-base · 14 libros |
+|---------|:-----------------:|:------------------:|:--------------------:|
+| Recall@1 | 74.3% | 91.4% | 97.1% |
+| Recall@3 | 94.3% | 100% | 100% |
+| Recall@5 | 97.1% | 100% | 100% |
+| MRR | 0.8405 | 0.9571 | 0.9857 |
+| Precision@5 | 74.3% | 94.3% | 80.6% |
+| Guardrails | 100% | 100% | 100% |
 
-### Por categoría (configuración actual)
-
-| Categoría | Recall@1 | Recall@3 | Recall@5 | MRR |
-|-----------|:--------:|:--------:|:--------:|:---:|
-| Síntomas → Diagnóstico | 100% | 100% | 100% | 1.000 |
-| Urgencias y Triaje | 100% | 100% | 100% | 1.000 |
-| Farmacología | 90% | 100% | 100% | 0.950 |
-| Fisiopatología | 100% | 100% | 100% | 1.000 |
+> La configuración **actual en producción** es MiniLM · 8 libros (ver nota abajo) — estos números son de corridas anteriores con e5-base sobre el corpus completo, quedan como referencia de la calidad alcanzable al re-indexar.
 
 ---
 
-## Libros indexados (8 de 14 activos — ver nota)
+## Libros indexados (8 de 14 activos)
 
 > El índice se reconstruyó manualmente tras un incidente que borró `index/books.index` local (ver historial de commits). Para tener algo funcional rápido se re-indexó con un modelo de embeddings más liviano y se cortó a propósito en 8 libros completos — los 6 restantes quedan como trabajo pendiente, no perdidos (el texto ya extraído de los 14 libros sigue completo en `index/metadata.json`, re-indexarlos es solo tiempo de cómputo vía `make ingest` o `rebuild_index_from_metadata.py`).
 
@@ -118,8 +133,6 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 | Tintinalli Emergency Medicine Manual | Urgencias y emergencias | ⏳ Pendiente |
 | Williams Obstetrics | Obstetricia y ginecología | ⏳ Pendiente |
 
-**Próximo paso propuesto:** completar la re-indexación de los 6 libros pendientes (~1h40min adicionales con el modelo liviano actual, según benchmark real de 13.8 chunks/seg) y, si se quiere volver a la mayor calidad de retrieval de `intfloat/multilingual-e5-base`, re-ingestar todo el corpus con GPU o en un proceso overnight — en CPU tomaría varias horas para los 136k chunks completos.
-
 ---
 
 ## Stack técnico
@@ -127,17 +140,18 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 | Capa | Tecnología |
 |------|-----------|
 | Backend | Flask 3.x + Gunicorn (2 workers sync) |
-| Embeddings | `paraphrase-multilingual-MiniLM-L12-v2` (384 dims) — temporal tras recuperación de índice, ver [Libros indexados](#libros-indexados-8-de-14-activos--ver-nota); `intfloat/multilingual-e5-base` (768 dims) es el objetivo de mayor calidad |
+| Auth | Cuentas reales — `werkzeug.security` (password hasheado), sesión Flask |
+| Embeddings | `paraphrase-multilingual-MiniLM-L12-v2` (384 dims) — ver [Libros indexados](#libros-indexados-8-de-14-activos) |
 | Índice vectorial | FAISS `IndexFlatIP` (cosine via inner product) |
 | BM25 | `rank-bm25` — fusión con FAISS vía Reciprocal Rank Fusion |
 | Reranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` (~120 MB, 26 idiomas) |
-| LLM | Qwen2.5-7B-Instruct via HuggingFace Inference API (remoto) |
+| LLM | Qwen2.5-7B-Instruct via HuggingFace Inference API (remoto, opcional) |
 | TTS | `edge-tts` — `es-ES-AlvaroNeural` streaming progresivo |
-| Persistencia | SQLite — sesiones, historial, feedback, métricas |
+| Persistencia | SQLite — usuarios, sesiones, historial, feedback, intentos de práctica |
 | Rate limiting | flask-limiter, respaldado por Redis (memoria solo en dev local) |
-| Frontend | TypeScript + Vite (build propio) + Chart.js + Lucide Icons |
+| Frontend | TypeScript + Vite + CSS con custom properties (sin framework pesado) |
 | PDF | fpdf2 (pure Python, sin dependencias nativas) |
-| Tests | pytest 185 aserciones · tsc --noEmit para el frontend |
+| Tests | pytest (230 aserciones) + Playwright (11 E2E en navegador real) |
 | Calidad | ruff + black + mypy (`pyproject.toml`) |
 | CI | GitHub Actions — lint + tests (Python 3.13) y build + typecheck (Node 20) |
 | Deploy | Docker (build multi-stage) + docker-compose (app + redis) + nginx |
@@ -149,13 +163,12 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails), 14 libros:
 ### Requisitos previos
 - Python 3.13+
 - Node.js 20+ (solo para compilar el frontend — no se necesita en runtime)
-- PDFs de los libros en `libros/` (ver tabla de libros indexados)
-- Token de HuggingFace (opcional, pero requerido para el agente ReAct)
+- Token de HuggingFace (opcional — activa coaching con IA en la práctica de casos y el agente ReAct en el chat)
 
 ```bash
 # 1. Clonar el repositorio
 git clone https://github.com/Dev-Sot/medical-agent.git
-cd medi-ia-medical-agent
+cd medical-agent
 
 # 2. Crear entorno virtual e instalar dependencias
 python -m venv venv
@@ -170,18 +183,18 @@ make frontend-build
 # 4. Configurar variables de entorno
 copy .env.example .env         # Windows
 # cp .env.example .env         # Linux / Mac
-# Editar .env: agregar HF_TOKEN y SECRET_KEY (obligatoria fuera de FLASK_DEBUG=True)
+# Editar .env: SECRET_KEY es obligatoria fuera de FLASK_DEBUG=True
 
-# 5. Indexar los libros (primera vez, tarda ~5-15 min según cantidad de libros)
-make ingest
-
-# 6. Iniciar el servidor
+# 5. Iniciar el servidor
 make run
-# Abre http://localhost:5000
+# Abre http://localhost:5000 — el chat funciona sin cuenta
+# Crea una cuenta en /signup para practicar casos y guardar tu progreso
 ```
 
-### Sin HF_TOKEN (modo RAG básico)
-El sistema funciona sin token. Las respuestas son fragmentos del libro sin análisis del LLM — útil para pruebas de desarrollo.
+El índice FAISS (`index/books.index`) ya viene reconstruido con 8 libros — no hace falta `make ingest` para probar el chat. Ver [Libros indexados](#libros-indexados-8-de-14-activos) para completar el corpus.
+
+### Sin HF_TOKEN
+El chat funciona sin token (modo RAG Template — respuestas basadas en los libros, sin razonamiento del LLM). La práctica de casos funciona igual sin token (modo autoevaluación) — el coaching con IA es un plus, no un requisito.
 
 ---
 
@@ -189,103 +202,96 @@ El sistema funciona sin token. Las respuestas son fragmentos del libro sin anál
 
 | Variable | Default | Descripción |
 |----------|---------|-------------|
-| `HF_TOKEN` | — | Activa el agente ReAct. Sin él → modo RAG Template |
+| `HF_TOKEN` | — | Activa el agente ReAct y el coaching con IA en práctica. Sin él → modo RAG Template / autoevaluación |
 | `HF_MODEL` | `Qwen/Qwen2.5-7B-Instruct` | Modelo LLM via HuggingFace Inference API |
-| `SECRET_KEY` | (random) | **Definir en producción** — clave Flask para sesiones |
-| `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Modelo de embeddings (384 dims) — debe coincidir con el usado para construir `index/books.index` |
+| `SECRET_KEY` | (random) | **Obligatoria en producción** — clave Flask para sesiones. Sin ella la app no arranca fuera de `FLASK_DEBUG=True` |
+| `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Debe coincidir con el modelo usado para construir `index/books.index` |
 | `RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo reranker |
 | `RERANK_THRESHOLD` | `-3.0` | Umbral de relevancia (chunks > 0 = relevantes) |
 | `CLEANUP_DAYS` | `30` | Días de inactividad para eliminar sesiones |
 | `CLEANUP_INTERVAL_HOURS` | `24` | Frecuencia del cron de limpieza automática |
 | `MEMORY_DB_PATH` | `data/memory.db` | Ruta del archivo SQLite |
 | `PORT` | `5000` | Puerto del servidor |
-| `REDIS_URL` | — | Store compartido para el rate limiter. Sin esto, con >1 worker de gunicorn el límite no se aplica correctamente (ver `gunicorn.conf.py`) |
+| `REDIS_URL` | — | Store compartido para el rate limiter. Sin esto, con >1 worker de gunicorn el límite no se aplica correctamente |
 
 ---
 
 ## API Endpoints
 
-| Endpoint | Método | Rate limit | Descripción |
-|----------|--------|-----------|-------------|
-| `/` | GET | — | Interfaz de chat (requiere sesión iniciada) |
-| `/metrics` | GET | — | Dashboard de métricas con Chart.js |
-| `/live` | GET | — | Monitor en tiempo real (refresh 5 s) |
-| `/evaluate` | GET | — | Dashboard de evaluación RAG |
-| `/login` | GET | — | Página de inicio de sesión |
-| `/signup` | GET | — | Página de registro (cuenta nueva) |
-| `/auth/signup` | POST | 10/hora | Crear cuenta — email + password (min. 8 caracteres) |
-| `/auth/login` | POST | 5/min | Iniciar sesión |
-| `/auth/logout` | POST | — | Cerrar sesión |
-| `/manifest.json` | GET | — | PWA manifest |
-| `/api/query` | POST | 10/min | Consulta RAG/ReAct — respuesta completa |
-| `/api/stream` | POST | 10/min | SSE streaming del agente token a token |
-| `/api/tts` | POST | — | Text-to-speech neural (edge-tts) |
-| `/api/export/pdf` | POST | 5/min | Exportar diagnóstico como PDF |
-| `/api/export/conversation` | GET | 5/min | Exportar sesión completa como PDF |
-| `/api/feedback` | POST | 30/min | Registrar valoración 👍 (1) o 👎 (-1) |
-| `/api/metrics` | GET | — | Métricas del sistema en JSON |
-| `/api/health` | GET | — | Estado del índice, modelo y modo |
-| `/api/reset` | POST | — | Limpiar historial de la sesión actual |
-| `/api/reload` | POST | — | Recargar índice FAISS sin reiniciar servidor |
-| `/api/evaluate/full` | GET | — | Resultados de evaluación completa (JSON) |
-| `/api/evaluate/snapshot` | GET | — | Snapshot actual de métricas RAG |
-| `/api/evaluate/run` | POST | — | Lanzar evaluación completa en background |
+| Endpoint | Método | Auth | Descripción |
+|----------|--------|:----:|-------------|
+| `/` | GET | No | Chat libre — accesible sin cuenta |
+| `/about` | GET | No | Landing / pitch del producto |
+| `/login` · `/signup` | GET | No | Páginas de autenticación |
+| `/auth/login` · `/auth/signup` · `/auth/logout` | POST | No | Login (5/min) · signup (10/hora) · logout |
+| `/practice` | GET | **Sí** | Práctica de casos — requiere cuenta |
+| `/api/practice/case` | GET | **Sí** | Siguiente caso clínico (sin la respuesta) |
+| `/api/practice/submit` | POST | **Sí** | Enviar diferencial — evalúa y devuelve feedback (30/min) |
+| `/api/practice/rate` | POST | **Sí** | Autocalificar un intento (correct/partial/incorrect) |
+| `/api/practice/progress` | GET | **Sí** | Resumen de progreso por especialidad |
+| `/api/query` | POST | No | Consulta RAG/ReAct — respuesta completa (10/min) |
+| `/api/stream` | POST | No | SSE streaming del agente token a token (10/min) |
+| `/api/tts` | POST | No | Text-to-speech neural (edge-tts) |
+| `/api/export/pdf` | POST | No | Exportar diagnóstico como PDF (5/min) |
+| `/api/feedback` | POST | No | Registrar valoración 👍 (1) o 👎 (-1) (30/min) |
+| `/api/health` | GET | No | Estado del índice, modelo y modo |
+| `/metrics` · `/live` · `/evaluate` | GET | **Sí** | Dashboards internos (métricas, monitor live, evaluación RAG) |
+| `/api/reload` | POST | **Sí** | Recargar índice FAISS sin reiniciar servidor |
 
 ---
 
 ## Tests
 
 ```bash
-make test                                    # Todos los tests (185)
-venv\Scripts\pytest.exe tests/ -v           # Con salida detallada
+make test                              # Todos los tests (230)
+venv\Scripts\pytest.exe tests/ -v      # Con salida detallada
 
 # Por módulo
-pytest tests/test_guardrails.py -v          # Lógica pura de filtro médico
-pytest tests/test_tools.py -v              # Tools del agente (mocks FAISS)
-pytest tests/test_memory.py -v             # SQLite — sesiones e historial
-pytest tests/test_api.py -v               # Endpoints Flask
-pytest tests/test_metrics.py -v           # Métricas en memoria
-pytest tests/test_feedback.py -v          # Feedback SQLite + endpoint
-pytest tests/test_evaluation.py -v        # Pipeline de evaluación RAG
-pytest tests/test_pipeline.py -v          # Pipeline completo end-to-end
+pytest tests/test_auth.py -v           # Cuentas, login, signup, require_auth
+pytest tests/test_practice.py -v       # Banco de casos, evaluacion, progreso
+pytest tests/test_guardrails.py -v     # Lógica pura de filtro médico
+pytest tests/test_tools.py -v          # Tools del agente (mocks FAISS)
+pytest tests/test_memory.py -v         # SQLite — sesiones e historial
+pytest tests/test_api.py -v            # Endpoints Flask
+pytest tests/test_metrics.py -v        # Métricas en memoria
+pytest tests/test_feedback.py -v       # Feedback SQLite + endpoint
+pytest tests/test_evaluation.py -v     # Pipeline de evaluación RAG
+pytest tests/test_pipeline.py -v       # Pipeline completo end-to-end
+
+# End-to-end (navegador real, Playwright)
+make e2e-install                       # Una vez: instala Playwright + Chromium
+make e2e                               # 11 tests: auth, chat, sidebar, tema, practica
 ```
 
 Los tests de `test_retriever.py` hacen skip automático si el índice FAISS no existe — comportamiento intencional para CI.
 
 ---
 
-## Deploy con Docker
+## Deploy
+
+### Docker (self-host — Railway, Render, Fly.io, un VPS, etc.)
 
 ```bash
-# Construir imagen (incluye un stage de Node que compila el frontend)
-make docker-build
-
-# Crear .env con las variables necesarias
+make docker-build   # incluye un stage de Node que compila el frontend
 copy .env.example .env
-
-# Levantar app + redis (requiere índice FAISS pre-construido en ./index/)
-make docker-run
-
-# Si el índice no existe, construirlo dentro del contenedor
-make docker-ingest
-
-# Ver logs en tiempo real
+make docker-run      # levanta app + redis
+make docker-ingest   # si el indice no existe, construirlo dentro del contenedor
 docker compose logs -f
-
-# Bajar
 make docker-stop
 ```
 
-`docker-compose.yml` levanta un servicio `redis` junto con la app y define `REDIS_URL` automáticamente — el rate limiter queda correctamente compartido entre los workers de gunicorn sin configuración adicional.
+`docker-compose.yml` levanta un servicio `redis` junto con la app y define `REDIS_URL` automáticamente. Para producción con nginx, usar `nginx/medi-ia.conf` (incluye `proxy_buffering off` para `/api/stream`).
 
-Para producción con nginx, usar `nginx/medi-ia.conf` — incluye `proxy_buffering off` para el endpoint SSE `/api/stream`.
+### ⚠️ Por qué no Vercel
+
+El backend carga modelos de embeddings + FAISS + PyTorch en memoria y mantiene estado entre requests — esto no entra en el modelo serverless de Vercel (límite ~250MB, sin disco persistente, timeouts cortos). Para desplegar Differential completo, usar un host que corra el Dockerfile como proceso/contenedor largo: **Railway, Render o Fly.io** son las opciones más simples (deploy directo desde GitHub, sin cambiar código). Vercel sí sirve si en el futuro se separa un frontend estático puro del backend.
 
 ---
 
 ## Estructura del proyecto
 
 ```
-medi-ia/
+medical-agent/
 ├── app.py                     # Flask app: rutas HTTP + auth + orquestacion (delgado)
 ├── ingest.py                  # Indexación de PDFs → FAISS (chunk 600/120, sentence-aware)
 ├── rebuild_index_from_metadata.py  # Reconstruye books.index desde metadata.json sin PDFs
@@ -298,6 +304,8 @@ medi-ia/
 ├── src/
 │   ├── agent.py               # Orquestador: ReAct vs RAG fallback
 │   ├── agent_loop.py          # Bucle ReAct + generador SSE (max 6 iteraciones)
+│   ├── auth.py                # Cuentas: create_user/verify_user, password hasheado
+│   ├── practice.py            # Banco de casos + evaluate_answer + progreso
 │   ├── guardrails.py          # Filtro regex pre-LLM
 │   ├── llm.py                 # Cliente HuggingFace InferenceClient
 │   ├── memory.py              # Historial + feedback en SQLite
@@ -306,34 +314,29 @@ medi-ia/
 │   ├── schemas.py             # Pydantic: ConsultaRequest, DiagnosticoResponse
 │   ├── tools.py                # 4 herramientas del agente ReAct
 │   ├── evaluation_full.py     # Evaluación completa con dataset anotado
-│   └── rag/
-│       ├── embeddings.py      # Singleton SentenceTransformer (e5-base, 768 dims)
-│       ├── retriever.py       # FAISS + BM25 con Reciprocal Rank Fusion
-│       ├── bm25_retriever.py  # BM25 lazy-loaded desde metadata.json
-│       ├── reranker.py        # CrossEncoder reranker
-│       ├── section_mapping.py # Página → capítulo por libro
-│       └── semantic_fallback.py  # Fallback cuando rerank_score < threshold
-├── frontend/                  # Build del chat UI (Vite + TypeScript + Tailwind)
+│   └── rag/                   # embeddings, retriever, bm25, reranker, section_mapping
+├── frontend/                  # Build del chat UI (Vite + TypeScript)
 │   ├── src/main.ts            # Toda la logica de UI, tipada, un solo modulo
 │   ├── src/styles/*.css       # CSS organizado por seccion (10 archivos)
 │   └── vite.config.ts         # Build -> ../static/dist (lo sirve Flask)
+├── e2e/                       # Tests Playwright contra un servidor Flask real
 ├── templates/
-│   ├── index.html             # Markup del chat (328 lineas — CSS/JS van en frontend/)
-│   ├── metrics.html           # Dashboard métricas con Chart.js
-│   ├── evaluate.html          # Dashboard evaluación RAG
-│   ├── live.html              # Monitor tiempo real
-│   └── login.html             # Página de autenticación
+│   ├── index.html             # Chat libre (sin cuenta requerida)
+│   ├── landing.html           # Pitch publico, montado en /about
+│   ├── login.html · signup.html  # Autenticacion
+│   ├── practice.html          # Practica de casos (requiere cuenta)
+│   ├── metrics.html · evaluate.html · live.html  # Dashboards internos
 ├── static/dist/                # Bundle generado por Vite (gitignored, `make frontend-build`)
 ├── data/
-│   ├── memory.db               # SQLite — sesiones, feedback (generado en runtime)
-│   ├── eval_dataset.json      # 40 queries anotadas para evaluación (v1.3)
-│   └── eval_full_results.json # Resultados de la última evaluación completa
-├── tests/                     # 185 tests pytest
-├── index/                     # Índice FAISS (generado por ingest.py, no incluido en repo)
+│   ├── case_bank.json          # 10 casos clinicos originales (contenido fuente, versionado)
+│   ├── memory.db               # SQLite — usuarios, sesiones, feedback (runtime, gitignored)
+│   └── eval_dataset.json      # 40 queries anotadas para evaluación (v1.3)
+├── tests/                     # 230 tests pytest
+├── index/                     # Índice FAISS (no incluido en repo, ver "Libros indexados")
 ├── libros/                    # PDFs fuente (no incluidos en el repo)
 ├── nginx/medi-ia.conf         # Config nginx para producción
 ├── Dockerfile                  # Multi-stage: build frontend (Node) -> runtime (Python)
-├── docker-compose.yml          # Servicios: medi-ia + redis
+├── docker-compose.yml          # Servicios: app + redis
 └── .github/workflows/ci.yml    # CI: lint + tests (Python) y build + typecheck (frontend)
 ```
 
@@ -342,16 +345,9 @@ medi-ia/
 ## Gestión de sesiones
 
 ```bash
-# Listar sesiones activas
-make sessions
-
-# Limpiar sesiones inactivas > 30 días
-make cleanup
-
-# Limpiar sesiones inactivas > N días
-make cleanup DAYS=7
-
-# Borrar sesión específica
+make sessions               # Listar sesiones activas
+make cleanup                # Limpiar sesiones inactivas > 30 días
+make cleanup DAYS=7          # Limpiar sesiones inactivas > N días
 venv\Scripts\python.exe manage.py clear <session_id>
 ```
 
@@ -359,4 +355,4 @@ venv\Scripts\python.exe manage.py clear <session_id>
 
 ## Nota académica
 
-Este sistema es un proyecto de investigación académica sobre aplicación de técnicas RAG y agentes conversacionales en el dominio médico. **No reemplaza la consulta médica profesional.** En caso de emergencia, llame al **123** (Colombia) o diríjase a urgencias inmediatamente.
+Differential es una herramienta de práctica y estudio para razonamiento clínico. **No reemplaza la consulta médica profesional ni debe usarse para diagnosticar pacientes reales.** En caso de emergencia, llame al **123** (Colombia) o diríjase a urgencias inmediatamente.
