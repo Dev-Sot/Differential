@@ -1,7 +1,7 @@
 PYTHON = venv/Scripts/python.exe
 PIP    = venv/Scripts/pip.exe
 
-.PHONY: run ingest test install install-dev lint format typecheck reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup frontend-install frontend-build frontend-dev frontend-typecheck
+.PHONY: run ingest test install install-dev lint format typecheck reload health eval-full docker-build docker-run docker-stop docker-ingest sessions cleanup frontend-install frontend-build frontend-dev frontend-typecheck e2e-install e2e
 
 ## Iniciar servidor Flask (requiere haber corrido frontend-build al menos una vez)
 run:
@@ -78,6 +78,14 @@ frontend-dev:
 ## Frontend: chequeo de tipos (tsc --noEmit)
 frontend-typecheck:
 	cd frontend && npm run typecheck
+
+## E2E: instalar Playwright + navegador chromium
+e2e-install:
+	cd e2e && npm install && npx playwright install chromium
+
+## E2E: smoke tests contra un servidor Flask real (levanta y baja el server solo)
+e2e:
+	cd e2e && npx playwright test
 
 ## Listar sesiones guardadas en SQLite
 sessions:
