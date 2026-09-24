@@ -1,15 +1,15 @@
 # Differential — Práctica de Diagnóstico Diferencial
 
-[![CI](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Dev-Sot/medical-agent/actions/workflows/ci.yml)
+[![CI](https://github.com/Dev-Sot/Differential/actions/workflows/ci.yml/badge.svg)](https://github.com/Dev-Sot/Differential/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-3.x-000000?logo=flask&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-vite-3178C6?logo=typescript&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-230-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**[🔗 Ver demo en vivo](https://medical-agent-production-7f7a.up.railway.app)** — desplegado en Railway (Docker multi-stage, ver [Deploy](#deploy))
+**🔗 Demo en vivo:** en proceso de redeploy a Hugging Face Spaces (gratis, Docker — ver [Deploy](#deploy)).
 
-> ⚠️ **Estado del demo:** el índice FAISS (`index/`) está excluido del repo a propósito — ver [Libros indexados](#libros-indexados-8-de-14-activos) y [Deploy](#deploy). Hasta que ese índice se suba al servicio de Railway, el chat responde en modo degradado (sin libros cargados). El resto del producto (auth, práctica de casos, UI) funciona normal.
+> El demo gratuito se duerme tras 48 h sin visitas; la primera carga después de eso tarda ~1–2 min mientras el contenedor arranca y descarga los modelos.
 
 Entrena el razonamiento clínico que los libros no te enseñan. Differential no te da un diagnóstico — te presenta un caso, **tú** propones tu diferencial, y el sistema te evalúa y cita la fuente exacta del libro que lo respalda. Construido sobre un pipeline RAG real (BM25 + FAISS + reranker + agente ReAct con Qwen2.5-7B) contra libros médicos reales.
 
@@ -171,8 +171,8 @@ Dataset v1.3 — 40 queries anotadas (35 médicas + 5 guardrails):
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/Dev-Sot/medical-agent.git
-cd medical-agent
+git clone https://github.com/Dev-Sot/Differential.git
+cd Differential
 
 # 2. Crear entorno virtual e instalar dependencias
 python -m venv venv
@@ -195,7 +195,7 @@ make run
 # Crea una cuenta en /signup para practicar casos y guardar tu progreso
 ```
 
-El índice FAISS (`index/books.index`) ya viene reconstruido con 8 libros — no hace falta `make ingest` para probar el chat. Ver [Libros indexados](#libros-indexados-8-de-14-activos) para completar el corpus.
+El índice FAISS (`index/`) **no está en el repo** (contenido derivado de libros con copyright). Sin él la app arranca igual pero el chat responde en modo degradado. Para tenerlo: coloca tus PDFs en `libros/` y corre `make ingest`, o define `INDEX_REPO` para descargarlo de un dataset privado de Hugging Face (ver [Deploy](#deploy)).
 
 ### Sin HF_TOKEN
 El chat funciona sin token (modo RAG Template — respuestas basadas en los libros, sin razonamiento del LLM). La práctica de casos funciona igual sin token (modo autoevaluación) — el coaching con IA es un plus, no un requisito.
@@ -208,6 +208,7 @@ El chat funciona sin token (modo RAG Template — respuestas basadas en los libr
 |----------|---------|-------------|
 | `HF_TOKEN` | — | Activa el agente ReAct y el coaching con IA en práctica. Sin él → modo RAG Template / autoevaluación |
 | `HF_MODEL` | `Qwen/Qwen2.5-7B-Instruct` | Modelo LLM via HuggingFace Inference API |
+| `INDEX_REPO` | — | Dataset de HF Hub (`usuario/nombre`) del que se descargan `books.index` y `metadata.json` al arrancar si no existen localmente. Usa `HF_TOKEN` para datasets privados |
 | `SECRET_KEY` | (random) | **Obligatoria en producción** — clave Flask para sesiones. Sin ella la app no arranca fuera de `FLASK_DEBUG=True` |
 | `EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Debe coincidir con el modelo usado para construir `index/books.index` |
 | `RERANKER_MODEL` | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | Modelo reranker |
@@ -273,7 +274,26 @@ Los tests de `test_retriever.py` hacen skip automático si el índice FAISS no e
 
 ## Deploy
 
-### Docker (self-host — Railway, Render, Fly.io, un VPS, etc.)
+### Hugging Face Spaces (demo público, gratis)
+
+El demo corre en un [Space de Docker](https://huggingface.co/docs/hub/spaces-sdks-docker) en el plan gratuito (2 vCPU, 16 GB RAM) — suficiente para FAISS + embeddings + reranker en CPU. Se usa el mismo `Dockerfile`, sin cambios.
+
+1. **Índice privado** — crea un dataset **privado** en HF (ej. `usuario/differential-index`) y sube `index/books.index` e `index/metadata.json`:
+   ```bash
+   hf upload usuario/differential-index index/ . --repo-type dataset --private
+   ```
+2. **Space** — crea un Space nuevo con SDK *Docker* y en *Settings → Variables and secrets* define:
+   - `SECRET_KEY` (secret) — `python -c "import secrets; print(secrets.token_hex(32))"`
+   - `HF_TOKEN` (secret) — token con lectura del dataset (también activa el agente ReAct)
+   - `INDEX_REPO` (variable) — `usuario/differential-index`
+3. **Código** — el README del Space necesita un encabezado YAML propio, así que se sube con el script:
+   ```bash
+   bash scripts/deploy_hf_space.sh usuario/differential
+   ```
+
+Al arrancar, `src/rag/retriever.py` descarga el índice del dataset privado; el contenido con copyright nunca queda en el repo público.
+
+### Docker (self-host — Render, Fly.io, un VPS, etc.)
 
 ```bash
 make docker-build   # incluye un stage de Node que compila el frontend
@@ -288,22 +308,14 @@ make docker-stop
 
 ### ⚠️ Por qué no Vercel
 
-El backend carga modelos de embeddings + FAISS + PyTorch en memoria y mantiene estado entre requests — esto no entra en el modelo serverless de Vercel (límite ~250MB, sin disco persistente, timeouts cortos). Para desplegar Differential completo, usar un host que corra el Dockerfile como proceso/contenedor largo: **Railway, Render o Fly.io** son las opciones más simples (deploy directo desde GitHub, sin cambiar código). Vercel sí sirve si en el futuro se separa un frontend estático puro del backend.
-
-### Subir el índice a un host sin acceso al filesystem local
-
-`index/books.index` e `index/metadata.json` están excluidos de git a propósito (ver [Libros indexados](#libros-indexados-8-de-14-activos) — contenido derivado de libros con copyright, no apto para redistribución pública). Eso significa que un deploy fresco desde GitHub (Railway, Render, Fly.io) arranca **sin índice**. Opciones para resolverlo, de más a menos privada:
-
-1. **Volumen persistente + subida manual** — la mayoría de estos hosts permiten montar un volumen en `/app/index` y subir los archivos una sola vez via su CLI/shell (`railway run`, `fly ssh console`, etc.). Mantiene el contenido fuera de cualquier canal público.
-2. **Storage privado propio** (S3, R2, Google Drive con service account) — el Dockerfile/entrypoint descarga los archivos al arrancar usando credenciales privadas. Requiere configurar ese storage aparte.
-3. **Aceptar el riesgo y versionarlo** — si el repo/deploy es de uso personal/portfolio de bajo perfil, se puede decidir conscientemente volver a incluir `index/metadata.json` en el repo (quitándolo de `.gitignore`). Es la opción más simple, pero reintroduce la exposición de copyright que se saco a propósito — solo si se acepta ese trade-off explícitamente.
+El backend carga modelos de embeddings + FAISS + PyTorch en memoria y mantiene estado entre requests — esto no entra en el modelo serverless de Vercel (límite ~250 MB por función, sin disco persistente, timeouts cortos). Hace falta un host que corra el `Dockerfile` como contenedor de larga duración. Los planes gratuitos de Render/Koyeb (512 MB RAM) tampoco alcanzan para los modelos; HF Spaces sí.
 
 ---
 
 ## Estructura del proyecto
 
 ```
-medical-agent/
+Differential/
 ├── app.py                     # Flask app: rutas HTTP + auth + orquestacion (delgado)
 ├── ingest.py                  # Indexación de PDFs → FAISS (chunk 600/120, sentence-aware)
 ├── rebuild_index_from_metadata.py  # Reconstruye books.index desde metadata.json sin PDFs

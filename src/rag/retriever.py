@@ -20,9 +20,35 @@ _index: faiss.Index | None = None
 _metadata: list[dict] | None = None
 
 
+def _download_index() -> None:
+    """Baja books.index + metadata.json desde un dataset (privado) de HF Hub.
+
+    Solo actua si INDEX_REPO esta definida (ej. "usuario/differential-index").
+    Pensado para hosts sin disco persistente (HF Spaces): el indice no se
+    versiona en git por copyright, asi que se trae al arrancar con HF_TOKEN.
+    """
+    repo_id = os.getenv("INDEX_REPO", "")
+    if not repo_id:
+        return
+    from huggingface_hub import hf_hub_download
+
+    index_dir = os.path.dirname(INDEX_PATH)
+    for filename in ("books.index", "metadata.json"):
+        hf_hub_download(
+            repo_id=repo_id,
+            filename=filename,
+            repo_type="dataset",
+            local_dir=index_dir,
+            token=os.getenv("HF_TOKEN") or None,
+        )
+    print(f"[Retriever] Indice descargado desde {repo_id}.")
+
+
 def _load():
     global _index, _metadata
     if _index is None:
+        if not os.path.exists(INDEX_PATH):
+            _download_index()
         if not os.path.exists(INDEX_PATH):
             raise FileNotFoundError(
                 "Indice FAISS no encontrado. Ejecuta: python ingest.py"

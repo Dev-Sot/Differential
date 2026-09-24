@@ -38,7 +38,7 @@ class DiagnosticoResponse(BaseModel):
     urgencia: str
     confianza: float
     fuentes: list[str] = []
-    modo: str = "FAISS + Reranker + Claude"
+    modo: str = "FAISS + Reranker + Qwen"
     disclaimer: str = (
         "MEDI-IA no reemplaza la consulta medica profesional. "
         "Esta es una evaluacion preliminar orientativa basada en libros medicos."
@@ -54,5 +54,5 @@ class HealthResponse(BaseModel):
     status: str
     modo: str
     chunks_indexados: int
-    claude_activo: bool
+    hf_activo: bool
     libros: list[str] = []
